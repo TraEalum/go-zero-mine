@@ -1,7 +1,4 @@
-# Ignore all
-*
-
-!.vscode/
+!.vscode/*
 
 # Unignore all with extensions
 !*.*
