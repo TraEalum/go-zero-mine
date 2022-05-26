@@ -4,11 +4,13 @@ go 1.16
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.0
+	github.com/chuckpreslar/inflect v0.0.0-20150228233301-423e3ac59c61
 	github.com/emicklei/proto v1.9.1
 	github.com/fatih/structtag v1.2.0
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/iancoleman/strcase v0.2.0
 	github.com/logrusorgru/aurora v2.0.3+incompatible
+	github.com/serenize/snaker v0.0.0-20201027110005-a7ad2135616e
 	github.com/spf13/cobra v1.4.0
 	github.com/stretchr/testify v1.7.0
 	github.com/zeromicro/antlr v0.0.1

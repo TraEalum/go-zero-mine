@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/zeromicro/go-zero/tools/goctl/proto"
 	"os"
 	"runtime"
 	"strings"
@@ -101,4 +102,5 @@ func init() {
 	rootCmd.AddCommand(rpc.Cmd)
 	rootCmd.AddCommand(tpl.Cmd)
 	rootCmd.AddCommand(upgrade.Cmd)
+	rootCmd.AddCommand(proto.Cmd)
 }
