@@ -18,5 +18,5 @@ func (m *default{{.upperStartCamelObject}}Model) Insert(ctx context.Context, ses
 `
 
 	// InsertMethod defines an interface method template for insert code in model
-	InsertMethod = `Insert(ctx context.Context, data *{{.upperStartCamelObject}}) (sql.Result,error)`
+	InsertMethod = `Insert(ctx context.Context, session sqlx.Session, data *{{.upperStartCamelObject}}) (sql.Result,error)`
 )

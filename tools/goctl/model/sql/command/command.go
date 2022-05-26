@@ -47,6 +47,8 @@ var (
 	VarStringRemote string
 	// VarStringBranch describes the git branch of the repository.
 	VarStringBranch string
+	// VarService describes the service of the rrz.
+	VarService string
 )
 
 var errNotMatched = errors.New("sql not matched")
@@ -91,6 +93,7 @@ func MySqlDataSource(_ *cobra.Command, _ []string) error {
 	home := VarStringHome
 	remote := VarStringRemote
 	branch := VarStringBranch
+	service := VarService
 	if len(remote) > 0 {
 		repo, _ := file.CloneIntoGitHome(remote, branch)
 		if len(repo) > 0 {
@@ -108,7 +111,7 @@ func MySqlDataSource(_ *cobra.Command, _ []string) error {
 		return err
 	}
 
-	return fromMysqlDataSource(url, dir, patterns, cfg, cache, idea)
+	return fromMysqlDataSource(url, dir, patterns, cfg, cache, idea, service)
 }
 
 type pattern map[string]struct{}
@@ -214,7 +217,7 @@ func fromDDL(src, dir string, cfg *config.Config, cache, idea bool, database str
 	return nil
 }
 
-func fromMysqlDataSource(url, dir string, tablePat pattern, cfg *config.Config, cache, idea bool) error {
+func fromMysqlDataSource(url, dir string, tablePat pattern, cfg *config.Config, cache, idea bool, service string) error {
 	log := console.NewConsole(idea)
 	if len(url) == 0 {
 		log.Error("%v", "expected data source of mysql, but nothing found")
@@ -264,7 +267,7 @@ func fromMysqlDataSource(url, dir string, tablePat pattern, cfg *config.Config, 
 		return errors.New("no tables matched")
 	}
 
-	generator, err := gen.NewDefaultGenerator(dir, cfg, gen.WithConsoleOption(log))
+	generator, err := gen.NewDefaultGenerator(dir, cfg, gen.WithConsoleOption(log), gen.WithServiceName(service))
 	if err != nil {
 		return err
 	}

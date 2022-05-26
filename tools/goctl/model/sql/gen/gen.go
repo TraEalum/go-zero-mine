@@ -30,6 +30,7 @@ type (
 		pkg          string
 		cfg          *config.Config
 		isPostgreSql bool
+		service      string
 	}
 
 	// Option defines a function with argument defaultGenerator
@@ -93,6 +94,13 @@ func WithConsoleOption(c console.Console) Option {
 func WithPostgreSql() Option {
 	return func(generator *defaultGenerator) {
 		generator.isPostgreSql = true
+	}
+}
+
+// WithPostgreSql marks  defaultGenerator.isPostgreSql true
+func WithServiceName(service string) Option {
+	return func(generator *defaultGenerator) {
+		generator.service = service
 	}
 }
 
@@ -249,7 +257,7 @@ func (g *defaultGenerator) genModel(in parser.Table, withCache bool) (string, er
 	table.UniqueCacheKey = uniqueKey
 	table.ContainsUniqueCacheKey = len(uniqueKey) > 0
 
-	importsCode, err := genImports(table, withCache, in.ContainsTime())
+	importsCode, err := genImports(table, g.service, withCache, in.ContainsTime())
 	if err != nil {
 		return "", err
 	}
@@ -331,6 +339,11 @@ func (g *defaultGenerator) genModelCustom(in parser.Table, withCache bool) (stri
 		return "", err
 	}
 
+	var table Table
+	table.Table = in
+
+	marshalFields, unmarshallFields, err := genFieldParser(table, table.Fields)
+
 	t := util.With("model-custom").
 		Parse(text).
 		GoFmt(true)
@@ -339,6 +352,9 @@ func (g *defaultGenerator) genModelCustom(in parser.Table, withCache bool) (stri
 		"withCache":             withCache,
 		"upperStartCamelObject": in.Name.ToCamel(),
 		"lowerStartCamelObject": stringx.From(in.Name.ToCamel()).Untitle(),
+		"serviceName":           g.service,
+		"marshalFields":         marshalFields,
+		"unmarshallFields":      unmarshallFields,
 	})
 	if err != nil {
 		return "", err

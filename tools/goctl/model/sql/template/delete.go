@@ -23,5 +23,5 @@ func (m *default{{.upperStartCamelObject}}Model) Delete(ctx context.Context, ses
 `
 
 	// DeleteMethod defines a delete template for interface method
-	DeleteMethod = `Delete(ctx context.Context, {{.lowerStartCamelPrimaryKey}} {{.dataType}}) error`
+	DeleteMethod = `Delete(ctx context.Context, session sqlx.Session, {{.lowerStartCamelPrimaryKey}} {{.dataType}}) error`
 )

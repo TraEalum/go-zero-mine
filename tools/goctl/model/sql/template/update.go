@@ -18,5 +18,5 @@ func (m *default{{.upperStartCamelObject}}Model) Update(ctx context.Context, ses
 `
 
 	// UpdateMethod defines an interface method template for generating update codes
-	UpdateMethod = `Update(ctx context.Context, data *{{.upperStartCamelObject}}) error`
+	UpdateMethod = `Update(ctx context.Context, session sqlx.Session, data *{{.upperStartCamelObject}}) error`
 )
