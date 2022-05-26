@@ -5,9 +5,6 @@ import (
 	"bytes"
 	"database/sql"
 	"fmt"
-	"github.com/serenize/snaker"
-	"github.com/chuckpreslar/inflect"
-	"github.com/zeromicro/go-zero/tools/goctl/util/stringx"
 	"io"
 	"io/ioutil"
 	"log"
@@ -15,6 +12,10 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+
+	"github.com/chuckpreslar/inflect"
+	"github.com/serenize/snaker"
+	"github.com/zeromicro/go-zero/tools/goctl/util/stringx"
 )
 
 const (
@@ -33,7 +34,7 @@ const (
 // Do not rely on the structure of the Generated schema to provide any context about
 // the protobuf types. The schema reflects the layout of a protobuf file and should be used
 // to pipe the output of the `Schema.String()` to a file.
-func GenerateSchema(db *sql.DB, table string, ignoreTables []string, serviceName,goPkg, pkg string, dir string) (*Schema, error) {
+func GenerateSchema(db *sql.DB, table string, ignoreTables []string, serviceName, goPkg, pkg string, dir string) (*Schema, error) {
 	s := &Schema{
 		Dir: dir,
 	}
@@ -89,7 +90,7 @@ func typesFromColumns(s *Schema, cols []Column, ignoreTables []string) error {
 
 		msg, ok := messageMap[messageName]
 		if !ok {
-			messageMap[messageName] = &Message{Name: messageName,Comment: c.TableComment}
+			messageMap[messageName] = &Message{Name: messageName, Comment: c.TableComment}
 			msg = messageMap[messageName]
 		}
 
@@ -116,7 +117,7 @@ func dbSchema(db *sql.DB) (string, error) {
 
 func dbColumns(db *sql.DB, schema, table string) ([]Column, error) {
 
-	tableArr:= strings.Split(table,",")
+	tableArr := strings.Split(table, ",")
 
 	q := "SELECT c.TABLE_NAME, c.COLUMN_NAME, c.IS_NULLABLE, c.DATA_TYPE, " +
 		"c.CHARACTER_MAXIMUM_LENGTH, c.NUMERIC_PRECISION, c.NUMERIC_SCALE, c.COLUMN_TYPE ,c.COLUMN_COMMENT,t.TABLE_COMMENT " +
@@ -124,10 +125,10 @@ func dbColumns(db *sql.DB, schema, table string) ([]Column, error) {
 		" WHERE c.TABLE_SCHEMA = ?"
 
 	if table != "" && table != "*" {
-		q +=  " AND c.TABLE_NAME IN('" + strings.TrimRight(strings.Join(tableArr,"' ,'"),",") + "')"
+		q += " AND c.TABLE_NAME IN('" + strings.TrimRight(strings.Join(tableArr, "' ,'"), ",") + "')"
 	}
 
-	q +=  " ORDER BY c.TABLE_NAME, c.ORDINAL_POSITION"
+	q += " ORDER BY c.TABLE_NAME, c.ORDINAL_POSITION"
 
 	rows, err := db.Query(q, schema)
 	defer rows.Close()
@@ -140,12 +141,12 @@ func dbColumns(db *sql.DB, schema, table string) ([]Column, error) {
 	for rows.Next() {
 		cs := Column{}
 		err := rows.Scan(&cs.TableName, &cs.ColumnName, &cs.IsNullable, &cs.DataType,
-			&cs.CharacterMaximumLength, &cs.NumericPrecision, &cs.NumericScale, &cs.ColumnType,&cs.ColumnComment,&cs.TableComment)
+			&cs.CharacterMaximumLength, &cs.NumericPrecision, &cs.NumericScale, &cs.ColumnType, &cs.ColumnComment, &cs.TableComment)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		if cs.TableComment == ""{
+		if cs.TableComment == "" {
 			cs.TableComment = stringx.From(cs.TableName).ToCamelWithStartLower()
 		}
 
@@ -160,14 +161,14 @@ func dbColumns(db *sql.DB, schema, table string) ([]Column, error) {
 
 // Schema is a representation of a protobuf schema.
 type Schema struct {
-	Syntax    string
+	Syntax      string
 	ServiceName string
-	GoPackage string
-	Package   string
-	Dir	string
-	Imports   sort.StringSlice
-	Messages  MessageCollection
-	Enums     EnumCollection
+	GoPackage   string
+	Package     string
+	Dir         string
+	Imports     sort.StringSlice
+	Messages    MessageCollection
+	Enums       EnumCollection
 }
 
 // MessageCollection represents a sortable collection of messages.
@@ -217,9 +218,9 @@ func (s *Schema) AppendImport(imports string) {
 }
 
 func (s *Schema) String() string {
-	_,err := os.Stat(s.Dir)
+	_, err := os.Stat(s.Dir)
 	//如果返回的错误类型使用os.isNotExist()判断为true，说明文件或者文件夹不存在
-	if os.IsNotExist(err){
+	if os.IsNotExist(err) {
 		return s.CreateString()
 	}
 	return s.UpdateString()
@@ -234,28 +235,28 @@ func (s *Schema) CreateString() string {
 	buf.WriteString("\n")
 	buf.WriteString(fmt.Sprintf("package %s;\n", s.Package))
 	buf.WriteString("\n")
-	buf.WriteString("// Already Exist Table Record Start\n")
+	buf.WriteString("// Already Exist Table:\n")
 	for _, m := range s.Messages {
 		buf.WriteString("// " + m.Name)
 		buf.WriteString("\n")
 	}
-	buf.WriteString("// Already Exist Table Record End\n")
+	// buf.WriteString("// Already Exist Table Record End\n")
 	buf.WriteString("\n")
 	buf.WriteString("// Message Record Start\n")
 
 	for _, m := range s.Messages {
-		buf.WriteString("//--------------------------------" + m.Comment+"--------------------------------")
+		buf.WriteString("//--------------------------------" + m.Comment + "--------------------------------")
 		buf.WriteString("\n")
 		m.GenDefaultMessage(buf)
-		m.GenRpcAddReqRespMessage(buf)
-		m.GenRpcUpdateReqMessage(buf)
-		m.GenRpcDelReqMessage(buf)
-		m.GenRpcGetByIdReqMessage(buf)
+		// m.GenRpcAddReqRespMessage(buf)
+		// m.GenRpcUpdateReqMessage(buf)
+		// m.GenRpcDelReqMessage(buf)
+		// m.GenRpcGetByIdReqMessage(buf)
 		m.GenRpcSearchReqMessage(buf)
 	}
 	buf.WriteString("// Message Record End\n")
 	buf.WriteString("\n")
-	if len(s.Enums) > 0{
+	if len(s.Enums) > 0 {
 		buf.WriteString("// Enums Record Start\n")
 		for _, e := range s.Enums {
 			buf.WriteString(fmt.Sprintf("%s\n", e))
@@ -268,16 +269,16 @@ func (s *Schema) CreateString() string {
 	buf.WriteString("// Rpc Func\n")
 	buf.WriteString("// ------------------------------------ \n\n")
 
-	funcTpl := "service " + s.ServiceName + "{ \n\n"
+	funcTpl := "service " + s.ServiceName + "{\n"
 	for _, m := range s.Messages {
-		funcTpl+= "\t //-----------------------" + m.Comment+"----------------------- \n"
-		funcTpl += "\t rpc Add" + m.Name + "(Add" + m.Name + "Req) returns (Add" + m.Name + "Resp); \n"
-		funcTpl += "\t rpc Update" + m.Name + "(Update" + m.Name + "Req) returns (Update" + m.Name + "Resp); \n"
-		funcTpl += "\t rpc Del" + m.Name + "(Del" + m.Name + "Req) returns (Del" + m.Name + "Resp); \n"
-		funcTpl += "\t rpc Get" + m.Name + "ById(Get" + m.Name + "ByIdReq) returns (Get" + m.Name + "ByIdResp); \n"
-		funcTpl += "\t rpc Search" + m.Name + "(Search" + m.Name + "Req) returns (Search" + m.Name + "Resp); \n"
+		funcTpl += "\t //-----------------------" + m.Comment + "----------------------- \n"
+		funcTpl += "\t rpc Create" + m.Name + "(" + m.Name + ") returns (" + m.Name + "); \n"
+		funcTpl += "\t rpc Update" + m.Name + "(" + m.Name + ") returns (" + m.Name + "); \n"
+		funcTpl += "\t rpc Delete" + m.Name + "(" + m.Name + ") returns (" + m.Name + "); \n"
+		funcTpl += "\t rpc Query" + m.Name + "Detail(" + m.Name + "Filter) returns (" + m.Name + "); \n"
+		funcTpl += "\t rpc Query" + m.Name + "List(" + m.Name + "Filter) returns (" + m.Name + "List); \n"
 	}
-	funcTpl = funcTpl + "\t // Service Record End \n"
+	funcTpl = funcTpl + "\t // Service Record End"
 	funcTpl = funcTpl + "\n}"
 	buf.WriteString(funcTpl)
 	err := ioutil.WriteFile(s.Dir, []byte(buf.String()), 0666)
@@ -292,7 +293,7 @@ func (s *Schema) UpdateString() string {
 	bufNew := new(bytes.Buffer)
 	file, err := os.OpenFile(s.Dir, os.O_RDWR, 0666)
 	if err != nil {
-		return "Open file error!"
+		return fmt.Sprintf("Open file error!%v", err)
 	}
 	defer file.Close()
 
@@ -309,7 +310,7 @@ func (s *Schema) UpdateString() string {
 		line, err := buf.ReadString('\n')
 		line = strings.TrimSpace(line)
 		bufNew.WriteString(line + "\n")
-		if line == "// Already Exist Table Record Start"{
+		if line == "// Already Exist Table Record Start" {
 			break
 		}
 		//fmt.Println(line)
@@ -325,7 +326,7 @@ func (s *Schema) UpdateString() string {
 	for {
 		line, err := buf.ReadString('\n')
 		line = strings.TrimSpace(line)
-		if line == "// Already Exist Table Record End"{
+		if line == "// Already Exist Table Record End" {
 			break
 		}
 		existTableName = append(existTableName, line[3:])
@@ -350,7 +351,7 @@ func (s *Schema) UpdateString() string {
 	for {
 		line, err := buf.ReadString('\n')
 		line = strings.TrimSpace(line)
-		if line == "// Message Record End"{
+		if line == "// Message Record End" {
 			break
 		}
 		bufNew.WriteString(line + "\n")
@@ -368,10 +369,10 @@ func (s *Schema) UpdateString() string {
 			bufNew.WriteString("//--------------------------------" + m.Comment + "--------------------------------")
 			bufNew.WriteString("\n")
 			m.GenDefaultMessage(bufNew)
-			m.GenRpcAddReqRespMessage(bufNew)
-			m.GenRpcUpdateReqMessage(bufNew)
-			m.GenRpcDelReqMessage(bufNew)
-			m.GenRpcGetByIdReqMessage(bufNew)
+			// m.GenRpcAddReqRespMessage(bufNew)
+			// m.GenRpcUpdateReqMessage(bufNew)
+			// m.GenRpcDelReqMessage(bufNew)
+			// m.GenRpcGetByIdReqMessage(bufNew)
 			m.GenRpcSearchReqMessage(bufNew)
 		}
 	}
@@ -381,7 +382,7 @@ func (s *Schema) UpdateString() string {
 	for {
 		line, err := buf.ReadString('\n')
 		line = strings.TrimSpace(line)
-		if line == "// Enums Record End"{
+		if line == "// Enums Record End" {
 			break
 		}
 		bufNew.WriteString(line + "\n")
@@ -399,7 +400,7 @@ func (s *Schema) UpdateString() string {
 		}
 	}
 
-	if len(s.Enums) > 0{
+	if len(s.Enums) > 0 {
 		for _, e := range s.Enums {
 			if !isInSlice(existEnumText, e.Name) {
 				bufNew.WriteString(fmt.Sprintf("%s\n", e))
@@ -411,7 +412,7 @@ func (s *Schema) UpdateString() string {
 	for {
 		line, err := buf.ReadString('\n')
 		line = strings.TrimSpace(line)
-		if line == "// Service Record End"{
+		if line == "// Service Record End" {
 			break
 		}
 		bufNew.WriteString(line + "\n")
@@ -426,13 +427,13 @@ func (s *Schema) UpdateString() string {
 
 	funcTpl := ""
 	for _, m := range s.Messages {
-		if !isInSlice(existTableName, m.Name){
-			funcTpl+= "\t //-----------------------" + m.Comment+"----------------------- \n"
-			funcTpl += "\t rpc Add" + m.Name + "(Add" + m.Name + "Req) returns (Add" + m.Name + "Resp); \n"
-			funcTpl += "\t rpc Update" + m.Name + "(Update" + m.Name + "Req) returns (Update" + m.Name + "Resp); \n"
-			funcTpl += "\t rpc Del" + m.Name + "(Del" + m.Name + "Req) returns (Del" + m.Name + "Resp); \n"
-			funcTpl += "\t rpc Get" + m.Name + "ById(Get" + m.Name + "ByIdReq) returns (Get" + m.Name + "ByIdResp); \n"
-			funcTpl += "\t rpc Search" + m.Name + "(Search" + m.Name + "Req) returns (Search" + m.Name + "Resp); \n"
+		if !isInSlice(existTableName, m.Name) {
+			funcTpl += "\t //-----------------------" + m.Comment + "----------------------- \n"
+			funcTpl += "\t rpc Create" + m.Name + "(" + m.Name + ") returns (" + m.Name + "); \n"
+			funcTpl += "\t rpc Update" + m.Name + "(" + m.Name + ") returns (" + m.Name + "); \n"
+			funcTpl += "\t rpc Delete" + m.Name + "(" + m.Name + ") returns (" + m.Name + "); \n"
+			funcTpl += "\t rpc Query" + m.Name + "Detail(" + m.Name + "Filter) returns (" + m.Name + "); \n"
+			funcTpl += "\t rpc Query" + m.Name + "List(" + m.Name + "Filter) returns (" + m.Name + "List); \n"
 		}
 	}
 	funcTpl = funcTpl + "\t // Service Record End \n"
@@ -444,9 +445,9 @@ func (s *Schema) UpdateString() string {
 
 // Enum represents a protocol buffer enumerated type.
 type Enum struct {
-	Name   string
+	Name    string
 	Comment string
-	Fields []EnumField
+	Fields  []EnumField
 }
 
 // String returns a string representation of an Enum.
@@ -510,7 +511,7 @@ func (ef EnumField) Tag() int {
 }
 
 // newEnumFromStrings creates an enum from a name and a slice of strings that represent the names of each field.
-func newEnumFromStrings(name ,comment string, ss []string) (*Enum, error) {
+func newEnumFromStrings(name, comment string, ss []string) (*Enum, error) {
 	enum := &Enum{}
 	enum.Name = name
 	enum.Comment = comment
@@ -550,7 +551,7 @@ func (m Message) GenDefaultMessage(buf *bytes.Buffer) {
 		filedTag++
 		field.tag = filedTag
 		field.Name = stringx.From(field.Name).ToCamelWithStartLower()
-		if field.Comment == ""{
+		if field.Comment == "" {
 			field.Comment = field.Name
 		}
 		curFields = append(curFields, field)
@@ -569,7 +570,7 @@ func (m Message) GenRpcAddReqRespMessage(buf *bytes.Buffer) {
 	mOrginFields := m.Fields
 
 	//req
-	m.Name = "Add" + mOrginName + "Req"
+	m.Name = mOrginName
 	curFields := []MessageField{}
 	var filedTag int
 	for _, field := range m.Fields {
@@ -579,7 +580,7 @@ func (m Message) GenRpcAddReqRespMessage(buf *bytes.Buffer) {
 		filedTag++
 		field.tag = filedTag
 		field.Name = stringx.From(field.Name).ToCamelWithStartLower()
-		if field.Comment == ""{
+		if field.Comment == "" {
 			field.Comment = field.Name
 		}
 		curFields = append(curFields, field)
@@ -592,14 +593,13 @@ func (m Message) GenRpcAddReqRespMessage(buf *bytes.Buffer) {
 	m.Fields = mOrginFields
 
 	//resp
-	m.Name = "Add" + mOrginName + "Resp"
-	m.Fields = []MessageField{}
-	buf.WriteString(fmt.Sprintf("%s\n", m))
+	// m.Name = "Add" + mOrginName + "Resp"
+	// m.Fields = []MessageField{}
+	// buf.WriteString(fmt.Sprintf("%s\n", m))
 
-	//reset
-	m.Name = mOrginName
-	m.Fields = mOrginFields
-
+	// //reset
+	// m.Name = mOrginName
+	// m.Fields = mOrginFields
 }
 
 //gen add resp message
@@ -607,7 +607,7 @@ func (m Message) GenRpcUpdateReqMessage(buf *bytes.Buffer) {
 	mOrginName := m.Name
 	mOrginFields := m.Fields
 
-	m.Name = "Update" + mOrginName + "Req"
+	m.Name = mOrginName
 	curFields := []MessageField{}
 	var filedTag int
 	for _, field := range m.Fields {
@@ -617,7 +617,7 @@ func (m Message) GenRpcUpdateReqMessage(buf *bytes.Buffer) {
 		filedTag++
 		field.tag = filedTag
 		field.Name = stringx.From(field.Name).ToCamelWithStartLower()
-		if field.Comment == ""{
+		if field.Comment == "" {
 			field.Comment = field.Name
 		}
 		curFields = append(curFields, field)
@@ -630,13 +630,13 @@ func (m Message) GenRpcUpdateReqMessage(buf *bytes.Buffer) {
 	m.Fields = mOrginFields
 
 	//resp
-	m.Name = "Update" + mOrginName + "Resp"
-	m.Fields = []MessageField{}
-	buf.WriteString(fmt.Sprintf("%s\n", m))
+	// m.Name = "Update" + mOrginName + "Resp"
+	// m.Fields = []MessageField{}
+	// buf.WriteString(fmt.Sprintf("%s\n", m))
 
-	//reset
-	m.Name = mOrginName
-	m.Fields = mOrginFields
+	// //reset
+	// m.Name = mOrginName
+	// m.Fields = mOrginFields
 }
 
 //gen add resp message
@@ -644,15 +644,15 @@ func (m Message) GenRpcDelReqMessage(buf *bytes.Buffer) {
 	mOrginName := m.Name
 	mOrginFields := m.Fields
 
-	m.Name = "Del" + mOrginName + "Req"
-	m.Fields = []MessageField{
-		{Name: "id", Typ: "int64", tag: 1,Comment: "id"},
-	}
-	buf.WriteString(fmt.Sprintf("%s\n", m))
+	// m.Name = mOrginName + "Filter"
+	// m.Fields = []MessageField{
+	// 	{Name: "id", Typ: "int64", tag: 1, Comment: "id"},
+	// }
+	// buf.WriteString(fmt.Sprintf("%s\n", m))
 
-	//reset
-	m.Name = mOrginName
-	m.Fields = mOrginFields
+	// //reset
+	// m.Name = mOrginName
+	// m.Fields = mOrginFields
 
 	//resp
 	m.Name = "Del" + mOrginName + "Resp"
@@ -669,9 +669,9 @@ func (m Message) GenRpcGetByIdReqMessage(buf *bytes.Buffer) {
 	mOrginName := m.Name
 	mOrginFields := m.Fields
 
-	m.Name = "Get" + mOrginName + "ByIdReq"
+	m.Name = mOrginName + "Filter"
 	m.Fields = []MessageField{
-		{Name: "id", Typ: "int64", tag: 1,Comment: "id"},
+		{Name: "id", Typ: "int64", tag: 1, Comment: "id"},
 	}
 	buf.WriteString(fmt.Sprintf("%s\n", m))
 
@@ -680,16 +680,16 @@ func (m Message) GenRpcGetByIdReqMessage(buf *bytes.Buffer) {
 	m.Fields = mOrginFields
 
 	//resp
-	firstWord := strings.ToLower(string(m.Name[0]))
-	m.Name = "Get" + mOrginName + "ByIdResp"
-	m.Fields = []MessageField{
-		{Typ: mOrginName, Name: stringx.From(firstWord + mOrginName[1:]).ToCamelWithStartLower(), tag: 1,Comment: stringx.From(firstWord + mOrginName[1:]).ToCamelWithStartLower()},
-	}
-	buf.WriteString(fmt.Sprintf("%s\n", m))
+	// firstWord := strings.ToLower(string(m.Name[0]))
+	// m.Name = mOrginName
+	// m.Fields = []MessageField{
+	// 	{Typ: mOrginName, Name: stringx.From(firstWord + mOrginName[1:]).ToCamelWithStartLower(), tag: 1, Comment: stringx.From(firstWord + mOrginName[1:]).ToCamelWithStartLower()},
+	// }
+	// buf.WriteString(fmt.Sprintf("%s\n", m))
 
-	//reset
-	m.Name = mOrginName
-	m.Fields = mOrginFields
+	// //reset
+	// m.Name = mOrginName
+	// m.Fields = mOrginFields
 }
 
 //gen add resp message
@@ -697,12 +697,12 @@ func (m Message) GenRpcSearchReqMessage(buf *bytes.Buffer) {
 	mOrginName := m.Name
 	mOrginFields := m.Fields
 
-	m.Name = "Search" + mOrginName + "Req"
+	m.Name = mOrginName + "Filter"
 	curFields := []MessageField{
-		{Typ: "int64",Name: "page",tag: 1,Comment: "page"},
-		{Typ: "int64",Name: "pageSize",tag: 2,Comment: "pageSize"},
+		{Typ: "int64", Name: "pageNo", tag: 1, Comment: "pageNo"},
+		{Typ: "int64", Name: "pageSize", tag: 2, Comment: "pageSize"},
 	}
-	var filedTag  = len(curFields)
+	var filedTag = len(curFields)
 	for _, field := range m.Fields {
 		if isInSlice([]string{"version", "del_state", "delete_time"}, field.Name) {
 			continue
@@ -710,7 +710,7 @@ func (m Message) GenRpcSearchReqMessage(buf *bytes.Buffer) {
 		filedTag++
 		field.tag = filedTag
 		field.Name = stringx.From(field.Name).ToCamelWithStartLower()
-		if field.Comment == ""{
+		if field.Comment == "" {
 			field.Comment = field.Name
 		}
 		curFields = append(curFields, field)
@@ -724,9 +724,12 @@ func (m Message) GenRpcSearchReqMessage(buf *bytes.Buffer) {
 
 	//resp
 	firstWord := strings.ToLower(string(m.Name[0]))
-	m.Name = "Search" + mOrginName + "Resp"
+	m.Name = mOrginName + "List"
 	m.Fields = []MessageField{
-		{Typ: "repeated " + mOrginName, Name: stringx.From(firstWord + mOrginName[1:]).ToCamelWithStartLower(), tag: 1,Comment: stringx.From(firstWord + mOrginName[1:]).ToCamelWithStartLower()},
+		{Typ: "repeated " + mOrginName, Name: stringx.From(firstWord + mOrginName[1:]).ToCamelWithStartLower(), tag: 1, Comment: stringx.From(firstWord+mOrginName[1:]).ToCamelWithStartLower() + "List"},
+		{Typ: "int64", Name: "totalPage", tag: 2},
+		{Typ: "int64", Name: "pageSize", tag: 3},
+		{Typ: "int64", Name: "curPage", tag: 4},
 	}
 	buf.WriteString(fmt.Sprintf("%s\n", m))
 
@@ -741,7 +744,7 @@ func (m Message) String() string {
 
 	buf.WriteString(fmt.Sprintf("message %s {\n", m.Name))
 	for _, f := range m.Fields {
-		buf.WriteString(fmt.Sprintf("%s%s; //%s\n", indent, f,f.Comment))
+		buf.WriteString(fmt.Sprintf("%s%s; //%s\n", indent, f, f.Comment))
 	}
 	buf.WriteString("}\n")
 
@@ -763,15 +766,15 @@ func (m *Message) AppendField(mf MessageField) error {
 
 // MessageField represents the field of a message.
 type MessageField struct {
-	Typ  string
-	Name string
-	tag  int
+	Typ     string
+	Name    string
+	tag     int
 	Comment string
 }
 
 // NewMessageField creates a new message field.
-func NewMessageField(typ, name string, tag int,comment string) MessageField {
-	return MessageField{typ, name, tag,comment}
+func NewMessageField(typ, name string, tag int, comment string) MessageField {
+	return MessageField{typ, name, tag, comment}
 }
 
 // Tag returns the unique numbered tag of the message field.
@@ -797,10 +800,11 @@ type Column struct {
 	ColumnType             string
 	ColumnComment          string
 }
+
 // Table represents a database table.
 type Table struct {
-	TableName              string
-	ColumnName             string
+	TableName  string
+	ColumnName string
 }
 
 // parseColumn parses a column and inserts the relevant fields in the Message. If an enumerated type is encountered, an Enum will
@@ -821,7 +825,7 @@ func parseColumn(s *Schema, msg *Message, col Column) error {
 		})
 
 		enumName := inflect.Singularize(snaker.SnakeToCamel(col.TableName)) + snaker.SnakeToCamel(col.ColumnName)
-		enum, err := newEnumFromStrings(enumName,col.ColumnComment, enums)
+		enum, err := newEnumFromStrings(enumName, col.ColumnComment, enums)
 		if nil != err {
 			return err
 		}
@@ -834,9 +838,9 @@ func parseColumn(s *Schema, msg *Message, col Column) error {
 	case "date", "time", "datetime", "timestamp":
 		//s.AppendImport("google/protobuf/timestamp.proto")
 		fieldType = "int64"
-	case  "bool":
+	case "bool":
 		fieldType = "bool"
-	case "tinyint","smallint", "int", "mediumint", "bigint":
+	case "tinyint", "smallint", "int", "mediumint", "bigint":
 		fieldType = "int64"
 	case "float", "decimal", "double":
 		fieldType = "double"
@@ -846,7 +850,7 @@ func parseColumn(s *Schema, msg *Message, col Column) error {
 		return fmt.Errorf("no compatible protobuf type found for `%s`. column: `%s`.`%s`", col.DataType, col.TableName, col.ColumnName)
 	}
 
-	field := NewMessageField(fieldType, col.ColumnName, len(msg.Fields)+1,col.ColumnComment)
+	field := NewMessageField(fieldType, col.ColumnName, len(msg.Fields)+1, col.ColumnComment)
 
 	err := msg.AppendField(field)
 	if nil != err {
@@ -857,11 +861,10 @@ func parseColumn(s *Schema, msg *Message, col Column) error {
 }
 
 func isInSlice(slice []string, s string) bool {
-	for i, _ := range slice {
+	for i := range slice {
 		if slice[i] == s {
 			return true
 		}
 	}
 	return false
 }
-
