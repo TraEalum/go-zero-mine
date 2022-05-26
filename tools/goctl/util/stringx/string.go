@@ -137,3 +137,20 @@ func ContainsAny(s string, runes ...rune) bool {
 func ContainsWhiteSpace(s string) bool {
 	return ContainsAny(s, WhiteSpace...)
 }
+
+// ToCamelWithStartLower converts the input text into camel case
+func (s String) ToCamelWithStartLower() string {
+	list := s.splitBy(func(r rune) bool {
+		return r == '_'
+	}, true)
+	var target []string
+	for i, item := range list {
+		if i !=0{
+			target = append(target, From(item).Title())
+		}else{
+			target = append(target, item)
+		}
+
+	}
+	return strings.Join(target, "")
+}
