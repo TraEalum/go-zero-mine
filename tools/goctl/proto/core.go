@@ -240,7 +240,7 @@ func (s *Schema) CreateString() string {
 		buf.WriteString("// " + m.Name)
 		buf.WriteString("\n")
 	}
-	// buf.WriteString("// Already Exist Table Record End\n")
+	buf.WriteString("// Exist Table End\n")
 	buf.WriteString("\n")
 	buf.WriteString("// Message Record Start\n")
 
@@ -248,14 +248,9 @@ func (s *Schema) CreateString() string {
 		buf.WriteString("//--------------------------------" + m.Comment + "--------------------------------")
 		buf.WriteString("\n")
 		m.GenDefaultMessage(buf)
-		// m.GenRpcAddReqRespMessage(buf)
-		// m.GenRpcUpdateReqMessage(buf)
-		// m.GenRpcDelReqMessage(buf)
-		// m.GenRpcGetByIdReqMessage(buf)
 		m.GenRpcSearchReqMessage(buf)
 	}
 	buf.WriteString("// Message Record End\n")
-	buf.WriteString("\n")
 	if len(s.Enums) > 0 {
 		buf.WriteString("// Enums Record Start\n")
 		for _, e := range s.Enums {
@@ -278,8 +273,8 @@ func (s *Schema) CreateString() string {
 		funcTpl += "\t rpc Query" + m.Name + "Detail(" + m.Name + "Filter) returns (" + m.Name + "); \n"
 		funcTpl += "\t rpc Query" + m.Name + "List(" + m.Name + "Filter) returns (" + m.Name + "List); \n"
 	}
-	funcTpl = funcTpl + "\t // Service Record End"
-	funcTpl = funcTpl + "\n}"
+	funcTpl = funcTpl + "\t // Service Record End\n"
+	funcTpl = funcTpl + "}"
 	buf.WriteString(funcTpl)
 	err := ioutil.WriteFile(s.Dir, []byte(buf.String()), 0666)
 	if err != nil {
@@ -303,17 +298,16 @@ func (s *Schema) UpdateString() string {
 	}
 
 	var _ = stat.Size()
-	//fmt.Println("file size=", size)
-
+	endLine := ""
 	buf := bufio.NewReader(file)
+
+	//写已存在表名
 	for {
 		line, err := buf.ReadString('\n')
-		line = strings.TrimSpace(line)
-		bufNew.WriteString(line + "\n")
-		if line == "// Already Exist Table Record Start" {
+		bufNew.WriteString(line)
+		if strings.Contains(line, "Already Exist Table") {
 			break
 		}
-		//fmt.Println(line)
 		if err != nil {
 			if err == io.EOF {
 				break
@@ -323,14 +317,15 @@ func (s *Schema) UpdateString() string {
 		}
 	}
 	var existTableName []string
+
 	for {
 		line, err := buf.ReadString('\n')
-		line = strings.TrimSpace(line)
-		if line == "// Already Exist Table Record End" {
+		if strings.Contains(line, "Exist Table End") {
+			endLine = line
 			break
 		}
 		existTableName = append(existTableName, line[3:])
-		bufNew.WriteString(line + "\n")
+		bufNew.WriteString(line)
 		if err != nil {
 			if err == io.EOF {
 				break
@@ -343,18 +338,19 @@ func (s *Schema) UpdateString() string {
 	for _, m := range s.Messages {
 		if !isInSlice(existTableName, m.Name) {
 			newTableNames = append(newTableNames, m.Name)
-			bufNew.WriteString("// " + m.Name)
-			bufNew.WriteString("\n")
+			bufNew.WriteString("// " + m.Name + "\n")
 		}
 	}
-	bufNew.WriteString("// Already Exist Table Record End\n\n")
+	bufNew.WriteString(endLine)
+
+	// 写Messages
 	for {
 		line, err := buf.ReadString('\n')
-		line = strings.TrimSpace(line)
-		if line == "// Message Record End" {
+		if strings.Contains(line, "Message Record End") {
+			endLine = line
 			break
 		}
-		bufNew.WriteString(line + "\n")
+		bufNew.WriteString(line)
 		if err != nil {
 			if err == io.EOF {
 				break
@@ -369,23 +365,28 @@ func (s *Schema) UpdateString() string {
 			bufNew.WriteString("//--------------------------------" + m.Comment + "--------------------------------")
 			bufNew.WriteString("\n")
 			m.GenDefaultMessage(bufNew)
-			// m.GenRpcAddReqRespMessage(bufNew)
-			// m.GenRpcUpdateReqMessage(bufNew)
-			// m.GenRpcDelReqMessage(bufNew)
-			// m.GenRpcGetByIdReqMessage(bufNew)
 			m.GenRpcSearchReqMessage(bufNew)
 		}
 	}
-	bufNew.WriteString("// Message Record End\n")
-	bufNew.WriteString("\n")
+	if len(s.Messages) > 0 {
+		bufNew.WriteString(endLine)
+	}
+
+	// 写enum
 	var existEnumText []string
 	for {
 		line, err := buf.ReadString('\n')
-		line = strings.TrimSpace(line)
-		if line == "// Enums Record End" {
+		if strings.Contains(line, "Enums Record End") {
+			endLine = line
 			break
 		}
-		bufNew.WriteString(line + "\n")
+
+		if strings.Contains(line, "Rpc Func") {
+			bufNew.WriteString(line)
+			break
+		}
+
+		bufNew.WriteString(line)
 		reg := regexp.MustCompile(`^enum [A-Za-z0-9]*`)
 		enumText := reg.FindAllString(line, -1)
 		if enumText != nil {
@@ -406,16 +407,16 @@ func (s *Schema) UpdateString() string {
 				bufNew.WriteString(fmt.Sprintf("%s\n", e))
 			}
 		}
-		bufNew.WriteString("// Enums Record End\n")
+		bufNew.WriteString(endLine)
 	}
 
+	// 写rpc服务名
 	for {
 		line, err := buf.ReadString('\n')
-		line = strings.TrimSpace(line)
-		if line == "// Service Record End" {
+		if strings.Contains(line, "Service Record End") {
 			break
 		}
-		bufNew.WriteString(line + "\n")
+		bufNew.WriteString(line)
 		if err != nil {
 			if err == io.EOF {
 				break
@@ -436,8 +437,9 @@ func (s *Schema) UpdateString() string {
 			funcTpl += "\t rpc Query" + m.Name + "List(" + m.Name + "Filter) returns (" + m.Name + "List); \n"
 		}
 	}
-	funcTpl = funcTpl + "\t // Service Record End \n"
-	funcTpl = funcTpl + "\n}"
+	funcTpl = funcTpl + "\t // Service Record End\n"
+	funcTpl = funcTpl + "}"
+
 	bufNew.WriteString(funcTpl)
 	err = ioutil.WriteFile(s.Dir, []byte(bufNew.String()), 0666) //写入文件(字节数组)
 	return "Done"
@@ -731,7 +733,7 @@ func (m Message) GenRpcSearchReqMessage(buf *bytes.Buffer) {
 		{Typ: "int64", Name: "pageSize", tag: 3},
 		{Typ: "int64", Name: "curPage", tag: 4},
 	}
-	buf.WriteString(fmt.Sprintf("%s\n", m))
+	buf.WriteString(fmt.Sprintf("%s", m))
 
 	//reset
 	m.Name = mOrginName
