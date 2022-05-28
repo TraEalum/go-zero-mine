@@ -12,6 +12,10 @@ func genTableName(table Table) (string, error) {
 		return "", err
 	}
 
+	if err != nil {
+		return "", err
+	}
+
 	output, err := util.With("tableName").
 		Parse(text).
 		Execute(map[string]interface{}{

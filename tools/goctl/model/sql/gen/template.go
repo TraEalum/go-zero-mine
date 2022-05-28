@@ -33,6 +33,8 @@ const (
 	updateMethodTemplateFile              = "interface-update.tpl"
 	varTemplateFile                       = "var.tpl"
 	errTemplateFile                       = "err.tpl"
+	marshalFile                           = "marshal.tpl"
+	unmarshalFile                         = "unmarshal.tpl"
 )
 
 var templates = map[string]string{

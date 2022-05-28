@@ -10,11 +10,17 @@ import (
 const ModelCustom = `package {{.pkg}}
 {{if .withCache}}
 import (
+	"go-service/app/{{.serviceName}}/rpc/proto"
+
 	"github.com/zeromicro/go-zero/core/stores/cache"
 	"github.com/zeromicro/go-zero/core/stores/sqlx"
 )
 {{else}}
-import "github.com/zeromicro/go-zero/core/stores/sqlx"
+import (
+	"go-service/app/{{.serviceName}}/rpc/proto"
+
+	"github.com/zeromicro/go-zero/core/stores/sqlx"
+)
 {{end}}
 var _ {{.upperStartCamelObject}}Model = (*custom{{.upperStartCamelObject}}Model)(nil)
 
@@ -34,6 +40,35 @@ type (
 func New{{.upperStartCamelObject}}Model(conn sqlx.SqlConn{{if .withCache}}, c cache.CacheConf{{end}}) {{.upperStartCamelObject}}Model {
 	return &custom{{.upperStartCamelObject}}Model{
 		default{{.upperStartCamelObject}}Model: new{{.upperStartCamelObject}}Model(conn{{if .withCache}}, c{{end}}),
+	}
+}
+
+
+func (m *{{.upperStartCamelObject}}) Marshal(p *proto.{{.upperStartCamelObject}}) error {
+	{{.marshalFields}}
+
+	return nil
+}
+
+func (m *{{.upperStartCamelObject}}) Unmarshal(p *proto.{{.upperStartCamelObject}}) error {
+	{{.unmarshallFields}}
+	
+	return nil
+}
+
+func Marshal{{.upperStartCamelObject}}Lst(lst []{{.upperStartCamelObject}}, protoLst *[]*proto.{{.upperStartCamelObject}}) {
+	for _, v := range lst {
+		var tmp proto.{{.upperStartCamelObject}}
+		v.Marshal(&tmp)
+		*protoLst = append(*protoLst, &tmp)
+	}
+}
+
+func Unmarshal{{.upperStartCamelObject}}Lst(protoLst []*proto.{{.upperStartCamelObject}}, lst *[]{{.upperStartCamelObject}}) {
+	for _, v := range protoLst {
+		var tmp {{.upperStartCamelObject}}
+		tmp.Unmarshal(v)
+		*lst = append(*lst, tmp)
 	}
 }
 `
