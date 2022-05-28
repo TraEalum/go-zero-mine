@@ -3,15 +3,16 @@ package template
 const (
 	// Lists defines a template for lists code in model
 	Lists = `
-func (m *default{{.upperStartCamelObject}}Model) Lists(ctx context.Context, where map[interface{}]interface{}) (*[]{{.upperStartCamelObject}}, error) {
-	query := fmt.Sprintf("select %s from %s limit 15", {{.lowerStartCamelObject}}Rows, m.table)
-	var values []interface{}
-	for column, value := range where {
-		query += fmt.Sprintf(" and %s = ?", column)
-		values = append(values, value)
-	}
+func (m *default{{.upperStartCamelObject}}Model) Lists(ctx context.Context, where map[interface{}]interface{}, selectBuilder squirrel.SelectBuilder) (*[]{{.upperStartCamelObject}}, error) {
 	var resp []{{.upperStartCamelObject}}
-	err := m.conn.QueryRowCtx(ctx, &resp, query, values...)
+	for column, value := range where {
+		selectBuilder = selectBuilder.Where(squirrel.Eq{column: value})
+	}
+	query, _, err := selectBuilder.ToSql()
+	if err != nil {
+		return nil, err
+	}
+	err = m.conn.QueryRowCtx(ctx, &resp, query)
 	switch err {
 	case nil:
 		return &resp, nil

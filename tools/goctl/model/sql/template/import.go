@@ -10,7 +10,7 @@ const (
 	{{if .time}}"time"{{end}}
 
 	"go-service/app/{{.serviceName}}/rpc/proto"
-
+	"github.com/Masterminds/squirrel"
 	"github.com/zeromicro/go-zero/core/stores/builder"
 	"github.com/zeromicro/go-zero/core/stores/cache"
 	"github.com/zeromicro/go-zero/core/stores/sqlc"
@@ -25,7 +25,7 @@ const (
 	"fmt"
 	"strings"
 	{{if .time}}"time"{{end}}
-
+	"github.com/Masterminds/squirrel"
 	"github.com/zeromicro/go-zero/core/stores/builder"
 	"github.com/zeromicro/go-zero/core/stores/sqlc"
 	"github.com/zeromicro/go-zero/core/stores/sqlx"
