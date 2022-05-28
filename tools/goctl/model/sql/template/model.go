@@ -50,6 +50,7 @@ package {{.pkg}}
 {{.find}}
 {{.update}}
 {{.delete}}
+{{.lists}}
 {{.extraMethod}}
 {{.tableName}}
 `, util.DoNotEditHead)

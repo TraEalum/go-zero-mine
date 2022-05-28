@@ -46,6 +46,7 @@ type (
 		deleteCode  string
 		cacheExtra  string
 		tableName   string
+		listsCode   string
 	}
 
 	codeTuple struct {
@@ -264,6 +265,11 @@ func (g *defaultGenerator) genModel(in parser.Table, withCache bool) (string, er
 		return "", err
 	}
 
+	listsCode, listsCodeMethod, err := genLists(table, withCache, g.isPostgreSql)
+	if err != nil {
+		return "", err
+	}
+
 	findCode := make([]string, 0)
 	findOneCode, findOneCodeMethod, err := genFindOne(table, withCache, g.isPostgreSql)
 	if err != nil {
@@ -288,7 +294,7 @@ func (g *defaultGenerator) genModel(in parser.Table, withCache bool) (string, er
 
 	var list []string
 	list = append(list, insertCodeMethod, findOneCodeMethod, ret.findOneInterfaceMethod,
-		updateCodeMethod, deleteCodeMethod)
+		updateCodeMethod, deleteCodeMethod, listsCodeMethod)
 	typesCode, err := genTypes(table, strings.Join(modelutil.TrimStringSlice(list), pathx.NL), withCache)
 	if err != nil {
 		return "", err
@@ -310,6 +316,7 @@ func (g *defaultGenerator) genModel(in parser.Table, withCache bool) (string, er
 		typesCode:   typesCode,
 		newCode:     newCode,
 		insertCode:  insertCode,
+		listsCode:   listsCode,
 		findCode:    findCode,
 		updateCode:  updateCode,
 		deleteCode:  deleteCode,
@@ -363,6 +370,7 @@ func (g *defaultGenerator) executeModel(table Table, code *code) (*bytes.Buffer,
 		"new":         code.newCode,
 		"insert":      code.insertCode,
 		"find":        strings.Join(code.findCode, "\n"),
+		"lists":       code.listsCode,
 		"update":      code.updateCode,
 		"delete":      code.deleteCode,
 		"extraMethod": code.cacheExtra,
