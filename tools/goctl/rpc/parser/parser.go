@@ -1,9 +1,11 @@
 package parser
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"go/token"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -38,6 +40,8 @@ func (p *DefaultProtoParser) Parse(src string) (Proto, error) {
 		return ret, err
 	}
 	defer r.Close()
+
+	ret.Tables = getTables(abs)
 
 	parser := proto.NewParser(r)
 	set, err := parser.Parse()
@@ -172,4 +176,51 @@ func isASCIILower(c byte) bool {
 // Is c an ASCII digit?
 func isASCIIDigit(c byte) bool {
 	return '0' <= c && c <= '9'
+}
+
+func getTables(path string) []string {
+	file, err := os.OpenFile(path, os.O_RDWR, 0666)
+	if err != nil {
+		fmt.Printf("Open file error!%v\n", err)
+		return nil
+	}
+	defer file.Close()
+
+	buf := bufio.NewReader(file)
+	var existTableName []string
+
+	//读已存在表名
+	for {
+		line, err := buf.ReadString('\n')
+		if strings.Contains(line, "Already Exist Table") {
+			break
+		}
+		if err != nil {
+			if err == io.EOF {
+				break
+			} else {
+				return existTableName
+			}
+		}
+	}
+
+	for {
+		line, err := buf.ReadString('\n')
+		if strings.Contains(line, "Exist Table End") {
+			break
+		}
+
+		table := strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(line, " ", ""), "//", ""), "\n", "")
+		existTableName = append(existTableName, table)
+		if err != nil {
+			if err == io.EOF {
+				break
+			} else {
+				return existTableName
+			}
+		}
+	}
+
+	return existTableName
+
 }

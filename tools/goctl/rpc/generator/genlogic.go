@@ -45,6 +45,9 @@ func (g *Generator) GenLogic(ctx DirContext, proto parser.Proto, cfg *conf.Confi
 		imports := collection.NewSet()
 		imports.AddStr(fmt.Sprintf(`"%v"`, ctx.GetSvc().Package))
 		imports.AddStr(fmt.Sprintf(`"%v"`, ctx.GetPb().Package))
+		imports.AddStr(fmt.Sprintf(`"go-service/app/%s/model"`, proto.Service.Name))
+		imports.AddStr(fmt.Sprintf(`"go-service/comm/errorm"`))
+		imports.AddStr(fmt.Sprintf(`"github.com/zeromicro/go-zero/core/stores/sqlc"`))
 		text, err := pathx.LoadTemplate(category, logicTemplateFileFile, logicTemplate)
 		if err != nil {
 			return err
@@ -67,22 +70,44 @@ func (g *Generator) genLogicFunction(serviceName, goPackage string, rpc *parser.
 	if err != nil {
 		return "", err
 	}
+	modelName := ""
+
+	// load curd template
+	switch parser.CamelCase(rpc.Name) {
+	case fmt.Sprintf("Create%s", parser.CamelCase(rpc.RequestType)):
+		text = CreateLogic
+		modelName = parser.CamelCase(rpc.RequestType)
+	case fmt.Sprintf("Delete%s", parser.CamelCase(rpc.RequestType)):
+		text = DeleteLogic
+		modelName = parser.CamelCase(rpc.RequestType)
+	case fmt.Sprintf("Query%sDetail", strings.Replace(parser.CamelCase(rpc.RequestType), "Filter", "", 1)):
+		text = QueryDetailLogic
+		modelName = strings.Replace(parser.CamelCase(rpc.RequestType), "Filter", "", 1)
+	case fmt.Sprintf("Query%sList", strings.Replace(parser.CamelCase(rpc.RequestType), "Filter", "", 1)):
+		text = QueryLogic
+		modelName = strings.Replace(parser.CamelCase(rpc.RequestType), "Filter", "", 1)
+	case fmt.Sprintf("Update%s", parser.CamelCase(rpc.RequestType)):
+		text = UpdateLogic
+		modelName = parser.CamelCase(rpc.RequestType)
+	}
 
 	logicName := stringx.From(rpc.Name + "_logic").ToCamel()
 	comment := parser.GetComment(rpc.Doc())
 	streamServer := fmt.Sprintf("%s.%s_%s%s", goPackage, parser.CamelCase(serviceName), parser.CamelCase(rpc.Name), "Server")
 	buffer, err := util.With("fun").Parse(text).Execute(map[string]interface{}{
-		"logicName":    logicName,
-		"method":       parser.CamelCase(rpc.Name),
-		"hasReq":       !rpc.StreamsRequest,
-		"request":      fmt.Sprintf("*%s.%s", goPackage, parser.CamelCase(rpc.RequestType)),
-		"hasReply":     !rpc.StreamsRequest && !rpc.StreamsReturns,
-		"response":     fmt.Sprintf("*%s.%s", goPackage, parser.CamelCase(rpc.ReturnsType)),
-		"responseType": fmt.Sprintf("%s.%s", goPackage, parser.CamelCase(rpc.ReturnsType)),
-		"stream":       rpc.StreamsRequest || rpc.StreamsReturns,
-		"streamBody":   streamServer,
-		"hasComment":   len(comment) > 0,
-		"comment":      comment,
+		"logicName":           logicName,
+		"method":              parser.CamelCase(rpc.Name),
+		"hasReq":              !rpc.StreamsRequest,
+		"request":             fmt.Sprintf("*%s.%s", goPackage, parser.CamelCase(rpc.RequestType)),
+		"hasReply":            !rpc.StreamsRequest && !rpc.StreamsReturns,
+		"response":            fmt.Sprintf("*%s.%s", goPackage, parser.CamelCase(rpc.ReturnsType)),
+		"responseType":        fmt.Sprintf("%s.%s", goPackage, parser.CamelCase(rpc.ReturnsType)),
+		"stream":              rpc.StreamsRequest || rpc.StreamsReturns,
+		"streamBody":          streamServer,
+		"hasComment":          len(comment) > 0,
+		"comment":             comment,
+		"modelName":           modelName,
+		"modelNameFirstLower": FirstLower(modelName),
 	})
 	if err != nil {
 		return "", err
@@ -90,4 +115,12 @@ func (g *Generator) genLogicFunction(serviceName, goPackage string, rpc *parser.
 
 	functions = append(functions, buffer.String())
 	return strings.Join(functions, pathx.NL), nil
+}
+
+// FirstLower 字符串首字母小写
+func FirstLower(s string) string {
+	if s == "" {
+		return ""
+	}
+	return strings.ToLower(s[:1]) + s[1:]
 }

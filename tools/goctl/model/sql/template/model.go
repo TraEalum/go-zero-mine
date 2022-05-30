@@ -85,7 +85,7 @@ package {{.pkg}}
 {{.find}}
 {{.update}}
 {{.delete}}
-{{.lists}}
+{{.list}}
 {{.extraMethod}}
 {{.tableName}}
 `, util.DoNotEditHead)
