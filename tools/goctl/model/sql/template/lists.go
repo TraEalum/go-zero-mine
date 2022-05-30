@@ -3,7 +3,7 @@ package template
 const (
 	// Lists defines a template for lists code in model
 	Lists = `
-func (m *default{{.upperStartCamelObject}}Model) Lists(ctx context.Context, where map[interface{}]interface{}, selectBuilder squirrel.SelectBuilder) (*[]{{.upperStartCamelObject}}, error) {
+func (m *default{{.upperStartCamelObject}}Model) List(ctx context.Context, where map[interface{}]interface{}, selectBuilder squirrel.SelectBuilder) (*[]{{.upperStartCamelObject}}, error) {
 	var resp []{{.upperStartCamelObject}}
 	for column, value := range where {
 		selectBuilder = selectBuilder.Where(squirrel.Eq{column: value})
@@ -25,5 +25,5 @@ func (m *default{{.upperStartCamelObject}}Model) Lists(ctx context.Context, wher
 `
 
 	// ListsMethod defines an interface method template for lists code in model
-	ListsMethod = `Lists(ctx context.Context, where map[interface{}]interface{}) (*[]{{.upperStartCamelObject}},error)`
+	ListsMethod = `List(ctx context.Context, where map[interface{}]interface{}, selectBuilder squirrel.SelectBuilder) (*[]{{.upperStartCamelObject}},error)`
 )
