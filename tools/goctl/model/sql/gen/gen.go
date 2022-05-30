@@ -37,17 +37,17 @@ type (
 	Option func(generator *defaultGenerator)
 
 	code struct {
-		importsCode string
-		varsCode    string
-		typesCode   string
-		newCode     string
-		insertCode  string
-		findCode    []string
-		updateCode  string
-		deleteCode  string
-		cacheExtra  string
-		tableName   string
-		listsCode   string
+		importsCode  string
+		varsCode     string
+		typesCode    string
+		newCode      string
+		insertCode   string
+		findCode     []string
+		updateCode   string
+		deleteCode   string
+		cacheExtra   string
+		tableName    string
+		findListCode string
 	}
 
 	codeTuple struct {
@@ -319,17 +319,17 @@ func (g *defaultGenerator) genModel(in parser.Table, withCache bool) (string, er
 	}
 
 	code := &code{
-		importsCode: importsCode,
-		varsCode:    varsCode,
-		typesCode:   typesCode,
-		newCode:     newCode,
-		insertCode:  insertCode,
-		listsCode:   listsCode,
-		findCode:    findCode,
-		updateCode:  updateCode,
-		deleteCode:  deleteCode,
-		cacheExtra:  ret.cacheExtra,
-		tableName:   tableName,
+		importsCode:  importsCode,
+		varsCode:     varsCode,
+		typesCode:    typesCode,
+		newCode:      newCode,
+		insertCode:   insertCode,
+		findListCode: listsCode,
+		findCode:     findCode,
+		updateCode:   updateCode,
+		deleteCode:   deleteCode,
+		cacheExtra:   ret.cacheExtra,
+		tableName:    tableName,
 	}
 
 	output, err := g.executeModel(table, code)
@@ -386,7 +386,7 @@ func (g *defaultGenerator) executeModel(table Table, code *code) (*bytes.Buffer,
 		"new":         code.newCode,
 		"insert":      code.insertCode,
 		"find":        strings.Join(code.findCode, "\n"),
-		"lists":       code.listsCode,
+		"findlist":    code.findListCode,
 		"update":      code.updateCode,
 		"delete":      code.deleteCode,
 		"extraMethod": code.cacheExtra,
