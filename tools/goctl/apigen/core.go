@@ -391,15 +391,15 @@ func (s *Schema) CreateString() string {
 	for _, m := range s.Messages {
 		funcTpl += "\t//-----------------------" + m.Comment + "----------------------- \n"
 		firstUpperName := FirstUpper(m.Name)
-		funcTpl += "\t@doc  创建" + m.Name + "\n"
+		funcTpl += "\t@doc  \"创建" + m.Name + "\"\n"
 		funcTpl += "\t@handler  create" + m.Name + "\n"
 		funcTpl += "\tpost /" + stringx.From(m.Name).ToSnake() + "/create" + firstUpperName + " (" + m.Name + ") returns (Create" + firstUpperName + "Resp); \n\n"
 
-		funcTpl += "\t@doc  更新" + m.Name + "\n"
+		funcTpl += "\t@doc  \"更新" + m.Name + "\"\n"
 		funcTpl += "\t@handler  update" + m.Name + "\n"
 		funcTpl += "\tpost /" + stringx.From(m.Name).ToSnake() + "/update" + firstUpperName + " (Update" + m.Name + "Req) returns (Update" + firstUpperName + "Resp); \n\n"
 
-		funcTpl += "\t@doc  查找" + m.Name + "\n"
+		funcTpl += "\t@doc  \"查找" + m.Name + "\"\n"
 		funcTpl += "\t@handler  query" + m.Name + "\n"
 		funcTpl += "\tget /" + stringx.From(m.Name).ToSnake() + "/query" + firstUpperName + " (Query" + firstUpperName + "Req) returns (Query" + firstUpperName + "Resp); \n\n"
 
@@ -537,15 +537,15 @@ func (s *Schema) UpdateString() string {
 			funcTpl += "\t//-----------------------" + m.Comment + "----------------------- \n"
 
 			firstUpperName := FirstUpper(m.Name)
-			funcTpl += "\t@doc  创建" + m.Name + "\n"
+			funcTpl += "\t@doc  \"创建" + m.Name + "\"\n"
 			funcTpl += "\t@handler  create" + m.Name + "\n"
 			funcTpl += "\tpost /" + stringx.From(m.Name).ToSnake() + "/create" + firstUpperName + " (" + m.Name + ") returns (Create" + firstUpperName + "Resp); \n\n"
 
-			funcTpl += "\t@doc  更新" + m.Name + "\n"
+			funcTpl += "\t@doc  \"更新" + m.Name + "\"\n"
 			funcTpl += "\t@handler  update" + m.Name + "\n"
 			funcTpl += "\tpost /" + stringx.From(m.Name).ToSnake() + "/update" + firstUpperName + " (Update" + m.Name + "Req) returns (Update" + firstUpperName + "Resp); \n\n"
 
-			funcTpl += "\t@doc  查找" + m.Name + "\n"
+			funcTpl += "\t@doc  \"查找" + m.Name + "\"\n"
 			funcTpl += "\t@handler  query" + m.Name + "\n"
 			funcTpl += "\tget /" + stringx.From(m.Name).ToSnake() + "/query" + firstUpperName + " (Query" + firstUpperName + "Req) returns (Query" + firstUpperName + "Resp); \n\n"
 		}
