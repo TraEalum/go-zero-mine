@@ -2,10 +2,12 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/zeromicro/go-zero/tools/goctl/proto"
 	"os"
 	"runtime"
 	"strings"
+
+	"github.com/zeromicro/go-zero/tools/goctl/apigen"
+	"github.com/zeromicro/go-zero/tools/goctl/proto"
 
 	"github.com/logrusorgru/aurora"
 	"github.com/spf13/cobra"
@@ -103,4 +105,5 @@ func init() {
 	rootCmd.AddCommand(tpl.Cmd)
 	rootCmd.AddCommand(upgrade.Cmd)
 	rootCmd.AddCommand(proto.Cmd)
+	rootCmd.AddCommand(apigen.Cmd)
 }
