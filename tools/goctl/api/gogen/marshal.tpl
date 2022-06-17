@@ -24,7 +24,7 @@ func (r *Query{{.upperStartCamelObject}}Resp) Marshal(p *proto.{{.upperStartCame
 }
 
 
-func (r *Query{{.upperStartCamelObject}}Req) (p *proto.{{.upperStartCamelObject}}Filter) error {
+func (r *Query{{.upperStartCamelObject}}Req) Unmarshal(p *proto.{{.upperStartCamelObject}}Filter) error {
     r.Id = p.Id
     r.PageNo = p.PageNo
     r.PageSize = p.PageSize
@@ -48,4 +48,3 @@ func Marshal{{.upperStartCamelObject}}Lst(r *[]{{.upperStartCamelObject}},p []*p
 		*r = append(*r,tmp)
 	}
 }
-// END

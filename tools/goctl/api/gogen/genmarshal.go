@@ -5,12 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
-	"path/filepath"
 	"strings"
 	"text/template"
-
-	"github.com/zeromicro/go-zero/tools/goctl/util/pathx"
 
 	"github.com/zeromicro/go-zero/tools/goctl/api/spec"
 	"github.com/zeromicro/go-zero/tools/goctl/util"
@@ -52,29 +48,12 @@ func GenMarshal(api *spec.ApiSpec, category string) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		dir, err := pathx.GetTemplateDir(category)
-		if err != nil {
-			return "", err
-		}
-		file := filepath.Join(dir, FILE)
-		f, err := os.Create(file)
-		if err != nil {
-			return "", err
-		}
-		_, err = f.WriteString(marshalTemplate)
-		if err != nil {
-			return "", err
-		}
-		content, err := pathx.LoadTemplate(category, FILE, marshalTemplate)
-		if err != nil {
-			return "", err
-		}
 		data := map[string]interface{}{
 			"upperStartCamelObject": tableName,
 			"unmarshallFields":      unMarshal,
 			"marshalFields":         marshal,
 		}
-		t := template.Must(template.New("marshalTemplate").Parse(content))
+		t := template.Must(template.New("marshalTemplate").Parse(marshalTemplateConst))
 		buffer := new(bytes.Buffer)
 		err = t.Execute(buffer, data)
 		if err != nil {
@@ -109,7 +88,7 @@ func buildUnmarshalFieldWrite(tp spec.DefineStruct) (string, error) {
 }
 func writeUmMarshalField(writer io.Writer, tp spec.DefineStruct) error {
 	for _, member := range tp.Members {
-		fmt.Fprintf(writer, "\tp.%s = s.%s \n", member.Name, member.Name)
+		fmt.Fprintf(writer, "\tp.%s = r.%s \n", member.Name, member.Name)
 	}
 	return nil
 }
