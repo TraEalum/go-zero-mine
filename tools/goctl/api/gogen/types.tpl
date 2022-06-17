@@ -4,3 +4,4 @@ import (
 	"time"
 ){{end}}
 {{.types}}
+{{.marshal}}

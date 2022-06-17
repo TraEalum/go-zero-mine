@@ -52,7 +52,10 @@ func genTypes(dir string, cfg *config.Config, api *spec.ApiSpec) error {
 	typeFilename = typeFilename + ".go"
 	filename := path.Join(dir, typesDir, typeFilename)
 	os.Remove(filename)
-
+	marshal, err := GenMarshal(api, dir)
+	if err != nil {
+		return err
+	}
 	return genFile(fileGenConfig{
 		dir:             dir,
 		subdir:          typesDir,
@@ -64,6 +67,7 @@ func genTypes(dir string, cfg *config.Config, api *spec.ApiSpec) error {
 		data: map[string]interface{}{
 			"types":        val,
 			"containsTime": false,
+			"marshal":      marshal,
 		},
 	})
 }

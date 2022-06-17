@@ -26,3 +26,4 @@ go.work.sum
 *~
 !OWNERS
 /.history/
+.vscode/settings.json

@@ -231,7 +231,7 @@ func (s *Schema) String() string {
 }
 func (s *Schema) CreateParamString(fileName string) string {
 	buf := new(bytes.Buffer)
-	buf.WriteString(fmt.Sprintf("syntax = \"%s\";\n", s.Syntax))
+	buf.WriteString(fmt.Sprintf("syntax = \"%s\"\n", s.Syntax))
 	buf.WriteString("\n")
 	buf.WriteString("// Already Exist Table:\n")
 	for _, m := range s.Messages {
@@ -360,7 +360,7 @@ func (s *Schema) UpdateParamString(fileName string) string {
 // String returns a string representation of a Schema.
 func (s *Schema) CreateString() string {
 	buf := new(bytes.Buffer)
-	buf.WriteString(fmt.Sprintf("syntax = \"%s\";\n", s.Syntax))
+	buf.WriteString(fmt.Sprintf("syntax = \"%s\"\n", s.Syntax))
 	buf.WriteString("\n")
 	buf.WriteString("import (\n")
 	arr := strings.Split(s.Dir, ".")

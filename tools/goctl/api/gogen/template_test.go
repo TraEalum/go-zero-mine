@@ -14,7 +14,7 @@ func TestGenTemplates(t *testing.T) {
 	assert.Nil(t, err)
 	dir, err := pathx.GetTemplateDir(category)
 	assert.Nil(t, err)
-	file := filepath.Join(dir, "main.tpl")
+	file := filepath.Join(dir, "marshal.tpl")
 	data, err := ioutil.ReadFile(file)
 	assert.Nil(t, err)
 	assert.Equal(t, string(data), mainTemplate)
