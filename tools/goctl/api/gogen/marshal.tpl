@@ -44,7 +44,7 @@ func (r *{{.upperStartCamelObject}}) Marshal(p *proto.{{.upperStartCamelObject}}
 func Marshal{{.upperStartCamelObject}}Lst(r *[]{{.upperStartCamelObject}},p []*proto.{{.upperStartCamelObject}}){
 	for _,item := range p {
 		var tmp {{.upperStartCamelObject}}
-		tmp.Marshal(c)
+		tmp.Marshal(item)
 		*r = append(*r,tmp)
 	}
 }

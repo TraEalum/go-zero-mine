@@ -2,6 +2,7 @@ package gogen
 
 import (
 	"bytes"
+	_ "embed"
 	"errors"
 	"fmt"
 	"io"
@@ -12,10 +13,7 @@ import (
 	"github.com/zeromicro/go-zero/tools/goctl/util"
 )
 
-const (
-	FILE = "marshal.tpl"
-)
-
+//go:embed marshal.tpl
 var marshalTemplate string
 
 func GenMarshal(api *spec.ApiSpec, category string) (string, error) {
@@ -53,7 +51,7 @@ func GenMarshal(api *spec.ApiSpec, category string) (string, error) {
 			"unmarshallFields":      unMarshal,
 			"marshalFields":         marshal,
 		}
-		t := template.Must(template.New("marshalTemplate").Parse(marshalTemplateConst))
+		t := template.Must(template.New("marshalTemplate").Parse(marshalTemplate))
 		buffer := new(bytes.Buffer)
 		err = t.Execute(buffer, data)
 		if err != nil {

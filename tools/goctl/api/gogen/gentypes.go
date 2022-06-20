@@ -48,7 +48,7 @@ func genTypes(dir string, cfg *config.Config, api *spec.ApiSpec) error {
 	if err != nil {
 		return err
 	}
-
+	protoPath := "app/rpc/proto"
 	typeFilename = typeFilename + ".go"
 	filename := path.Join(dir, typesDir, typeFilename)
 	os.Remove(filename)
@@ -67,6 +67,7 @@ func genTypes(dir string, cfg *config.Config, api *spec.ApiSpec) error {
 		data: map[string]interface{}{
 			"types":        val,
 			"containsTime": false,
+			"porto":        protoPath,
 			"marshal":      marshal,
 		},
 	})
