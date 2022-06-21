@@ -90,11 +90,3 @@ func writeUmMarshalField(writer io.Writer, tp spec.DefineStruct) error {
 	}
 	return nil
 }
-func isStartWith(arr []string, target string) bool {
-	for _, value := range arr {
-		if strings.Contains(target, value) {
-			return true
-		}
-	}
-	return false
-}

@@ -6,6 +6,7 @@ import (
 
 	"github.com/zeromicro/go-zero/tools/goctl/api/spec"
 	"github.com/zeromicro/go-zero/tools/goctl/config"
+	"github.com/zeromicro/go-zero/tools/goctl/util"
 	"github.com/zeromicro/go-zero/tools/goctl/util/format"
 	"github.com/zeromicro/go-zero/tools/goctl/vars"
 )
@@ -14,12 +15,15 @@ const (
 	configFile     = "config"
 	configTemplate = `package config
 
-import {{.authImport}}
-
+import (
+	{{.authImport}}
+	"github.com/zeromicro/go-zero/zrpc"
+)
 type Config struct {
 	rest.RestConf
 	{{.auth}}
 	{{.jwtTrans}}
+	{{.rpc}}
 }
 `
 
@@ -46,7 +50,24 @@ func genConfig(dir string, cfg *config.Config, api *spec.ApiSpec) error {
 	for _, item := range authNames {
 		auths = append(auths, fmt.Sprintf("%s %s", item, jwtTemplate))
 	}
-
+	// generate about rpc
+	types := api.Types
+	need2gen := []spec.Type{}
+	//Filter out unnecessary generation types
+	for _, tp := range types {
+		name := tp.Name()
+		if !isStartWith([]string{"Update", "Query", "Create"}, name) {
+			need2gen = append(need2gen, tp)
+		}
+	}
+	var builder strings.Builder
+	if len(need2gen) != 0 {
+		for _, tp := range need2gen {
+			name := util.Title(tp.Name())
+			str := fmt.Sprintf("%s zrpc.RpcClientConf\n", name)
+			builder.WriteString(str)
+		}
+	}
 	jwtTransNames := getJwtTrans(api)
 	var jwtTransList []string
 	for _, item := range jwtTransNames {
@@ -66,6 +87,7 @@ func genConfig(dir string, cfg *config.Config, api *spec.ApiSpec) error {
 			"authImport": authImportStr,
 			"auth":       strings.Join(auths, "\n"),
 			"jwtTrans":   strings.Join(jwtTransList, "\n"),
+			"rpc":        builder.String(),
 		},
 	})
 }
