@@ -27,19 +27,9 @@ const DeleteLogic = `{{if .hasComment}}{{.comment}}{{end}}
 func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 	var err error
 
-	// check whether it already exists
-	if in.Id != 0 {
-		if _, err = l.svcCtx.{{.modelName}}Model.FindOne(l.ctx, in.Id); err != sqlc.ErrNotFound {
-			logx.WithContext(l.ctx).Infof("%v is already exists")
-			return &{{.responseType}}{Id: in.Id}, nil
-		}
-	}
-
-	// create
-	{{.modelNameFirstLower}} := model.{{.modelName}}{}
-	{{.modelNameFirstLower}}.Marshal(in)
-	if _, err = l.svcCtx.{{.modelName}}Model.Insert(l.ctx, nil, &{{.modelNameFirstLower}}); err != nil {
-		return nil, errorm.New(errorm.RecordCreateFailed, "create data fail.%v", err)
+	// delete
+	if err = l.svcCtx.{{.modelName}}Model.Delete(l.ctx, nil, &model.{{.modelName}}{Id: in.Id}); err != nil {
+		return nil, errorm.New(errorm.RecordDeleteFailed, "delete data fail.%v", err)
 	}
 
 	return &{{.responseType}}{}, nil
@@ -51,17 +41,25 @@ func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 	var err error
 
 	// check whether it already exists
-	if in.Id != 0 {
-		if _, err = l.svcCtx.{{.modelName}}Model.FindOne(l.ctx, in.Id); err != sqlc.ErrNotFound {
-			logx.WithContext(l.ctx).Infof("%v is already exists")
-			return &{{.responseType}}{Id: in.Id}, nil
-		}
+	if _, err = l.svcCtx.{{.modelName}}Model.FindOne(l.ctx, in.Id); err != nil && err != sqlc.ErrNotFound {
+		logx.WithContext(l.ctx).Infof("find data fail. %v", err)
+		return nil, err
+	}else if err == sqlc.ErrNotFound{
+		err = errorm.New(errorm.RecordNotFound, "id %d dose not exists.", in.Id)
+		logx.WithContext(l.ctx).Infof("find data fail. %v", err)
+		return nil, err
 	}
 
-	// create
+	where := model.{{.modelName}}{
+		Id: in.Id,
+	}
 	{{.modelNameFirstLower}} := model.{{.modelName}}{}
 	{{.modelNameFirstLower}}.Marshal(in)
-	if _, err = l.svcCtx.{{.modelName}}Model.Insert(l.ctx, nil, &{{.modelNameFirstLower}}); err != nil {
+	builder := util.NewUpdateBuiler(util.WithTable(where.TableName())).Where(&where)
+
+	// update
+	if err = l.svcCtx.{{.modelName}}Model.Update(l.ctx, nil, builder.UpdateBuilder); err != nil {
+		logx.WithContext(l.ctx).Infof("update fail. %v", err)
 		return nil, errorm.New(errorm.RecordCreateFailed, "create data fail.%v", err)
 	}
 
@@ -71,44 +69,52 @@ func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 const QueryLogic = `{{if .hasComment}}{{.comment}}{{end}}
 func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 	var err error
-
-	// check whether it already exists
-	if in.Id != 0 {
-		if _, err = l.svcCtx.{{.modelName}}Model.FindOne(l.ctx, in.Id); err != sqlc.ErrNotFound {
-			logx.WithContext(l.ctx).Infof("%v is already exists")
-			return &{{.responseType}}{Id: in.Id}, nil
-		}
+	var totalCount int64
+	resp := proto.{{.modelName}}List{
+		{{.modelName}}: []*proto.{{.modelName}}{},
 	}
 
-	// create
-	{{.modelNameFirstLower}} := model.{{.modelName}}{}
-	{{.modelNameFirstLower}}.Marshal(in)
-	if _, err = l.svcCtx.{{.modelName}}Model.Insert(l.ctx, nil, &{{.modelNameFirstLower}}); err != nil {
-		return nil, errorm.New(errorm.RecordCreateFailed, "create data fail.%v", err)
+	// build where
+	where := model.{{.modelName}}{
+		Id: in.Id,
+	}
+	builder := util.NewSelectBuilder(util.WithTable(where.TableName())).
+		Where(&where).
+		Limit(in)
+
+	// query
+	{{.modelNameFirstLower}}List := &[]model.{{.modelName}}{}
+	if {{.modelNameFirstLower}}List, err = l.svcCtx.{{.modelName}}Model.FindList(l.ctx, builder.SelectBuilder, &totalCount); err != nil {
+		logx.WithContext(l.ctx).Infof("FindList fail. %v", err)
+		return nil, errorm.New(errorm.RecordFindFailed, "FindList fail.%v", err)
 	}
 
-	return &{{.responseType}}{}, nil
+	model.Unmarshal{{.modelName}}Lst(&resp.{{.modelName}}, *{{.modelNameFirstLower}}List)
+
+	// 分页
+	resp.TotalCount = totalCount
+	resp.CurPage = in.GetPageNo()
+	resp.TotalPage = totalCount / in.GetPageSize()
+	if totalCount%in.GetPageSize() != 0 {
+		resp.TotalPage += 1
+	}
+
+	return &resp, nil
 }
 `
 const QueryDetailLogic = `{{if .hasComment}}{{.comment}}{{end}}
 func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 	var err error
+	resp := {{.responseType}}{}
 
-	// check whether it already exists
-	if in.Id != 0 {
-		if _, err = l.svcCtx.{{.modelName}}Model.FindOne(l.ctx, in.Id); err != sqlc.ErrNotFound {
-			logx.WithContext(l.ctx).Infof("%v is already exists")
-			return &{{.responseType}}{Id: in.Id}, nil
-		}
+	// query
+	{{.modelNameFirstLower}} := &model.{{.modelName}}{}
+	if {{.modelNameFirstLower}}, err = l.svcCtx.{{.modelName}}Model.FindOne(l.ctx, in.Id); err != nil {
+		return nil, errorm.New(errorm.RecordFindFailed, "FindOne fail.%v", err)
 	}
 
-	// create
-	{{.modelNameFirstLower}} := model.{{.modelName}}{}
-	{{.modelNameFirstLower}}.Marshal(in)
-	if _, err = l.svcCtx.{{.modelName}}Model.Insert(l.ctx, nil, &{{.modelNameFirstLower}}); err != nil {
-		return nil, errorm.New(errorm.RecordCreateFailed, "create data fail.%v", err)
-	}
+	{{.modelNameFirstLower}}.Marshal(&resp)
 
-	return &{{.responseType}}{}, nil
+	return &resp, nil
 }
 `

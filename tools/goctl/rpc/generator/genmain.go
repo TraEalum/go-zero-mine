@@ -47,5 +47,6 @@ func (g *Generator) GenMain(ctx DirContext, proto parser.Proto, cfg *conf.Config
 		"pkg":         proto.PbPackage,
 		"serviceNew":  stringx.From(proto.Service.Name).ToCamel(),
 		"service":     parser.CamelCase(proto.Service.Name),
+		"serviceKey":  proto.Service.Name,
 	}, fileName, false)
 }

@@ -6,6 +6,7 @@ import (
 
 	{{.imports}}
 
+	"go-service/comm/configm"
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/core/service"
 	"github.com/zeromicro/go-zero/zrpc"
@@ -13,13 +14,21 @@ import (
 	"google.golang.org/grpc/reflection"
 )
 
-var configFile = flag.String("f", "etc/{{.serviceName}}.yaml", "the config file")
+var configFile = flag.String("f", "", "the config file")
 
 func main() {
 	flag.Parse()
 
 	var c config.Config
-	conf.MustLoad(*configFile, &c)
+	if configFile != nil && *configFile != "" {
+		conf.MustLoad(*configFile, &c)
+	} else {
+		configm.LoadConfig(configm.ConfigInfo{
+			ServerType: "rpc",
+			Server:     "{{.serviceKey}}",
+		}, &c)
+	}
+
 	ctx := svc.NewServiceContext(c)
 	svr := server.New{{.serviceNew}}Server(ctx)
 

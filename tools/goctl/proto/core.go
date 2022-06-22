@@ -730,7 +730,7 @@ func (m Message) GenRpcSearchReqMessage(buf *bytes.Buffer) {
 	m.Fields = []MessageField{
 		{Typ: "repeated " + mOrginName, Name: stringx.From(firstWord + mOrginName[1:]).ToCamelWithStartLower(), tag: 1, Comment: stringx.From(firstWord+mOrginName[1:]).ToCamelWithStartLower() + "List"},
 		{Typ: "int64", Name: "totalPage", tag: 2},
-		{Typ: "int64", Name: "pageSize", tag: 3},
+		{Typ: "int64", Name: "totalCount", tag: 3},
 		{Typ: "int64", Name: "curPage", tag: 4},
 	}
 	buf.WriteString(fmt.Sprintf("%s", m))

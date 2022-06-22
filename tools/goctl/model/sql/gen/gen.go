@@ -362,6 +362,7 @@ func (g *defaultGenerator) genModelCustom(in parser.Table, withCache bool) (stri
 		"serviceName":           g.service,
 		"marshalFields":         marshalFields,
 		"unmarshallFields":      unmarshallFields,
+		"table":                 table.Name.Source(),
 	})
 	if err != nil {
 		return "", err

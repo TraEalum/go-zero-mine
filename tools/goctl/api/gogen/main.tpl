@@ -7,13 +7,20 @@ import (
 	{{.importPackages}}
 )
 
-var configFile = flag.String("f", "etc/{{.serviceName}}.yaml", "the config file")
+var configFile = flag.String("f", "", "the config file")
 
 func main() {
 	flag.Parse()
 
 	var c config.Config
-	conf.MustLoad(*configFile, &c)
+	if configFile != nil && *configFile != "" {
+		conf.MustLoad(*configFile, &c)
+	} else {
+		configm.LoadConfig(configm.ConfigInfo{
+			ServerType: "rpc",
+			Server:     "{{.serviceKey}}",
+		}, &c)
+	}
 
 	server := rest.MustNewServer(c.RestConf)
 	defer server.Stop()

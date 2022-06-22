@@ -45,16 +45,23 @@ func (g *Generator) GenLogic(ctx DirContext, proto parser.Proto, cfg *conf.Confi
 		imports := collection.NewSet()
 		imports.AddStr(fmt.Sprintf(`"%v"`, ctx.GetSvc().Package))
 		imports.AddStr(fmt.Sprintf(`"%v"`, ctx.GetPb().Package))
-		imports.AddStr(fmt.Sprintf(`"go-service/app/%s/model"`, proto.Service.Name))
 		imports.AddStr(fmt.Sprintf(`"go-service/comm/errorm"`))
-		imports.AddStr(fmt.Sprintf(`"github.com/zeromicro/go-zero/core/stores/sqlc"`))
+		if functions.HasSqlc {
+			imports.AddStr(fmt.Sprintf(`"github.com/zeromicro/go-zero/core/stores/sqlc"`))
+		}
+		if functions.HasUtil {
+			imports.AddStr(fmt.Sprintf(`"go-service/comm/util"`))
+		}
+		if functions.HasModel {
+			imports.AddStr(fmt.Sprintf(`"go-service/app/%s/model"`, proto.Service.Name))
+		}
 		text, err := pathx.LoadTemplate(category, logicTemplateFileFile, logicTemplate)
 		if err != nil {
 			return err
 		}
 		err = util.With("logic").GoFmt(true).Parse(text).SaveTo(map[string]interface{}{
 			"logicName": fmt.Sprintf("%sLogic", stringx.From(rpc.Name).ToCamel()),
-			"functions": functions,
+			"functions": functions.Fn,
 			"imports":   strings.Join(imports.KeysStr(), pathx.NL),
 		}, filename, false)
 		if err != nil {
@@ -64,11 +71,20 @@ func (g *Generator) GenLogic(ctx DirContext, proto parser.Proto, cfg *conf.Confi
 	return nil
 }
 
-func (g *Generator) genLogicFunction(serviceName, goPackage string, rpc *parser.RPC) (string, error) {
+type genLogic struct {
+	HasSqlc  bool
+	HasUtil  bool
+	HasModel bool
+
+	Fn string
+}
+
+func (g *Generator) genLogicFunction(serviceName, goPackage string, rpc *parser.RPC) (genLogic, error) {
 	functions := make([]string, 0)
+	gen := genLogic{}
 	text, err := pathx.LoadTemplate(category, logicFuncTemplateFileFile, logicFunctionTemplate)
 	if err != nil {
-		return "", err
+		return gen, err
 	}
 	modelName := ""
 
@@ -77,18 +93,28 @@ func (g *Generator) genLogicFunction(serviceName, goPackage string, rpc *parser.
 	case fmt.Sprintf("Create%s", parser.CamelCase(rpc.RequestType)):
 		text = CreateLogic
 		modelName = parser.CamelCase(rpc.RequestType)
+		gen.HasSqlc = true
+		gen.HasModel = true
 	case fmt.Sprintf("Delete%s", parser.CamelCase(rpc.RequestType)):
 		text = DeleteLogic
 		modelName = parser.CamelCase(rpc.RequestType)
+		gen.HasModel = true
 	case fmt.Sprintf("Query%sDetail", strings.Replace(parser.CamelCase(rpc.RequestType), "Filter", "", 1)):
 		text = QueryDetailLogic
 		modelName = strings.Replace(parser.CamelCase(rpc.RequestType), "Filter", "", 1)
+		gen.HasModel = true
 	case fmt.Sprintf("Query%sList", strings.Replace(parser.CamelCase(rpc.RequestType), "Filter", "", 1)):
 		text = QueryLogic
 		modelName = strings.Replace(parser.CamelCase(rpc.RequestType), "Filter", "", 1)
+		gen.HasUtil = true
+		gen.HasModel = true
+
 	case fmt.Sprintf("Update%s", parser.CamelCase(rpc.RequestType)):
 		text = UpdateLogic
+		gen.HasSqlc = true
+		gen.HasUtil = true
 		modelName = parser.CamelCase(rpc.RequestType)
+		gen.HasModel = true
 	}
 
 	logicName := stringx.From(rpc.Name + "_logic").ToCamel()
@@ -110,11 +136,12 @@ func (g *Generator) genLogicFunction(serviceName, goPackage string, rpc *parser.
 		"modelNameFirstLower": FirstLower(modelName),
 	})
 	if err != nil {
-		return "", err
+		return gen, err
 	}
 
 	functions = append(functions, buffer.String())
-	return strings.Join(functions, pathx.NL), nil
+	gen.Fn = strings.Join(functions, pathx.NL)
+	return gen, nil
 }
 
 // FirstLower 字符串首字母小写

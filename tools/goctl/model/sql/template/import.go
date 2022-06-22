@@ -8,9 +8,11 @@ const (
 	"fmt"
 	"strings"
 	{{if .time}}"time"{{end}}
+	"go-service/comm/util"
 
 	"go-service/app/{{.serviceName}}/rpc/proto"
 	"github.com/Masterminds/squirrel"
+	sqlBuilder "github.com/lann/builder"
 	"github.com/zeromicro/go-zero/core/stores/builder"
 	"github.com/zeromicro/go-zero/core/stores/cache"
 	"github.com/zeromicro/go-zero/core/stores/sqlc"
@@ -25,7 +27,10 @@ const (
 	"fmt"
 	"strings"
 	{{if .time}}"time"{{end}}
+	"go-service/comm/util"
+	
 	"github.com/Masterminds/squirrel"
+	sqlBuilder "github.com/lann/builder"
 	"github.com/zeromicro/go-zero/core/stores/builder"
 	"github.com/zeromicro/go-zero/core/stores/sqlc"
 	"github.com/zeromicro/go-zero/core/stores/sqlx"

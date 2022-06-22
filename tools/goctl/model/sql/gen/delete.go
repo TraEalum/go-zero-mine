@@ -44,6 +44,7 @@ func genDelete(table Table, withCache, postgreSql bool) (string, string, error) 
 			"keyValues":                 strings.Join(keyVars, ", "),
 			"postgreSql":                postgreSql,
 			"data":                      table,
+			"primaryKey":                table.PrimaryKey.Name.ToCamel(),
 		})
 	if err != nil {
 		return "", "", err
@@ -60,7 +61,7 @@ func genDelete(table Table, withCache, postgreSql bool) (string, string, error) 
 		Execute(map[string]interface{}{
 			"lowerStartCamelPrimaryKey": util.EscapeGolangKeyword(stringx.From(table.PrimaryKey.Name.ToCamel()).Untitle()),
 			"dataType":                  table.PrimaryKey.DataType,
-			"data":                      table,
+			"upperStartCamelObject":     camel,
 		})
 	if err != nil {
 		return "", "", err

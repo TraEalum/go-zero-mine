@@ -1,6 +1,8 @@
 package gen
 
 import (
+	"fmt"
+
 	"github.com/zeromicro/go-zero/tools/goctl/model/sql/template"
 	"github.com/zeromicro/go-zero/tools/goctl/util"
 	"github.com/zeromicro/go-zero/tools/goctl/util/pathx"
@@ -13,6 +15,8 @@ func genLists(table Table, withCache, postgreSql bool) (string, string, error) {
 	if err != nil {
 		return "", "", err
 	}
+
+	countTag := fmt.Sprintf("`db:%s`", "\"count\"")
 
 	output, err := util.With("lists").
 		Parse(text).
@@ -27,6 +31,7 @@ func genLists(table Table, withCache, postgreSql bool) (string, string, error) {
 			"cacheKeyVariable":          table.PrimaryCacheKey.KeyLeft,
 			"postgreSql":                postgreSql,
 			"data":                      table,
+			"countTag":                  countTag,
 		})
 	if err != nil {
 		return "", "", err
