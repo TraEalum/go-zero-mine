@@ -21,7 +21,7 @@ var logicTemplate string
 func genLogic(dir, rootPkg string, cfg *config.Config, api *spec.ApiSpec) error {
 	for _, g := range api.Service.Groups {
 		for _, r := range g.Routes {
-			err := genLogicByRoute(dir, rootPkg, cfg, g, r)
+			err := genLogicByRoute(dir, rootPkg, cfg, g, r, api)
 			if err != nil {
 				return err
 			}
@@ -30,7 +30,7 @@ func genLogic(dir, rootPkg string, cfg *config.Config, api *spec.ApiSpec) error 
 	return nil
 }
 
-func genLogicByRoute(dir, rootPkg string, cfg *config.Config, group spec.Group, route spec.Route) error {
+func genLogicByRoute(dir, rootPkg string, cfg *config.Config, group spec.Group, route spec.Route, api *spec.ApiSpec) error {
 	logic := getLogicName(route)
 	goFile, err := format.FileNamingFormat(cfg.NamingFormat, logic)
 	if err != nil {
@@ -52,7 +52,7 @@ func genLogicByRoute(dir, rootPkg string, cfg *config.Config, group spec.Group, 
 	if len(route.RequestTypeName()) > 0 {
 		requestString = "req *" + requestGoTypeName(route, typesPacket)
 	}
-
+	path := fmt.Sprintf("\"go-service/app/%s/rpc/proto\"", api.Service.Name)
 	subDir := getLogicFolderPath(group, route)
 	return genFile(fileGenConfig{
 		dir:             dir,
@@ -70,6 +70,8 @@ func genLogicByRoute(dir, rootPkg string, cfg *config.Config, group spec.Group, 
 			"responseType": responseString,
 			"returnString": returnString,
 			"request":      requestString,
+			"context":      genLogicContext(logic),
+			"rpcImport":    path,
 		},
 	})
 }
@@ -134,4 +136,43 @@ func shallImportTypesPackage(route spec.Route) bool {
 	}
 
 	return true
+}
+
+func genLogicContext(logic string) string {
+	var builder strings.Builder
+	title := strings.Title(strings.TrimSuffix(logic, "Logic"))
+	if strings.Contains(title, "Create") {
+		tableName := title[6:]
+		paraName := strings.ToLower(tableName)
+		builder.WriteString(fmt.Sprintf("\tvar %s *proto.%s\n", paraName, tableName))
+		builder.WriteString(fmt.Sprintf("\treq.Unmarshal(%s)\n", paraName))
+		builder.WriteString(fmt.Sprintf("\trpcResp,err := l.svcCtx.%s.%s(l.ctx, %s)\n", tableName, title, paraName))
+		builder.WriteString("\tif err != nil {\n")
+		builder.WriteString("\t\treturn nil,err\n")
+		builder.WriteString("\t}\n")
+		builder.WriteString("\tresp.Marshal(rpcResp)\n")
+	} else if strings.Contains(title, "Query") {
+		tableName := title[5:]
+		paraName := strings.ToLower(tableName)
+		builder.WriteString(fmt.Sprintf("\tvar %s *proto.%sFilter\n", paraName, tableName))
+		builder.WriteString(fmt.Sprintf("\treq.Unmarshal(%s)\n", paraName))
+		builder.WriteString(fmt.Sprintf("\trpcResp, err := l.svcCtx.%s.Query%sDetail(l.ctx, %s)\n", tableName, tableName, paraName))
+		builder.WriteString("\tif err != nil {\n")
+		builder.WriteString("\t\treturn nil,err\n")
+		builder.WriteString("\t}\n")
+		builder.WriteString("\tresp.Marshal(rpcResp)\n")
+	} else if strings.Contains(title, "Update") {
+		tableName := title[6:]
+		paraName := strings.ToLower(tableName)
+		builder.WriteString(fmt.Sprintf("\tvar %s *proto.%s\n", paraName, tableName))
+		builder.WriteString(fmt.Sprintf("\treq.Unmarshal(%s)\n", paraName))
+		builder.WriteString(fmt.Sprintf("\trpcResp, err := l.svcCtx.%s.Update%s(l.ctx, %s)\n", tableName, tableName, paraName))
+		builder.WriteString("\tif err != nil {\n")
+		builder.WriteString("\t\treturn nil,err\n")
+		builder.WriteString("\t}\n")
+		builder.WriteString("\tresp.Marshal(rpcResp)\n")
+	} else {
+		return ""
+	}
+	return builder.String()
 }

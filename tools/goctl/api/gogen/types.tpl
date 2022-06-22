@@ -3,6 +3,8 @@ package types{{if .containsTime}}
 import (
 	"time"
 ){{end}}
-import "{{.porto}}"
+import (
+	{{.porto}}
+	)
 {{.types}}
 {{.marshal}}

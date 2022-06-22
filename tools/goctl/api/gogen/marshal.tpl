@@ -12,6 +12,19 @@ func (r *{{.upperStartCamelObject}}) Unmarshal(p *proto.{{.upperStartCamelObject
 	return nil
 }
 
+// ----------------update----------------
+func (r *Update{{.upperStartCamelObject}}Resp) Marshal(p *proto.{{.upperStartCamelObject}}) error {
+	r.Id = p.Id
+
+	return nil
+}
+
+
+func (r *Update{{.upperStartCamelObject}}Req) Unmarshal(p *proto.{{.upperStartCamelObject}}) error {
+	{{.unmarshallFields}}
+
+	return nil
+}
 
 // ----------------query----------------
 func (r *Query{{.upperStartCamelObject}}Resp) Marshal(p *proto.{{.upperStartCamelObject}}List) error {
@@ -25,9 +38,9 @@ func (r *Query{{.upperStartCamelObject}}Resp) Marshal(p *proto.{{.upperStartCame
 
 
 func (r *Query{{.upperStartCamelObject}}Req) Unmarshal(p *proto.{{.upperStartCamelObject}}Filter) error {
-    r.Id = p.Id
-    r.PageNo = p.PageNo
-    r.PageSize = p.PageSize
+    p.Id = r.Id
+    p.PageNo = r.PageNo
+    p.PageSize = r.PageSize
 	return nil
 }
 

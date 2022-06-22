@@ -2,6 +2,7 @@ package {{.pkgName}}
 
 import (
 	{{.imports}}
+	{{.rpcImport}}
 )
 
 type {{.logic}} struct {
@@ -20,6 +21,6 @@ func New{{.logic}}(ctx context.Context, svcCtx *svc.ServiceContext) *{{.logic}} 
 
 func (l *{{.logic}}) {{.function}}({{.request}}) {{.responseType}} {
 	// todo: add your logic here and delete this line
-
+	{{.context}}
 	{{.returnString}}
 }

@@ -401,7 +401,7 @@ func (s *Schema) CreateString() string {
 
 		funcTpl += "\t@doc  \"查找" + m.Name + "\"\n"
 		funcTpl += "\t@handler  query" + m.Name + "\n"
-		funcTpl += "\tget /" + stringx.From(m.Name).ToSnake() + "/query" + firstUpperName + " (Query" + firstUpperName + "Req) returns (Query" + firstUpperName + "Resp); \n\n"
+		funcTpl += "\tget /" + stringx.From(m.Name).ToSnake() + "/query" + firstUpperName + " (Query" + firstUpperName + "Req) returns (" + m.Name + "); \n\n"
 
 	}
 	funcTpl = funcTpl + "\t // Service Record End\n"
@@ -547,7 +547,7 @@ func (s *Schema) UpdateString() string {
 
 			funcTpl += "\t@doc  \"查找" + m.Name + "\"\n"
 			funcTpl += "\t@handler  query" + m.Name + "\n"
-			funcTpl += "\tget /" + stringx.From(m.Name).ToSnake() + "/query" + firstUpperName + " (Query" + firstUpperName + "Req) returns (Query" + firstUpperName + "Resp); \n\n"
+			funcTpl += "\tget /" + stringx.From(m.Name).ToSnake() + "/query" + firstUpperName + " (Query" + firstUpperName + "Req) returns (" + m.Name + "); \n\n"
 		}
 	}
 	funcTpl = funcTpl + "\t // Service Record End\n"

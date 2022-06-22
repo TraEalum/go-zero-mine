@@ -48,7 +48,7 @@ func genTypes(dir string, cfg *config.Config, api *spec.ApiSpec) error {
 	if err != nil {
 		return err
 	}
-	protoPath := "app/rpc/proto"
+	protoPath := fmt.Sprintf("\"go-service/app/%s/rpc/proto\"", api.Service.Name)
 	typeFilename = typeFilename + ".go"
 	filename := path.Join(dir, typesDir, typeFilename)
 	os.Remove(filename)
