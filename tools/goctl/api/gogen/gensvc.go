@@ -67,7 +67,7 @@ func genServiceContext(dir, rootPkg string, cfg *config.Config, api *spec.ApiSpe
 		builtinTemplate: contextTemplate,
 		data: map[string]string{
 			"configImport":         configImport,
-			"config":               "config.Config\n",
+			"config":               "config.Config",
 			"middleware":           middlewareStr,
 			"middlewareAssignment": middlewareAssignment,
 			"rpcImport":            rpcImport,
@@ -83,7 +83,7 @@ func genRpcImport(api *spec.ApiSpec, types []spec.Type) string {
 	for _, tp := range types {
 		tableName := util.Title(tp.Name())
 		lowerTableName := strings.ToLower(tableName)
-		str := fmt.Sprintf("\"go-service/app/%s/rpc/%s\"\n", api.Service.Name, lowerTableName)
+		str := fmt.Sprintf("\t\"go-service/app/%s/rpc/%s\"\n", api.Service.Name, lowerTableName)
 		build.WriteString(str)
 	}
 	return build.String()
