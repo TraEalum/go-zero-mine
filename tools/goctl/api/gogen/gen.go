@@ -38,6 +38,8 @@ var (
 	VarStringBranch string
 	// VarStringStyle describes the style of output files.
 	VarStringStyle string
+	//是否要生成marshal和unmarshal函数
+	VarStringMarshal string
 )
 
 // GoCommand gen go project files from command line
@@ -48,6 +50,7 @@ func GoCommand(_ *cobra.Command, _ []string) error {
 	home := VarStringHome
 	remote := VarStringRemote
 	branch := VarStringBranch
+	marshal := VarStringMarshal
 	if len(remote) > 0 {
 		repo, _ := util.CloneIntoGitHome(remote, branch)
 		if len(repo) > 0 {
@@ -65,11 +68,11 @@ func GoCommand(_ *cobra.Command, _ []string) error {
 		return errors.New("missing -dir")
 	}
 
-	return DoGenProject(apiFile, dir, namingStyle)
+	return DoGenProject(apiFile, dir, namingStyle, marshal)
 }
 
 // DoGenProject gen go project files with api file
-func DoGenProject(apiFile, dir, style string) error {
+func DoGenProject(apiFile, dir, style, marshal string) error {
 	api, err := parser.Parse(apiFile)
 	if err != nil {
 		return err
@@ -94,7 +97,7 @@ func DoGenProject(apiFile, dir, style string) error {
 	logx.Must(genConfig(dir, cfg, api))
 	logx.Must(genMain(dir, rootPkg, cfg, api))
 	logx.Must(genServiceContext(dir, rootPkg, cfg, api))
-	logx.Must(genTypes(dir, cfg, api))
+	logx.Must(genTypes(dir, cfg, api, marshal))
 	logx.Must(genRoutes(dir, rootPkg, cfg, api))
 	logx.Must(genHandlers(dir, rootPkg, cfg, api))
 	logx.Must(genLogic(dir, rootPkg, cfg, api))

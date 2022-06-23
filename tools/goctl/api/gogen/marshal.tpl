@@ -45,7 +45,7 @@ func (r *Query{{.upperStartCamelObject}}Req) Unmarshal(p *proto.{{.upperStartCam
 }
 
 
-// ----------------{{.upperStartCamelObject}}----------------
+// ----------------marshal----------------
 func (r *{{.upperStartCamelObject}}) Marshal(p *proto.{{.upperStartCamelObject}}) error {
 	{{.marshalFields}}
 
