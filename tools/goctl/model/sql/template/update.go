@@ -5,7 +5,7 @@ const (
 	Update = `
 func (m *default{{.upperStartCamelObject}}Model) Update(ctx context.Context, session sqlx.Session, updateBuilder squirrel.UpdateBuilder) error {
 	var err error
-	query, _, err := updateBuilder.ToSql()
+	query, values, err := updateBuilder.ToSql()
 	if err != nil {
 		return err
 	}
@@ -13,17 +13,17 @@ func (m *default{{.upperStartCamelObject}}Model) Update(ctx context.Context, ses
 	{{if .withCache}}{{.keys}}
     _, err := m.ExecCtx(ctx, func(ctx context.Context, conn sqlx.SqlConn) (result sql.Result, err error) {
 		if session != nil {
-			_, err = session.ExecCtx(ctx, query)
+			_, err = session.ExecCtx(ctx, query, values...)
 			return err
 		}
-		return conn.ExecCtx(ctx, query)
+		return conn.ExecCtx(ctx, query, values...)
 	}, {{.keyValues}}){{else}}
 	if session != nil {
-		_, err = session.ExecCtx(ctx, query)
+		_, err = session.ExecCtx(ctx, query, values...)
 		return err
 	}
 	
-    _, err = m.conn.ExecCtx(ctx, query){{end}}
+    _, err = m.conn.ExecCtx(ctx, query, values...){{end}}
 
 	return err
 }
