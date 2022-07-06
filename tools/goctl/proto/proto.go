@@ -26,6 +26,11 @@ func proto(_ *cobra.Command, _ []string) error {
 	flag.Parse()
 	//fmt.Println(port)
 	//return nil
+	
+	if err := ifNotExistThenCreate(dir); err != nil {
+		log.Fatal(err)
+	}
+	
 	connStr := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", user, password, host, port, schema)
 	db, err := sql.Open("mysql", connStr)
 	if err != nil {
@@ -44,6 +49,22 @@ func proto(_ *cobra.Command, _ []string) error {
 
 	if nil != s {
 		fmt.Println(s)
+	}
+
+	return nil
+}
+
+func ifNotExistThenCreate(path string) (err error) {
+	split := strings.Split(path, "/")
+	path = ""
+	for i := 0; i < len(split) -1; i++ {
+		path = filepath.Join(path, split[i])
+	}
+
+	path = filepath.Join(path)
+
+	if _, err = os.Stat(path); err != nil {
+		return os.MkdirAll(path, os.ModePerm)
 	}
 
 	return nil
