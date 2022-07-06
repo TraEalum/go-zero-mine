@@ -61,8 +61,6 @@ func ifNotExistThenCreate(path string) (err error) {
 		path = filepath.Join(path, split[i])
 	}
 
-	path = filepath.Join(path)
-
 	if _, err = os.Stat(path); err != nil {
 		return os.MkdirAll(path, os.ModePerm)
 	}
