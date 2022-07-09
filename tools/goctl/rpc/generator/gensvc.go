@@ -33,7 +33,13 @@ func (g *Generator) GenSvc(ctx DirContext, proto parser.Proto, cfg *conf.Config)
 	modelDefine, modelInit := genModels(proto.Tables)
 
 	fileName := filepath.Join(dir.Filename, svcFilename+".go")
-	text, err := pathx.LoadTemplate(category, svcTemplateFile, svcTemplate)
+	text := ""
+	if pathx.FileExists(fileName) {
+		// modify
+		text, err = text2Template(fileName)
+	} else {
+		text, err = pathx.LoadTemplate(category, svcTemplateFile, svcTemplate)
+	}
 	if err != nil {
 		return err
 	}
@@ -43,7 +49,7 @@ func (g *Generator) GenSvc(ctx DirContext, proto parser.Proto, cfg *conf.Config)
 		"modelDefine": modelDefine,
 		"modelInit":   modelInit,
 		"serviceName": proto.Service.Name,
-	}, fileName, false)
+	}, fileName, true)
 }
 
 func genModels(tables []string) (string, string) {
