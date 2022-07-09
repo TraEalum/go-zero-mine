@@ -43,7 +43,7 @@ func (g *Generator) GenSvc(ctx DirContext, proto parser.Proto, cfg *conf.Config)
 		"modelDefine": modelDefine,
 		"modelInit":   modelInit,
 		"serviceName": proto.Service.Name,
-	}, fileName, true)
+	}, fileName, false)
 }
 
 func genModels(tables []string) (string, string) {
