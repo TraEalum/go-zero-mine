@@ -40,6 +40,7 @@ var rootCmd = &cobra.Command{
 
 // Execute executes the given command
 func Execute() {
+	//	fmt.Printf("%#v", os.Args) // type  args
 	os.Args = supportGoStdFlag(os.Args)
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(aurora.Red(err.Error()))

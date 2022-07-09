@@ -324,7 +324,7 @@ func (s *Schema) UpdateString() string {
 			endLine = line
 			break
 		}
-		existTableName = append(existTableName, line[3:])
+		existTableName = append(existTableName, strings.TrimRight(line[3:], "\n"))
 		bufNew.WriteString(line)
 		if err != nil {
 			if err == io.EOF {

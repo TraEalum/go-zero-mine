@@ -1,3 +1,5 @@
+// Package svc
+// source: tools/goctl/rpc/generator/svc.tpl
 package svc
 
 import (
@@ -9,8 +11,9 @@ import (
 
 type ServiceContext struct {
 	Config config.Config
-
+    // <codeGeneratedModelDefine>
 	{{.modelDefine}}
+	// </codeGeneratedModelDefine>
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
@@ -18,8 +21,9 @@ func NewServiceContext(c config.Config) *ServiceContext {
 
 	return &ServiceContext{
 		Config:c,
-
+        // <codeGeneratedModelInit>
 		{{.modelInit}}
+		// </codeGeneratedModelInit>
 	}
 }
  
