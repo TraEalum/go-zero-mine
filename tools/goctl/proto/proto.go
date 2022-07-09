@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"github.com/spf13/cobra"
 	"log"
+	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -26,11 +28,11 @@ func proto(_ *cobra.Command, _ []string) error {
 	flag.Parse()
 	//fmt.Println(port)
 	//return nil
-	
+
 	if err := ifNotExistThenCreate(dir); err != nil {
 		log.Fatal(err)
 	}
-	
+
 	connStr := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", user, password, host, port, schema)
 	db, err := sql.Open("mysql", connStr)
 	if err != nil {
@@ -41,7 +43,7 @@ func proto(_ *cobra.Command, _ []string) error {
 
 	ignoreTables := strings.Split(ignoreTableStr, ",")
 
-	s, err := GenerateSchema(db, table,ignoreTables,serviceName, goPackageName, packageName, dir)
+	s, err := GenerateSchema(db, table, ignoreTables, serviceName, goPackageName, packageName, dir)
 
 	if nil != err {
 		log.Fatal(err)
@@ -57,7 +59,7 @@ func proto(_ *cobra.Command, _ []string) error {
 func ifNotExistThenCreate(path string) (err error) {
 	split := strings.Split(path, "/")
 	path = ""
-	for i := 0; i < len(split) -1; i++ {
+	for i := 0; i < len(split)-1; i++ {
 		path = filepath.Join(path, split[i])
 	}
 
