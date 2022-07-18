@@ -1,3 +1,4 @@
+# tools/goctl/rpc/generator/etc.tpl
 Name: {{.serviceName}}.rpc
 ListenOn: 127.0.0.1:8080
 Etcd:
@@ -13,3 +14,8 @@ Log:
   ServiceName: "{{.serviceName}}-rpc"
   TimeFormat: "2006-01-02 15:04:05"
   KeepDays: 15
+
+Prometheus:
+  Host: 0.0.0.0
+  Port: 8103
+  Path: /metrics
