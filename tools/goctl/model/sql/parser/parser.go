@@ -263,6 +263,19 @@ func (t *Table) ContainsTime() bool {
 	return false
 }
 
+// ContainsTimeV2 base on ContainsTime
+func (t *Table) ContainsTimeV2() bool {
+	for _, item := range t.Fields {
+		if item.Name.Source() == "created_at" || item.Name.Source() == "updated_at" {
+			return true
+		}
+		if item.DataType == timeImport {
+			return true
+		}
+	}
+	return false
+}
+
 // ConvertDataType converts mysql data type into golang data type
 func ConvertDataType(table *model.Table) (*Table, error) {
 	isPrimaryDefaultNull := table.PrimaryKey.ColumnDefault == nil && table.PrimaryKey.IsNullAble == "YES"

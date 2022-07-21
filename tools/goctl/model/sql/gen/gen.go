@@ -257,8 +257,8 @@ func (g *defaultGenerator) genModel(in parser.Table, withCache bool) (string, er
 	table.PrimaryCacheKey = primaryKey
 	table.UniqueCacheKey = uniqueKey
 	table.ContainsUniqueCacheKey = len(uniqueKey) > 0
-
-	importsCode, err := genImports(table, g.service, withCache, in.ContainsTime())
+	// modify import time
+	importsCode, err := genImports(table, g.service, withCache, in.ContainsTimeV2())
 	if err != nil {
 		return "", err
 	}
