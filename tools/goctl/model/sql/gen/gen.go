@@ -146,7 +146,7 @@ func (g *defaultGenerator) StartFromInformationSchema(tables map[string]*model.T
 		}
 
 		if g.subTableNumber > 0 && g.subTableKey != "" {
-			if g.subTableNumber == 1 {
+			if g.subTableNumber <= 1 {
 				g.subTableNumber = 2
 			}
 			//从0下标开始，需要减一
