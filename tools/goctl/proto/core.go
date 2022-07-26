@@ -147,7 +147,7 @@ func dbColumns(db *sql.DB, schema, table string, subTableNumber int, subTableKey
 		}
 
 		if subTableNumber > 0 && subTableKey != "" {
-			if subTableNumber <= 1 {
+			if subTableNumber == 1 {
 				subTableNumber = 2
 			}
 			//从0下标开始，需要减一
