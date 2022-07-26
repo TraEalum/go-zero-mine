@@ -146,10 +146,7 @@ func dbColumns(db *sql.DB, schema, table string, subTableNumber int, subTableKey
 			log.Fatal(err)
 		}
 
-		if subTableNumber > 0 && subTableKey != "" {
-			if subTableNumber == 1 {
-				subTableNumber = 2
-			}
+		if subTableNumber > 1 && subTableKey != "" {
 			//从0下标开始，需要减一
 			splitNum := util.GetSplitNum(subTableNumber - 1)
 			//把最后得特殊符号"_"去掉，需要减一

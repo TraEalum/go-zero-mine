@@ -145,10 +145,7 @@ func (g *defaultGenerator) StartFromInformationSchema(tables map[string]*model.T
 			return err
 		}
 
-		if g.subTableNumber > 0 && g.subTableKey != "" {
-			if g.subTableNumber == 1 {
-				g.subTableNumber = 2
-			}
+		if g.subTableNumber > 1 && g.subTableKey != "" {
 			//从0下标开始，需要减一
 			splitNum := util.GetSplitNum(g.subTableNumber - 1)
 			tmpName := table.Name.Source()
