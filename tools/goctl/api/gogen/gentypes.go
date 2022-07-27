@@ -48,17 +48,27 @@ func genTypes(dir string, cfg *config.Config, api *spec.ApiSpec, marshalFlag str
 	if err != nil {
 		return err
 	}
-	protoPath := fmt.Sprintf("\"go-service/app/%s/rpc/proto\"", api.Service.Name)
+
 	typeFilename = typeFilename + ".go"
 	filename := path.Join(dir, typesDir, typeFilename)
 	os.Remove(filename)
-	marshal := ""
-	if strings.ToLower(marshalFlag) == "yes" {
-		marshal, err = GenMarshal(api, dir)
-	}
+
+	// if strings.ToLower(marshalFlag) == "yes" {
+	go func() {
+		err = GenMarshal(api, dir)
+		if err != nil {
+			fmt.Println(err.Error())
+			fmt.Println("generate marsha file error")
+			return
+		}
+	}()
+
+	// }
+
 	if err != nil {
 		return err
 	}
+
 	return genFile(fileGenConfig{
 		dir:             dir,
 		subdir:          typesDir,
@@ -70,8 +80,6 @@ func genTypes(dir string, cfg *config.Config, api *spec.ApiSpec, marshalFlag str
 		data: map[string]interface{}{
 			"types":        val,
 			"containsTime": false,
-			"porto":        protoPath,
-			"marshal":      marshal,
 		},
 	})
 }

@@ -61,11 +61,13 @@ func GenerateSchema(db *sql.DB, table string, ignoreTables []string, serviceName
 func typesFromColumns(s *Schema, cols []Column, ignoreTables []string) error {
 	messageMap := map[string]*Message{}
 	ignoreMap := map[string]bool{}
+
 	if len(ignoreTables) != 0 {
 		for _, ig := range ignoreTables {
 			ignoreMap[ig] = true
 		}
 	}
+
 	for _, c := range cols {
 		if _, ok := ignoreMap[c.TableName]; ok {
 			continue
@@ -212,6 +214,7 @@ func (s *Schema) String() string {
 		fmt.Println("Only API terminated files can be generated")
 		panic("Only API terminated files can be generated")
 	}
+
 	//这里生成xxxParam.api文件 start
 	arr := strings.Split(s.Dir, ".")
 	paramFile := arr[0] + "Param." + arr[1]
@@ -221,6 +224,7 @@ func (s *Schema) String() string {
 	} else {
 		s.UpdateParamString(paramFile)
 	}
+
 	_, err = os.Stat(s.Dir)
 	//如果返回的错误类型使用os.isNotExist()判断为true，说明文件或者文件夹不存在
 	if os.IsNotExist(err) {
@@ -229,6 +233,7 @@ func (s *Schema) String() string {
 
 	return s.UpdateString()
 }
+
 func (s *Schema) CreateParamString(fileName string) string {
 	buf := new(bytes.Buffer)
 	buf.WriteString(fmt.Sprintf("syntax = \"%s\"\n", s.Syntax))
@@ -245,23 +250,35 @@ func (s *Schema) CreateParamString(fileName string) string {
 	for _, m := range s.Messages {
 		buf.WriteString("//--------------------------------" + m.Comment + "--------------------------------")
 		buf.WriteString("\n")
+		buf.WriteString("type (\n")
 		// 创建
 		m.GenApiDefault(buf)
+		buf.WriteString("\n")
 		m.GenApiDefaultResp(buf)
+		buf.WriteString("\n")
+
 		//更新
 		m.GenApiUpdateReq(buf)
+		buf.WriteString("\n")
 		m.GenApiUpdateResp(buf)
+		buf.WriteString("\n")
+
 		//查询
 		m.GenApiQueryReq(buf)
+		buf.WriteString("\n")
 		m.GenApiQueryResp(buf)
 
+		buf.WriteString(")")
+		buf.WriteString("\n\n")
 	}
+
 	buf.WriteString("// Type Record End\n")
 	err := ioutil.WriteFile(fileName, []byte(buf.String()), 0666)
 	if err != nil {
-		fmt.Println(fmt.Sprintf("生成paramFile文件失败:%s", err.Error()))
+		fmt.Println("生成paramFile文件失败")
 		return ""
 	}
+
 	return "paramFile Done"
 }
 func (s *Schema) UpdateParamString(fileName string) string {
@@ -270,10 +287,12 @@ func (s *Schema) UpdateParamString(fileName string) string {
 	if err != nil {
 		return fmt.Sprintf("Open file error!%v", err)
 	}
+
 	stat, err := file.Stat()
 	if err != nil {
 		panic(err)
 	}
+
 	var _ = stat.Size()
 	endLine := ""
 	buf := bufio.NewReader(file)
@@ -292,6 +311,7 @@ func (s *Schema) UpdateParamString(fileName string) string {
 			}
 		}
 	}
+
 	var existTableName []string
 
 	for {
@@ -310,7 +330,9 @@ func (s *Schema) UpdateParamString(fileName string) string {
 			}
 		}
 	}
+
 	var newTableNames []string
+
 	for _, m := range s.Messages {
 		if !isInSlice(existTableName, m.Name) {
 			newTableNames = append(newTableNames, m.Name)
@@ -318,6 +340,7 @@ func (s *Schema) UpdateParamString(fileName string) string {
 		}
 	}
 	bufNew.WriteString(endLine)
+
 	// 写Messages
 	for {
 		line, err := buf.ReadString('\n')
@@ -339,21 +362,34 @@ func (s *Schema) UpdateParamString(fileName string) string {
 		if !isInSlice(existTableName, m.Name) {
 			bufNew.WriteString("//--------------------------------" + m.Comment + "--------------------------------")
 			bufNew.WriteString("\n")
+			bufNew.WriteString("type (\n")
 
 			// 创建
 			m.GenApiDefault(bufNew)
+			bufNew.WriteString("\n")
 			m.GenApiDefaultResp(bufNew)
+			bufNew.WriteString("\n")
+
 			//更新
 			m.GenApiUpdateReq(bufNew)
+			bufNew.WriteString("\n")
 			m.GenApiUpdateResp(bufNew)
+			bufNew.WriteString("\n")
+
 			//查询
 			m.GenApiQueryReq(bufNew)
+			bufNew.WriteString("\n")
 			m.GenApiQueryResp(bufNew)
+
+			bufNew.WriteString(")")
+			bufNew.WriteString("\n\n")
 
 		}
 	}
+
 	bufNew.WriteString("// Type Record End\n")
 	err = ioutil.WriteFile(fileName, []byte(bufNew.String()), 0666)
+
 	return "paramFile DONE"
 }
 
@@ -674,55 +710,56 @@ func (m Message) GenApiDefault(buf *bytes.Buffer) {
 // 先固定写为id
 func (m Message) GenApiDefaultResp(buf *bytes.Buffer) {
 	mOrginName := FirstUpper(m.Name)
-	buf.WriteString(fmt.Sprintf("type Create%sResp {\n", mOrginName))
-	buf.WriteString(fmt.Sprintf("%s  %s   %s  `json:\"%s\"`   \n", indent, "Id", "int64", "id"))
-	buf.WriteString("}\n")
+	buf.WriteString(fmt.Sprintf("%sCreate%sResp {\n", indent, mOrginName))
+	buf.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`   \n", indent, indent, "Id", "int64", "id"))
+	buf.WriteString(fmt.Sprintf("%s}\n", indent))
 }
 
 func (m Message) GenApiUpdateReq(buf *bytes.Buffer) {
 	mOrginName := FirstUpper(m.Name)
-	buf.WriteString(fmt.Sprintf("type Update%sReq {\n", mOrginName))
+	buf.WriteString(fmt.Sprintf("%sUpdate%sReq {\n", indent, mOrginName))
 	for _, f := range m.Fields {
-		buf.WriteString(fmt.Sprintf("%s  %s   %s  `json:\"%s\"`   //%s\n", indent, f.Name, f.Typ, f.ColumnName, f.Comment))
+		buf.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`   //%s\n", indent, indent, FirstUpper(stringx.From(f.Name).ToCamelWithStartLower()), f.Typ, f.ColumnName, f.Comment))
 	}
-	buf.WriteString("}\n")
+	buf.WriteString(fmt.Sprintf("%s}\n", indent))
 }
+
 func (m Message) GenApiUpdateResp(buf *bytes.Buffer) {
 	mOrginName := FirstUpper(m.Name)
-	buf.WriteString(fmt.Sprintf("type Update%sResp {\n", mOrginName))
-	buf.WriteString(fmt.Sprintf("%s  %s   %s  `json:\"%s\"`   \n", indent, "Id", "int64", "id"))
-	buf.WriteString("}\n")
+	buf.WriteString(fmt.Sprintf("%sUpdate%sResp {\n", indent, mOrginName))
+	buf.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`   \n", indent, indent, "Id", "int64", "id"))
+	buf.WriteString(fmt.Sprintf("%s}\n", indent))
 }
 
 //先固定三个参数
 func (m Message) GenApiQueryReq(buf *bytes.Buffer) {
 	mOrginName := FirstUpper(m.Name)
-	buf.WriteString(fmt.Sprintf("type Query%sReq {\n", mOrginName))
-	buf.WriteString(fmt.Sprintf("%s  %s   %s  `json:\"%s,optional\"`   \n", indent, "Id", "int64", "id"))
-	buf.WriteString(fmt.Sprintf("%s  %s   %s  `json:\"%s,optional\"`   \n", indent, "PageNo", "int64", "page_no"))
-	buf.WriteString(fmt.Sprintf("%s  %s   %s  `json:\"%s,optional\"`   \n", indent, "PageSize", "int64", "page_size"))
-	buf.WriteString("}\n")
+	buf.WriteString(fmt.Sprintf("%sQuery%sReq {\n", indent, mOrginName))
+	buf.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s,optional\"`   \n", indent, indent, "Id", "int64", "id"))
+	buf.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s,optional\"`   \n", indent, indent, "PageNo", "int64", "page_no"))
+	buf.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s,optional\"`   \n", indent, indent, "PageSize", "int64", "page_size"))
+	buf.WriteString(fmt.Sprintf("%s}\n", indent))
 }
 
 func (m Message) GenApiQueryResp(buf *bytes.Buffer) {
 	mOrginName := FirstUpper(m.Name)
-	buf.WriteString(fmt.Sprintf("type Query%sResp {\n", mOrginName))
-	buf.WriteString(fmt.Sprintf("%s  %s   []%s  `json:\"%s\"`   \n", indent, "Data", mOrginName, "data"))
-	buf.WriteString(fmt.Sprintf("%s  %s   %s  `json:\"%s\"`   \n", indent, "CurrPage", "int64", "curr_page"))
-	buf.WriteString(fmt.Sprintf("%s  %s   %s  `json:\"%s\"`   \n", indent, "TotalPage", "int64", "total_page"))
-	buf.WriteString(fmt.Sprintf("%s  %s   %s  `json:\"%s\"`   \n", indent, "TotalCount", "int64", "total_count"))
-	buf.WriteString("}\n")
+	buf.WriteString(fmt.Sprintf("%sQuery%sResp {\n", indent, mOrginName))
+	buf.WriteString(fmt.Sprintf("%s%s%s   []%s  `json:\"%s\"`   \n", indent, indent, mOrginName+"List", mOrginName, fmt.Sprintf("%s_list", m.Name)))
+	buf.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`   \n", indent, indent, "CurrPage", "int64", "curr_page"))
+	buf.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`   \n", indent, indent, "TotalPage", "int64", "total_page"))
+	buf.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`   \n", indent, indent, "TotalCount", "int64", "total_count"))
+	buf.WriteString(fmt.Sprintf("%s}\n", indent))
 }
 
 // String returns a string representation of a Message.
 func (m Message) String() string {
 	var buf bytes.Buffer
 
-	buf.WriteString(fmt.Sprintf("type %s {\n", m.Name))
+	buf.WriteString(fmt.Sprintf("%s%s {\n", indent, m.Name))
 	for _, f := range m.Fields {
-		buf.WriteString(fmt.Sprintf("%s  %s   %s  `json:\"%s\"`  ; //%s\n", indent, FirstUpper(f.Name), f.Typ, f.ColumnName, f.Comment))
+		buf.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`  ; //%s\n", indent, indent, FirstUpper(f.Name), f.Typ, f.ColumnName, f.Comment))
 	}
-	buf.WriteString("}\n")
+	buf.WriteString(fmt.Sprintf("%s}\n", indent))
 
 	return buf.String()
 }
@@ -812,6 +849,7 @@ func parseColumn(s *Schema, msg *Message, col Column) error {
 	if "" == fieldType {
 		return fmt.Errorf("no compatible go type found for `%s`. column: `%s`.`%s`", col.DataType, col.TableName, col.ColumnName)
 	}
+
 	field := NewMessageField(fieldType, col.ColumnName, col.ColumnComment, col.ColumnName)
 	err := msg.AppendField(field)
 	if nil != err {
@@ -829,6 +867,7 @@ func isInSlice(slice []string, s string) bool {
 	}
 	return false
 }
+
 func FirstUpper(s string) string {
 	if s == "" {
 		return ""

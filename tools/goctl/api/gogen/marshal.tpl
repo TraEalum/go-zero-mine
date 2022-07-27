@@ -1,3 +1,5 @@
+package types
+//start
 // ----------------create----------------
 func (r *Create{{.upperStartCamelObject}}Resp) Marshal(p *proto.{{.upperStartCamelObject}}) error {
     r.Id = p.Id
@@ -61,3 +63,5 @@ func Marshal{{.upperStartCamelObject}}Lst(r *[]{{.upperStartCamelObject}},p []*p
 		*r = append(*r,tmp)
 	}
 }
+
+//TheEndLine   please do not delete this line

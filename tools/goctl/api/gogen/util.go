@@ -219,11 +219,22 @@ func golangExpr(ty spec.Type, pkg ...string) string {
 
 	return ""
 }
+
 func isStartWith(arr []string, target string) bool {
 	for _, value := range arr {
 		if strings.Contains(target, value) {
 			return true
 		}
 	}
+	return false
+}
+
+func isContain(arr []string, target string) bool {
+	for _, v := range arr {
+		if v == target {
+			return true
+		}
+	}
+
 	return false
 }
