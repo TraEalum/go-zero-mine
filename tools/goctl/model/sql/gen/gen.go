@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/zeromicro/go-zero/tools/goctl/config"
@@ -26,11 +27,13 @@ type (
 	defaultGenerator struct {
 		console.Console
 		// source string
-		dir          string
-		pkg          string
-		cfg          *config.Config
-		isPostgreSql bool
-		service      string
+		dir            string
+		pkg            string
+		cfg            *config.Config
+		isPostgreSql   bool
+		service        string
+		subTableNumber int
+		subTableKey    string
 	}
 
 	// Option defines a function with argument defaultGenerator
@@ -105,6 +108,20 @@ func WithServiceName(service string) Option {
 	}
 }
 
+// WithSubTableNumber marks  defaultGenerator.subTableNumber true
+func WithSubTableNumber(subTableNumber int) Option {
+	return func(generator *defaultGenerator) {
+		generator.subTableNumber = subTableNumber
+	}
+}
+
+// WithSubTableKey marks  defaultGenerator.subTableKey true
+func WithSubTableKey(subTableKey string) Option {
+	return func(generator *defaultGenerator) {
+		generator.subTableKey = subTableKey
+	}
+}
+
 func newDefaultOption() Option {
 	return func(generator *defaultGenerator) {
 		generator.Console = console.NewColorConsole()
@@ -126,6 +143,15 @@ func (g *defaultGenerator) StartFromInformationSchema(tables map[string]*model.T
 		table, err := parser.ConvertDataType(each)
 		if err != nil {
 			return err
+		}
+
+		if g.subTableNumber > 1 && g.subTableKey != "" {
+			//从0下标开始，需要减一
+			splitNum := util.GetSplitNum(g.subTableNumber - 1)
+			tmpName := table.Name.Source()
+			//把最后得特殊符号"_"去掉，需要减一
+			table.Name = stringx.From(tmpName[0 : len(tmpName)-splitNum-1])
+			table.FmtString = table.Name.Source() + "_%0" + strconv.Itoa(splitNum) + "d"
 		}
 
 		code, err := g.genModel(*table, withCache)
@@ -249,7 +275,6 @@ func (g *defaultGenerator) genModel(in parser.Table, withCache bool) (string, er
 	if len(in.PrimaryKey.Name.Source()) == 0 {
 		return "", fmt.Errorf("table %s: missing primary key", in.Name.Source())
 	}
-
 	primaryKey, uniqueKey := genCacheKeys(in)
 
 	var table Table
@@ -341,7 +366,13 @@ func (g *defaultGenerator) genModel(in parser.Table, withCache bool) (string, er
 }
 
 func (g *defaultGenerator) genModelCustom(in parser.Table, withCache bool) (string, error) {
-	text, err := pathx.LoadTemplate(category, modelCustomTemplateFile, template.ModelCustom)
+	var templateStr string
+	if in.FmtString != "" {
+		templateStr = template.ModelCustomSubTable
+	} else {
+		templateStr = template.ModelCustom
+	}
+	text, err := pathx.LoadTemplate(category, modelCustomTemplateFile, templateStr)
 	if err != nil {
 		return "", err
 	}
@@ -362,7 +393,10 @@ func (g *defaultGenerator) genModelCustom(in parser.Table, withCache bool) (stri
 		"serviceName":           g.service,
 		"marshalFields":         marshalFields,
 		"unmarshallFields":      unmarshallFields,
-		"table":                 table.Name.Source(),
+		"table":                 in.Name.Source(),
+		"fmtSubTableName":       in.FmtString,
+		"subTableNumber":        g.subTableNumber,
+		"upperSubTableKey":      stringx.From(g.subTableKey).ToCamel(),
 	})
 	if err != nil {
 		return "", err

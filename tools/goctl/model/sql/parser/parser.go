@@ -25,6 +25,7 @@ type (
 		PrimaryKey  Primary
 		UniqueIndex map[string][]*Field
 		Fields      []*Field
+		FmtString   string
 	}
 
 	// Primary describes a primary key
