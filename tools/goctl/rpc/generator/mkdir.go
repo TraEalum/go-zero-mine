@@ -38,6 +38,7 @@ type (
 		GetProtoGo() Dir
 		GetMain() Dir
 		GetServiceName() stringx.String
+		GetConfigExtend() Dir
 		SetPbDir(pbDir, grpcDir string)
 	}
 
@@ -198,6 +199,10 @@ func (d *defaultDirContext) GetMain() Dir {
 
 func (d *defaultDirContext) GetServiceName() stringx.String {
 	return d.serviceName
+}
+
+func (d *defaultDirContext) GetConfigExtend() Dir {
+	return d.inner[config]
 }
 
 // Valid returns true if the directory is valid

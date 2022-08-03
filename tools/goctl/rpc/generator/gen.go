@@ -92,6 +92,11 @@ func (g *Generator) Generate(zctx *ZRpcContext) error {
 
 	err = g.GenCall(dirCtx, proto, g.cfg)
 
+	err = g.GenConfigExtend(dirCtx, proto, g.cfg)
+	if err != nil {
+		return err
+	}
+
 	console.NewColorConsole().MarkDone()
 
 	return err

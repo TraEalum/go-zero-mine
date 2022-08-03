@@ -20,6 +20,7 @@ const (
 	serverFuncTemplateFile            = "server-func.tpl"
 	svcTemplateFile                   = "svc.tpl"
 	rpcTemplateFile                   = "template.tpl"
+	configExtendTemplateFileFile      = "config-extend.tpl"
 )
 
 var templates = map[string]string{
@@ -35,6 +36,7 @@ var templates = map[string]string{
 	serverFuncTemplateFile:            functionTemplate,
 	svcTemplateFile:                   svcTemplate,
 	rpcTemplateFile:                   rpcTemplateText,
+	configExtendTemplateFileFile:      configExtendTemplate,
 }
 
 // GenTemplates is the entry for command goctl template,
