@@ -5,10 +5,10 @@ func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 	var err error
 
 	// check whether it already exists
-	if in.Id != 0 {
-		if _, err = l.svcCtx.{{.modelName}}Model.FindOne(l.ctx, in.Id); err != sqlc.ErrNotFound {
+	if in.{{.pK}} != {{.pV}} {
+		if _, err = l.svcCtx.{{.modelName}}Model.FindOne(l.ctx, in.{{.pK}}); err != sqlc.ErrNotFound {
 			logx.WithContext(l.ctx).Infof("%v is already exists")
-			return &{{.responseType}}{Id: in.Id}, nil
+			return &{{.responseType}}{ {{.pK}}: in.{{.pK}}}, nil
 		}
 	}
 
@@ -28,7 +28,7 @@ func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 	var err error
 
 	// delete
-	if err = l.svcCtx.{{.modelName}}Model.Delete(l.ctx, nil, &model.{{.modelName}}{Id: in.Id}); err != nil {
+	if err = l.svcCtx.{{.modelName}}Model.Delete(l.ctx, nil, &model.{{.modelName}}{ {{.pK}}: in.{{.pK}}}); err != nil {
 		return nil, errorm.New(errorm.RecordDeleteFailed, "delete data fail.%v", err)
 	}
 
@@ -41,17 +41,17 @@ func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 	var err error
 
 	// check whether it already exists
-	if _, err = l.svcCtx.{{.modelName}}Model.FindOne(l.ctx, in.Id); err != nil && err != sqlc.ErrNotFound {
+	if _, err = l.svcCtx.{{.modelName}}Model.FindOne(l.ctx, in.{{.pK}}); err != nil && err != sqlc.ErrNotFound {
 		logx.WithContext(l.ctx).Infof("find data fail. %v", err)
 		return nil, err
 	}else if err == sqlc.ErrNotFound{
-		err = errorm.New(errorm.RecordNotFound, "id %d dose not exists.", in.Id)
+		err = errorm.New(errorm.RecordNotFound, "{{.pK}} %v dose not exists.", in.{{.pK}})
 		logx.WithContext(l.ctx).Infof("find data fail. %v", err)
 		return nil, err
 	}
 
 	where := model.{{.modelName}}{
-		Id: in.Id,
+		 {{.pK}}: in.{{.pK}},
 	}
 	{{.modelNameFirstLower}} := model.{{.modelName}}{}
 	{{.modelNameFirstLower}}.Marshal(in)
@@ -76,7 +76,7 @@ func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 
 	// build where
 	where := model.{{.modelName}}{
-		Id: in.Id,
+		 {{.pK}}: in.{{.pK}},
 	}
 	builder := util.NewSelectBuilder(util.WithTable(where.TableName())).
 		Where(&where).
@@ -109,7 +109,7 @@ func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 
 	// query
 	{{.modelNameFirstLower}} := &model.{{.modelName}}{}
-	if {{.modelNameFirstLower}}, err = l.svcCtx.{{.modelName}}Model.FindOne(l.ctx, in.Id); err != nil {
+	if {{.modelNameFirstLower}}, err = l.svcCtx.{{.modelName}}Model.FindOne(l.ctx, in.{{.pK}}); err != nil {
 		return nil, errorm.New(errorm.RecordFindFailed, "FindOne fail.%v", err)
 	}
 
