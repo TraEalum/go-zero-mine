@@ -1,8 +1,12 @@
 package generator
 
 import (
+	"bufio"
 	_ "embed"
+	"encoding/json"
+	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -30,6 +34,12 @@ var logicTemplate string
 func (g *Generator) GenLogic(ctx DirContext, proto parser.Proto, cfg *conf.Config) error {
 	dir := ctx.GetLogic()
 	service := proto.Service.Service.Name
+
+	pK, pV, err := getPrimaryKey(strings.Replace(parser.CamelCase(proto.Service.RPC[0].RequestType), "Filter", "", 1))
+	if err != nil {
+		return err
+	}
+
 	for _, rpc := range proto.Service.RPC {
 		logicFilename, err := format.FileNamingFormat(cfg.NamingFormat, rpc.Name+"_logic")
 		if err != nil {
@@ -37,7 +47,7 @@ func (g *Generator) GenLogic(ctx DirContext, proto parser.Proto, cfg *conf.Confi
 		}
 
 		filename := filepath.Join(dir.Filename, logicFilename+".go")
-		functions, err := g.genLogicFunction(service, proto.PbPackage, rpc)
+		functions, err := g.genLogicFunction(service, proto.PbPackage, rpc, pK, pV)
 		if err != nil {
 			return err
 		}
@@ -79,7 +89,7 @@ type genLogic struct {
 	Fn string
 }
 
-func (g *Generator) genLogicFunction(serviceName, goPackage string, rpc *parser.RPC) (genLogic, error) {
+func (g *Generator) genLogicFunction(serviceName, goPackage string, rpc *parser.RPC, pK, pV string) (genLogic, error) {
 	functions := make([]string, 0)
 	gen := genLogic{}
 	text, err := pathx.LoadTemplate(category, logicFuncTemplateFileFile, logicFunctionTemplate)
@@ -121,6 +131,8 @@ func (g *Generator) genLogicFunction(serviceName, goPackage string, rpc *parser.
 	comment := parser.GetComment(rpc.Doc())
 	streamServer := fmt.Sprintf("%s.%s_%s%s", goPackage, parser.CamelCase(serviceName), parser.CamelCase(rpc.Name), "Server")
 	buffer, err := util.With("fun").Parse(text).Execute(map[string]interface{}{
+		"pK":pK,
+		"pV":pV,
 		"logicName":           logicName,
 		"method":              parser.CamelCase(rpc.Name),
 		"hasReq":              !rpc.StreamsRequest,
@@ -150,4 +162,53 @@ func FirstLower(s string) string {
 		return ""
 	}
 	return strings.ToLower(s[:1]) + s[1:]
+}
+
+// 获取临时文件中的主键
+func getPrimaryKey(modelName string) (string, string, error) {
+	type PKey struct {
+		ColumnName string
+		Mark int
+	}
+
+	var (
+		pKeyMap = make(map[string]PKey)
+		kValue string
+		path = "./tmp"
+	)
+
+	file, err := os.OpenFile(path, os.O_RDWR, 0666)
+	if err != nil {
+		return "", "", err
+	}
+	defer file.Close()
+
+	r := bufio.NewReader(file)
+
+	line, _, err := r.ReadLine()
+	if err != nil {
+		return "", "", err
+	}
+
+	if err = json.Unmarshal(line, &pKeyMap); err != nil {
+		return "", "", err
+	}
+
+	k, ok := pKeyMap[modelName]
+	if !ok {
+		return "", "", errors.New("map is null")
+	}
+
+	if k.Mark == 0 {
+		kValue = "0"
+	}else {
+		kValue = `""`
+	}
+
+	// 删除文件
+	if err := os.Remove(path); err != nil {
+		return "", "", err
+	}
+
+	return k.ColumnName, kValue, nil
 }
