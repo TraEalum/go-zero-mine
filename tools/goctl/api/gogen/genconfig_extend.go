@@ -9,10 +9,6 @@ import (
 
 //go:embed config-extend.tpl
 var configExtendTemplate string
-var specialStr = `{{
-		IpAddr: cfg.Nacos.Host,
-		Port:   cfg.Nacos.Port,
-	}}`
 
 func genConfigExtend(dir string, cfg *config.Config, api *spec.ApiSpec) error {
 	name := strings.ToLower(api.Service.Name)
@@ -27,8 +23,7 @@ func genConfigExtend(dir string, cfg *config.Config, api *spec.ApiSpec) error {
 		templateFile:    configExtendTemplateFileFile,
 		builtinTemplate: configExtendTemplate,
 		data: map[string]string{
-			"serviceKey":   name,
-			"serverConfig": specialStr,
+			"serviceKey": name,
 		},
 	})
 }

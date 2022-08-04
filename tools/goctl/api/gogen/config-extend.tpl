@@ -33,9 +33,10 @@ func (m *Config) loadConfig() (string, error) {
 
 	dataId := "{{.serviceKey}}" + "-" + "rpc"
 
-	sc := []constant.ServerConfig{{.serverConfig}}
-
-
+    sc := []constant.ServerConfig{ {
+         	IpAddr: cfg.Nacos.Host,
+         	Port:   cfg.Nacos.Port,
+        } }
 	cc := constant.ClientConfig{
 		NamespaceId:         "", // 如果需要支持多namespace，我们可以场景多个client,它们有不同的NamespaceId。当namespace是public时，此处填空字符串。
 		TimeoutMs:           5000,

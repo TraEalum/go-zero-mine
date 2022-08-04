@@ -11,10 +11,6 @@ import (
 
 //go:embed config-extend.tpl
 var configExtendTemplate string
-var specialStr = `{{
-		IpAddr: cfg.Nacos.Host,
-		Port:   cfg.Nacos.Port,
-	}}`
 
 // GenConfigExtend generates the configuration structure definition file of the rpc service
 func (g *Generator) GenConfigExtend(ctx DirContext, proto parser.Proto, cfg *conf.Config) error {
@@ -30,7 +26,6 @@ func (g *Generator) GenConfigExtend(ctx DirContext, proto parser.Proto, cfg *con
 	}
 
 	return util.With("config-extend").GoFmt(true).Parse(text).SaveTo(map[string]interface{}{
-		"serviceKey":   proto.Service.Name,
-		"serverConfig": specialStr,
+		"serviceKey": proto.Service.Name,
 	}, fileName, true)
 }
