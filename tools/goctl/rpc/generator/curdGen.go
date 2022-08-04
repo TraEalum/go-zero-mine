@@ -66,6 +66,7 @@ func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 	return &{{.responseType}}{}, nil
 }
 `
+
 const QueryLogic = `{{if .hasComment}}{{.comment}}{{end}}
 func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 	var err error
