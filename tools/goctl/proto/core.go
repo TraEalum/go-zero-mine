@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"github.com/zeromicro/go-zero/tools/goctl/util"
 	"io"
@@ -57,10 +56,6 @@ func GenerateSchema(db *sql.DB, table string, ignoreTables []string, serviceName
 		s.GoPackage = "./" + s.Package
 	}
 
-	if err := dbPKey(db, table); err != nil {
-		return nil, err
-	}
-
 	cols, err := dbColumns(db, dbs, table, subTableNumber, subTableKey)
 	if nil != err {
 		return nil, err
@@ -76,64 +71,6 @@ func GenerateSchema(db *sql.DB, table string, ignoreTables []string, serviceName
 	sort.Sort(s.Enums)
 
 	return s, nil
-}
-
-func dbPKey(db *sql.DB, tableName string) error {
-	/*
-	   select COLUMN_KEY,COLUMN_NAME from INFORMATION_SCHEMA.COLUMNS where table_name='ant_audit_order' AND COLUMN_KEY='PRI'
-	*/
-	type PKey struct {
-		ColumnName string
-		DataType string
-		Mark int
-	}
-
-	var PK PKey
-	var PKeyMap = make(map[string]PKey)
-
-	row:= db.QueryRow("select c.COLUMN_NAME, c.DATA_TYPE from INFORMATION_SCHEMA.COLUMNS as c where table_name= ? AND COLUMN_KEY='PRI'", tableName)
-
-	if err := row.Scan(&PK.ColumnName, &PK.DataType); err != nil {
-		return err
-	}
-
-
-	// 下滑线转驼峰
-	switch PK.DataType {
-	case "char", "varchar", "text", "longtext", "mediumtext", "tinytext":
-		PK.Mark = 1
-	default:
-	}
-
-	PK.ColumnName = camel(PK.ColumnName)
-
-	PKeyMap[camel(tableName)] = PK
-
-	file, err := os.OpenFile("./tmp", os.O_RDWR|os.O_CREATE, 0666)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	data, err := json.Marshal(PKeyMap)
-	if err != nil {
-		return err
-	}
-
-	w := bufio.NewWriter(file)
-	if _, err = w.WriteString(string(data)); err != nil {
-		return err
-	}
-
-	w.Flush()
-
-	return nil
-}
-
-func camel(name string) string {
-	name = strings.Replace(name, "_", " ", -1)
-	name = strings.Title(name)
-	return strings.Replace(name, " ", "", -1)
 }
 
 // typesFromColumns creates the appropriate schema properties from a collection of column types.

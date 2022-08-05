@@ -1,15 +1,9 @@
 package generator
 
 import (
-	"bufio"
+	"database/sql"
 	_ "embed"
-	"encoding/json"
-	"errors"
 	"fmt"
-	"os"
-	"path/filepath"
-	"strings"
-
 	"github.com/zeromicro/go-zero/core/collection"
 	conf "github.com/zeromicro/go-zero/tools/goctl/config"
 	"github.com/zeromicro/go-zero/tools/goctl/rpc/parser"
@@ -17,6 +11,10 @@ import (
 	"github.com/zeromicro/go-zero/tools/goctl/util/format"
 	"github.com/zeromicro/go-zero/tools/goctl/util/pathx"
 	"github.com/zeromicro/go-zero/tools/goctl/util/stringx"
+	"log"
+	"path/filepath"
+	"strings"
+	"sync"
 )
 
 const logicFunctionTemplate = `{{if .hasComment}}{{.comment}}{{end}}
@@ -35,12 +33,13 @@ func (g *Generator) GenLogic(ctx DirContext, proto parser.Proto, cfg *conf.Confi
 	dir := ctx.GetLogic()
 	service := proto.Service.Service.Name
 
-	pK, pV, err := getPrimaryKey(strings.Replace(parser.CamelCase(proto.Service.RPC[0].RequestType), "Filter", "", 1))
-	if err != nil {
-		return err
-	}
-
 	for _, rpc := range proto.Service.RPC {
+
+		pK, pV, err := getPrimaryKey(strings.Replace(parser.CamelCase(rpc.RequestType), "Filter", "", 1))
+		if err != nil {
+			return err
+		}
+
 		logicFilename, err := format.FileNamingFormat(cfg.NamingFormat, rpc.Name+"_logic")
 		if err != nil {
 			return err
@@ -164,51 +163,79 @@ func FirstLower(s string) string {
 	return strings.ToLower(s[:1]) + s[1:]
 }
 
+var (
+	dbOnce sync.Once
+	VarStringURL string
+	DB *sql.DB
+)
+
+
 // 获取临时文件中的主键
 func getPrimaryKey(modelName string) (string, string, error) {
 	type PKey struct {
 		ColumnName string
-		Mark int
+		DataType string
 	}
 
 	var (
-		pKeyMap = make(map[string]PKey)
-		kValue string
-		path = "./tmp"
+		mark string
+		PK PKey
 	)
 
-	file, err := os.OpenFile(path, os.O_RDWR, 0666)
-	if err != nil {
-		return "", "", err
-	}
-	defer file.Close()
+	tableName := snakeString(modelName)
 
-	r := bufio.NewReader(file)
+	row:= GetDb().QueryRow("select c.COLUMN_NAME, c.DATA_TYPE from INFORMATION_SCHEMA.COLUMNS as c where table_name= ? AND COLUMN_KEY='PRI'", tableName)
 
-	line, _, err := r.ReadLine()
-	if err != nil {
+	if err := row.Scan(&PK.ColumnName, &PK.DataType); err != nil {
 		return "", "", err
 	}
 
-	if err = json.Unmarshal(line, &pKeyMap); err != nil {
-		return "", "", err
+	switch PK.DataType {
+	case "char", "varchar", "text", "longtext", "mediumtext", "tinytext":
+		mark = `""`
+	default:
+		mark = "0"
 	}
 
-	k, ok := pKeyMap[modelName]
-	if !ok {
-		return "", "", errors.New("map is null")
+	return camel(PK.ColumnName), mark,  nil
+}
+
+func camel(name string) string {
+	name = strings.Replace(name, "_", " ", -1)
+	name = strings.Title(name)
+	return strings.Replace(name, " ", "", -1)
+}
+
+
+func snakeString(s string) string {
+	data := make([]byte, 0, len(s)*2)
+	j := false
+	num := len(s)
+	for i := 0; i < num; i++ {
+		d := s[i]
+
+		if i > 0 && d >= 'A' && d <= 'Z' && j {
+			data = append(data, '_')
+		}
+		if d != '_' {
+			j = true
+		}
+		data = append(data, d)
 	}
 
-	if k.Mark == 0 {
-		kValue = "0"
-	}else {
-		kValue = `""`
-	}
+	return strings.ToLower(string(data[:]))
+}
 
-	// 删除文件
-	if err := os.Remove(path); err != nil {
-		return "", "", err
-	}
+func GetDb() *sql.DB{
+	var err error
 
-	return k.ColumnName, kValue, nil
+	dbOnce.Do(func() {
+		url := VarStringURL
+		DB, err = sql.Open("mysql", url)
+		if err != nil {
+			log.Fatal(err)
+		}
+	})
+
+	return DB
 }

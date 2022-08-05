@@ -3,14 +3,13 @@ package cli
 import (
 	"errors"
 	"fmt"
-	"path/filepath"
-	"strings"
-
 	"github.com/spf13/cobra"
 	"github.com/zeromicro/go-zero/tools/goctl/rpc/generator"
 	"github.com/zeromicro/go-zero/tools/goctl/util"
 	"github.com/zeromicro/go-zero/tools/goctl/util/console"
 	"github.com/zeromicro/go-zero/tools/goctl/util/pathx"
+	"path/filepath"
+	"strings"
 )
 
 var (
@@ -42,6 +41,7 @@ var (
 	VarBoolIdea bool
 	// VarBoolVerbose describes whether verbose.
 	VarBoolVerbose bool
+
 )
 
 // RPCNew is to generate rpc greet service, this greet service can speed
@@ -124,3 +124,5 @@ func RPCTemplate(_ *cobra.Command, _ []string) error {
 
 	return generator.ProtoTmpl(protoFile)
 }
+
+
