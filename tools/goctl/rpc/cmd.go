@@ -34,17 +34,6 @@ var (
 		Args:    cobra.ExactValidArgs(1),
 		RunE:    cli.ZRPC,
 	}
-
-	// mysqlCmd = &cobra.Command{
-	// 	Use:   "mysql",
-	// 	Short: "Generate mysql model",
-	// }
-	//
-	// datasourceCmd = &cobra.Command{
-	// 	Use:   "datasource",
-	// 	Short: "find table primary key from datasource",
-	// 	RunE:  cli.MySqlDataSource,
-	// }
 )
 
 func init() {
