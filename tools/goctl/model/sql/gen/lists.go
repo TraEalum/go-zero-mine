@@ -21,6 +21,7 @@ func genLists(table Table, withCache, postgreSql bool) (string, string, error) {
 	output, err := util.With("lists").
 		Parse(text).
 		Execute(map[string]interface{}{
+			"primaryKey":                table.PrimaryKey.Name.ToSnake(),
 			"withCache":                 withCache,
 			"upperStartCamelObject":     camel,
 			"lowerStartCamelObject":     stringx.From(camel).Untitle(),
