@@ -34,18 +34,22 @@ func (g *Generator) GenLogic(ctx DirContext, proto parser.Proto, cfg *conf.Confi
 	service := proto.Service.Service.Name
 
 	for _, rpc := range proto.Service.RPC {
-
-		pK, pV, err := getPrimaryKey(strings.Replace(parser.CamelCase(rpc.RequestType), "Filter", "", 1))
-		if err != nil {
-			return err
-		}
-
 		logicFilename, err := format.FileNamingFormat(cfg.NamingFormat, rpc.Name+"_logic")
 		if err != nil {
 			return err
 		}
 
 		filename := filepath.Join(dir.Filename, logicFilename+".go")
+
+		if pathx.FileExists(filename) {
+			continue
+		}
+
+		pK, pV, err := getPrimaryKey(strings.Replace(parser.CamelCase(rpc.RequestType), "Filter", "", 1))
+		if err != nil {
+			return err
+		}
+
 		functions, err := g.genLogicFunction(service, proto.PbPackage, rpc, pK, pV)
 		if err != nil {
 			return err
