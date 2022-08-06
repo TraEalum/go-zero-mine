@@ -3,6 +3,7 @@ package rpc
 import (
 	"github.com/spf13/cobra"
 	"github.com/zeromicro/go-zero/tools/goctl/rpc/cli"
+	"github.com/zeromicro/go-zero/tools/goctl/rpc/generator"
 )
 
 var (
@@ -83,6 +84,8 @@ func init() {
 	templateCmd.Flags().StringVar(&cli.VarStringHome, "home", "", "The goctl home path of the template, --home and --remote cannot be set at the same time, if they are, --remote has higher priority")
 	templateCmd.Flags().StringVar(&cli.VarStringRemote, "remote", "", "The remote git repo of the template, --home and --remote cannot be set at the same time, if they are, --remote has higher priority\n\tThe git repo directory must be consistent with the https://github.com/zeromicro/go-zero-template directory structure")
 	templateCmd.Flags().StringVar(&cli.VarStringBranch, "branch", "", "The branch of the remote repo, it does work with --remote")
+
+	protocCmd.Flags().StringVar(&generator.VarStringURL, "url", "", `The data source of database,like "root:password@tcp(127.0.0.1:3306)/database"`)
 
 	Cmd.AddCommand(newCmd)
 	Cmd.AddCommand(protocCmd)

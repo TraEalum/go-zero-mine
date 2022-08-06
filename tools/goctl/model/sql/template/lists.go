@@ -17,8 +17,8 @@ func (m *default{{.upperStartCamelObject}}Model) FindList(ctx context.Context, s
 
 	if len(totalCount) != 0 {
 		count := struct{Count int64 {{.countTag}}}{}
-		query, values, err =sqlBuilder.Delete(selectBuilder, "Columns").(squirrel.SelectBuilder).Columns("COUNT(id) as count").ToSql()
-		if err = m.conn.QueryRowsCtx(ctx, &count, query, values...);err != nil {
+		query, values, err =sqlBuilder.Delete(selectBuilder, "Columns").(squirrel.SelectBuilder).Columns("COUNT({{.primaryKey}}) as count").RemoveOffset().ToSql()
+		if err = m.conn.QueryRowCtx(ctx, &count, query, values...);err != nil {
 			return nil, err
 		}
 

@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"database/sql"
 	"fmt"
+	"github.com/zeromicro/go-zero/tools/goctl/util"
 	"io"
 	"io/ioutil"
 	"log"
@@ -34,7 +35,7 @@ const (
 // Do not rely on the structure of the Generated schema to provide any context about
 // the protobuf types. The schema reflects the layout of a protobuf file and should be used
 // to pipe the output of the `Schema.String()` to a file.
-func GenerateSchema(db *sql.DB, table string, ignoreTables []string, serviceName, goPkg, pkg string, dir string) (*Schema, error) {
+func GenerateSchema(db *sql.DB, table string, ignoreTables []string, serviceName, goPkg, pkg string, dir string, subTableNumber int, subTableKey string) (*Schema, error) {
 	s := &Schema{
 		Dir: dir,
 	}
@@ -55,7 +56,7 @@ func GenerateSchema(db *sql.DB, table string, ignoreTables []string, serviceName
 		s.GoPackage = "./" + s.Package
 	}
 
-	cols, err := dbColumns(db, dbs, table)
+	cols, err := dbColumns(db, dbs, table, subTableNumber, subTableKey)
 	if nil != err {
 		return nil, err
 	}
@@ -84,7 +85,6 @@ func typesFromColumns(s *Schema, cols []Column, ignoreTables []string) error {
 		if _, ok := ignoreMap[c.TableName]; ok {
 			continue
 		}
-
 		messageName := snaker.SnakeToCamel(c.TableName)
 		messageName = inflect.Singularize(messageName)
 
@@ -115,7 +115,7 @@ func dbSchema(db *sql.DB) (string, error) {
 	return schema, err
 }
 
-func dbColumns(db *sql.DB, schema, table string) ([]Column, error) {
+func dbColumns(db *sql.DB, schema, table string, subTableNumber int, subTableKey string) ([]Column, error) {
 
 	tableArr := strings.Split(table, ",")
 
@@ -144,6 +144,13 @@ func dbColumns(db *sql.DB, schema, table string) ([]Column, error) {
 			&cs.CharacterMaximumLength, &cs.NumericPrecision, &cs.NumericScale, &cs.ColumnType, &cs.ColumnComment, &cs.TableComment)
 		if err != nil {
 			log.Fatal(err)
+		}
+
+		if subTableNumber > 1 && subTableKey != "" {
+			//从0下标开始，需要减一
+			splitNum := util.GetSplitNum(subTableNumber - 1)
+			//把最后得特殊符号"_"去掉，需要减一
+			cs.TableName = cs.TableName[0 : len(cs.TableName)-splitNum-1]
 		}
 
 		if cs.TableComment == "" {

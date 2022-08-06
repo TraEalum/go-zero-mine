@@ -18,6 +18,10 @@ var (
 	stringGoPackage    string
 	stringIgnoreTables string
 
+	//sub table
+	stringSubTableKey string
+	intSubTableNumber int
+
 	// Cmd describes a model command.
 	Cmd = &cobra.Command{
 		Use:   "proto",
@@ -39,6 +43,8 @@ func init() {
 	Cmd.Flags().StringVar(&stringPackage, "package", "", "the protocol buffer package. defaults to the database schema.")
 	Cmd.Flags().StringVar(&stringGoPackage, "goPackage", "", "the protocol buffer go_package. defaults to the database schema.")
 	Cmd.Flags().StringVar(&stringIgnoreTables, "ignore_tables", "", "a comma spaced list of tables to ignore")
+	Cmd.Flags().IntVarP(&intSubTableNumber, "subTableNumber", "s", 0, "Sub table number")
+	Cmd.Flags().StringVarP(&stringSubTableKey, "subTableKey", "k", "", "Sub table key")
 
 	//Cmd.AddCommand(mysqlCmd)
 	//Cmd.AddCommand(mongoCmd)
