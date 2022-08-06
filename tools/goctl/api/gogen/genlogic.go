@@ -3,6 +3,7 @@ package gogen
 import (
 	_ "embed"
 	"fmt"
+	"github.com/zeromicro/go-zero/tools/goctl/apigen"
 	"path"
 	"strconv"
 	"strings"
@@ -70,7 +71,7 @@ func genLogicByRoute(dir, rootPkg string, cfg *config.Config, group spec.Group, 
 			"responseType": responseString,
 			"returnString": returnString,
 			"request":      requestString,
-			"context":      genLogicContext(logic),
+			"context":      genLogicContext(logic, api.Service.Name),
 			"rpcImport":    path,
 		},
 	})
@@ -138,38 +139,41 @@ func shallImportTypesPackage(route spec.Route) bool {
 	return true
 }
 
-func genLogicContext(logic string) string {
+func genLogicContext(logic string, serviceName string) string {
 	var builder strings.Builder
 	title := strings.Title(strings.TrimSuffix(logic, "Logic"))
 	if strings.Contains(title, "Create") {
 		tableName := title[6:]
 		paraName := strings.ToLower(tableName)
-		builder.WriteString(fmt.Sprintf("\tvar %s *proto.%s\n", paraName, tableName))
-		builder.WriteString(fmt.Sprintf("\treq.Unmarshal(%s)\n", paraName))
-		builder.WriteString(fmt.Sprintf("\trpcResp,err := l.svcCtx.%s.%s(l.ctx, %s)\n", tableName, title, paraName))
+		builder.WriteString(fmt.Sprintf("\tresp = &types.%sResp{}\n\n", title))
+		builder.WriteString(fmt.Sprintf("\tvar %s proto.%s\n", paraName, tableName))
+		builder.WriteString(fmt.Sprintf("\treq.Unmarshal(&%s)\n\n", paraName))
+		builder.WriteString(fmt.Sprintf("\trpcResp,err := l.svcCtx.%s.%s(l.ctx, &%s)\n", apigen.FirstUpper(serviceName), title, paraName))
 		builder.WriteString("\tif err != nil {\n")
 		builder.WriteString("\t\treturn nil,err\n")
-		builder.WriteString("\t}\n")
+		builder.WriteString("\t}\n\n")
 		builder.WriteString("\tresp.Marshal(rpcResp)\n")
 	} else if strings.Contains(title, "Query") {
 		tableName := title[5:]
 		paraName := strings.ToLower(tableName)
-		builder.WriteString(fmt.Sprintf("\tvar %s *proto.%sFilter\n", paraName, tableName))
-		builder.WriteString(fmt.Sprintf("\treq.Unmarshal(%s)\n", paraName))
-		builder.WriteString(fmt.Sprintf("\trpcResp, err := l.svcCtx.%s.Query%sDetail(l.ctx, %s)\n", tableName, tableName, paraName))
+		builder.WriteString(fmt.Sprintf("\tresp = &types.%s{}\n\n", tableName))
+		builder.WriteString(fmt.Sprintf("\tvar %s proto.%sFilter\n", paraName, tableName))
+		builder.WriteString(fmt.Sprintf("\treq.Unmarshal(&%s)\n\n", paraName))
+		builder.WriteString(fmt.Sprintf("\trpcResp, err := l.svcCtx.%s.Query%sDetail(l.ctx, &%s)\n", apigen.FirstUpper(serviceName), tableName, paraName))
 		builder.WriteString("\tif err != nil {\n")
 		builder.WriteString("\t\treturn nil,err\n")
-		builder.WriteString("\t}\n")
+		builder.WriteString("\t}\n\n")
 		builder.WriteString("\tresp.Marshal(rpcResp)\n")
 	} else if strings.Contains(title, "Update") {
 		tableName := title[6:]
 		paraName := strings.ToLower(tableName)
-		builder.WriteString(fmt.Sprintf("\tvar %s *proto.%s\n", paraName, tableName))
-		builder.WriteString(fmt.Sprintf("\treq.Unmarshal(%s)\n", paraName))
-		builder.WriteString(fmt.Sprintf("\trpcResp, err := l.svcCtx.%s.Update%s(l.ctx, %s)\n", tableName, tableName, paraName))
+		builder.WriteString(fmt.Sprintf("\tresp = &types.%sResp{}\n\n", title))
+		builder.WriteString(fmt.Sprintf("\tvar %s proto.%s\n", paraName, tableName))
+		builder.WriteString(fmt.Sprintf("\treq.Unmarshal(&%s)\n\n", paraName))
+		builder.WriteString(fmt.Sprintf("\trpcResp, err := l.svcCtx.%s.Update%s(l.ctx, &%s)\n", apigen.FirstUpper(serviceName), tableName, paraName))
 		builder.WriteString("\tif err != nil {\n")
 		builder.WriteString("\t\treturn nil,err\n")
-		builder.WriteString("\t}\n")
+		builder.WriteString("\t}\n\n")
 		builder.WriteString("\tresp.Marshal(rpcResp)\n")
 	} else {
 		return ""

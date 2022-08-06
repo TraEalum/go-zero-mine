@@ -53,7 +53,6 @@ func genTypes(dir string, cfg *config.Config, api *spec.ApiSpec, marshalFlag str
 	filename := path.Join(dir, typesDir, typeFilename)
 	os.Remove(filename)
 
-	// if strings.ToLower(marshalFlag) == "yes" {
 	go func() {
 		err = GenMarshal(api, dir)
 		if err != nil {
@@ -62,8 +61,6 @@ func genTypes(dir string, cfg *config.Config, api *spec.ApiSpec, marshalFlag str
 			return
 		}
 	}()
-
-	// }
 
 	if err != nil {
 		return err

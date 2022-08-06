@@ -12,6 +12,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/zeromicro/go-zero/core/stringx"
 	"github.com/zeromicro/go-zero/tools/goctl/api/spec"
 	util2 "github.com/zeromicro/go-zero/tools/goctl/api/util"
 	"github.com/zeromicro/go-zero/tools/goctl/util"
@@ -23,7 +24,7 @@ var marshalTemplate string
 func GenMarshal(api *spec.ApiSpec, category string) error {
 	types := api.Types
 	need2gen := []spec.Type{}
-
+	serviceName := api.Service.Name
 	//获取table
 	tables := getTables(api)
 	if len(tables) == 0 {
@@ -33,7 +34,7 @@ func GenMarshal(api *spec.ApiSpec, category string) error {
 	//Filter out unnecessary generation types
 	for _, tp := range types {
 		name := tp.Name()
-		if isContain(tables, name) {
+		if stringx.Contains(tables, name) {
 			need2gen = append(need2gen, tp)
 		}
 	}
@@ -65,6 +66,7 @@ func GenMarshal(api *spec.ApiSpec, category string) error {
 			"upperStartCamelObject": tableName,
 			"unmarshallFields":      unMarshal,
 			"marshalFields":         marshal,
+			"importProto":           fmt.Sprintf("import \"go-service/app/%s/rpc/proto\"", serviceName),
 		}
 
 		t := template.Must(template.New("marshalTemplate").Parse(marshalTemplate))
@@ -204,8 +206,10 @@ func readFileTable(path string) ([]string, error) {
 		}
 
 		line = strings.ReplaceAll(line, "\n", "")
-		res = append(res, line[3:])
+		if len(line) > 3 {
+			res = append(res, line[3:])
 
+		}
 		if err != nil {
 			if err == io.EOF {
 				break
