@@ -35,7 +35,7 @@ func (r *Update{{.upperStartCamelObject}}Req) Unmarshal(p *proto.{{.upperStartCa
 func (r *Query{{.upperStartCamelObject}}Resp) Marshal(p *proto.{{.upperStartCamelObject}}List) error {
     r.CurrPage = p.CurPage
     r.TotalPage = p.TotalPage
-    r.TotalCount = p.PageSize
+    r.TotalCount = p.TotalCount
 	Marshal{{.upperStartCamelObject}}Lst(&r.{{.upperStartCamelObject}}List,p.{{.upperStartCamelObject}})
 
 	return nil
