@@ -159,7 +159,7 @@ func genLogicContext(logic string, serviceName string) string {
 		builder.WriteString(fmt.Sprintf("\tresp = &types.%s{}\n\n", tableName))
 		builder.WriteString(fmt.Sprintf("\tvar %s proto.%sFilter\n", paraName, tableName))
 		builder.WriteString(fmt.Sprintf("\treq.Unmarshal(&%s)\n\n", paraName))
-		builder.WriteString(fmt.Sprintf("\trpcResp, err := l.svcCtx.%s.Query%sDetail(l.ctx, &%s)\n", apigen.FirstUpper(serviceName), tableName, paraName))
+		builder.WriteString(fmt.Sprintf("\trpcResp, err := l.svcCtx.%s.Query%sList(l.ctx, &%s)\n", apigen.FirstUpper(serviceName), tableName, paraName))
 		builder.WriteString("\tif err != nil {\n")
 		builder.WriteString("\t\treturn nil,err\n")
 		builder.WriteString("\t}\n\n")
