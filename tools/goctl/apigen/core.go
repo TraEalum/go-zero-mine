@@ -445,7 +445,7 @@ func (s *Schema) CreateString() string {
 
 		funcTpl += "\t@doc  \"查找" + m.Name + "\"\n"
 		funcTpl += "\t@handler  query" + m.Name + "\n"
-		funcTpl += "\tget " + "/query" + firstUpperName + " (Query" + firstUpperName + "Req) returns (" + m.Name + "); \n\n"
+		funcTpl += "\tget " + "/query" + firstUpperName + " (Query" + firstUpperName + "Req) returns (Query" + m.Name + "Resp); \n\n"
 
 	}
 	funcTpl = funcTpl + "\t // Service Record End\n"
