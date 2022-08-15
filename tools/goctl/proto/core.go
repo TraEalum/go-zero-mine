@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"database/sql"
 	"fmt"
-	"github.com/zeromicro/go-zero/tools/goctl/util"
 	"io"
 	"io/ioutil"
 	"log"
@@ -13,6 +12,8 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+
+	"github.com/zeromicro/go-zero/tools/goctl/util"
 
 	"github.com/chuckpreslar/inflect"
 	"github.com/serenize/snaker"
@@ -61,6 +62,8 @@ func GenerateSchema(db *sql.DB, table string, ignoreTables []string, serviceName
 		return nil, err
 	}
 
+	// fmt.Println("log print:" + table)
+
 	err = typesFromColumns(s, cols, ignoreTables)
 	if nil != err {
 		return nil, err
@@ -86,7 +89,9 @@ func typesFromColumns(s *Schema, cols []Column, ignoreTables []string) error {
 			continue
 		}
 		messageName := snaker.SnakeToCamel(c.TableName)
-		messageName = inflect.Singularize(messageName)
+		// messageName = inflect.Singularize(messageName)
+
+		// fmt.Printf("print table origin[%s] snaker[%s]", messageName, c.TableName)
 
 		msg, ok := messageMap[messageName]
 		if !ok {
