@@ -3,6 +3,7 @@ package generator
 import (
 	"database/sql"
 	_ "embed"
+	"errors"
 	"fmt"
 	"github.com/zeromicro/go-zero/core/collection"
 	conf "github.com/zeromicro/go-zero/tools/goctl/config"
@@ -11,7 +12,6 @@ import (
 	"github.com/zeromicro/go-zero/tools/goctl/util/format"
 	"github.com/zeromicro/go-zero/tools/goctl/util/pathx"
 	"github.com/zeromicro/go-zero/tools/goctl/util/stringx"
-	"log"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -47,7 +47,11 @@ func (g *Generator) GenLogic(ctx DirContext, proto parser.Proto, cfg *conf.Confi
 
 		pK, pV, err := getPrimaryKey(strings.Replace(parser.CamelCase(rpc.RequestType), "Filter", "", 1))
 		if err != nil {
-			return err
+			pK = "id"
+			pV = "0"
+
+			fmt.Println("getPrimaryKey err !")
+
 		}
 
 		functions, err := g.genLogicFunction(service, proto.PbPackage, rpc, pK, pV)
@@ -175,22 +179,28 @@ var (
 
 
 // 获取临时文件中的主键
-func getPrimaryKey(modelName string) (string, string, error) {
+func getPrimaryKey(modelName string) (camels string, mark string, err error) {
+	defer func() {
+		if msg := recover(); err != nil {
+			err = errors.New(fmt.Sprintf("getPrimaryKey recover%v", msg))
+		}
+	}()
+
+
 	type PKey struct {
 		ColumnName string
 		DataType string
 	}
 
 	var (
-		mark string
 		PK PKey
 	)
 
 	tableName := snakeString(modelName)
 
-	row:= GetDb().QueryRow("select c.COLUMN_NAME, c.DATA_TYPE from INFORMATION_SCHEMA.COLUMNS as c where table_name= ? AND COLUMN_KEY='PRI'", tableName)
+	row := GetDb().QueryRow("select c.COLUMN_NAME, c.DATA_TYPE from INFORMATION_SCHEMA.COLUMNS as c where table_name= ? AND COLUMN_KEY='PRI'", tableName)
 
-	if err := row.Scan(&PK.ColumnName, &PK.DataType); err != nil {
+	if err = row.Scan(&PK.ColumnName, &PK.DataType); err != nil {
 		return "", "", err
 	}
 
@@ -237,7 +247,8 @@ func GetDb() *sql.DB{
 		url := VarStringURL
 		DB, err = sql.Open("mysql", url)
 		if err != nil {
-			log.Fatal(err)
+			// log.Fatal(err)
+			fmt.Println("getDb err !")
 		}
 	})
 
