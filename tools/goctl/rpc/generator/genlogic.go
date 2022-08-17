@@ -47,11 +47,8 @@ func (g *Generator) GenLogic(ctx DirContext, proto parser.Proto, cfg *conf.Confi
 
 		pK, pV, err := getPrimaryKey(strings.Replace(parser.CamelCase(rpc.RequestType), "Filter", "", 1))
 		if err != nil {
-			pK = "id"
+			pK = "Id"
 			pV = "0"
-
-			fmt.Println("getPrimaryKey err !")
-
 		}
 
 		functions, err := g.genLogicFunction(service, proto.PbPackage, rpc, pK, pV)
