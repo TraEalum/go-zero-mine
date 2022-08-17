@@ -26,6 +26,18 @@ const (
 )
 
 func GenerateSchema(db *sql.DB, table string, ignoreTables []string, serviceName string, dir string) (*Schema, error) {
+	dir = "api/desc/"
+	var err error
+
+	_, err = os.Stat(dir)
+	if os.IsNotExist(err) {
+		err = os.MkdirAll(dir, os.ModePerm)
+		if err != nil {
+			fmt.Println(fmt.Sprintf("创建文件错误:%v", err))
+			panic(err)
+		}
+	}
+
 	s := &Schema{
 		Dir: dir,
 	}
@@ -41,7 +53,7 @@ func GenerateSchema(db *sql.DB, table string, ignoreTables []string, serviceName
 	if nil != err {
 		return nil, err
 	}
-	//if the clos lenth equal 0
+
 	if len(cols) == 0 {
 		return nil, errors.New("no columns to genertor!!!")
 	}
@@ -74,7 +86,7 @@ func typesFromColumns(s *Schema, cols []Column, ignoreTables []string) error {
 		}
 
 		messageName := snaker.SnakeToCamel(c.TableName)
-		messageName = inflect.Singularize(messageName)
+		// messageName = inflect.Singularize(messageName)
 
 		msg, ok := messageMap[messageName]
 		if !ok {
@@ -209,23 +221,17 @@ func (s *Schema) AppendImport(imports string) {
 }
 
 func (s *Schema) String() string {
-	b := strings.HasSuffix(s.Dir, ".api")
-	if !b {
-		fmt.Println("Only API terminated files can be generated")
-		panic("Only API terminated files can be generated")
-	}
+	var err error
+	paramFile := fmt.Sprintf("%s%sParam.api", s.Dir, s.ServiceName)
 
-	//这里生成xxxParam.api文件 start
-	arr := strings.Split(s.Dir, ".")
-	paramFile := arr[0] + "Param." + arr[1]
-	_, err := os.Stat(paramFile)
+	_, err = os.Stat(paramFile)
 	if os.IsNotExist(err) {
 		s.CreateParamString(paramFile)
 	} else {
 		s.UpdateParamString(paramFile)
 	}
 
-	_, err = os.Stat(s.Dir)
+	_, err = os.Stat(fmt.Sprintf("%s%s.api", s.Dir, s.ServiceName))
 	//如果返回的错误类型使用os.isNotExist()判断为true，说明文件或者文件夹不存在
 	if os.IsNotExist(err) {
 		return s.CreateString()
@@ -275,7 +281,7 @@ func (s *Schema) CreateParamString(fileName string) string {
 	buf.WriteString("// Type Record End\n")
 	err := ioutil.WriteFile(fileName, []byte(buf.String()), 0666)
 	if err != nil {
-		fmt.Println("生成paramFile文件失败")
+		fmt.Println(fmt.Sprintf("生成paramFile文件失败:%v", err.Error()))
 		return ""
 	}
 
@@ -395,12 +401,14 @@ func (s *Schema) UpdateParamString(fileName string) string {
 
 // String returns a string representation of a Schema.
 func (s *Schema) CreateString() string {
+	fileName := fmt.Sprintf("%s%s.api", s.Dir, s.ServiceName)
+
 	buf := new(bytes.Buffer)
 	buf.WriteString(fmt.Sprintf("syntax = \"%s\"\n", s.Syntax))
 	buf.WriteString("\n")
 	buf.WriteString("import (\n")
-	arr := strings.Split(s.Dir, ".")
-	buf.WriteString(fmt.Sprintf("\t\"%s\" \n", arr[0]+"Param."+arr[1]))
+
+	buf.WriteString(fmt.Sprintf("\t\"%s\" \n", s.ServiceName+"Param.api"))
 	buf.WriteString(")")
 	buf.WriteString("\n")
 	buf.WriteString("// Already Exist Table:\n")
@@ -429,21 +437,21 @@ func (s *Schema) CreateString() string {
 		firstUpperName := FirstUpper(m.Name)
 		funcTpl += "\t@doc  \"创建" + m.Name + "\"\n"
 		funcTpl += "\t@handler  create" + m.Name + "\n"
-		funcTpl += "\tpost /" + stringx.From(m.Name).ToSnake() + "/create" + firstUpperName + " (" + m.Name + ") returns (Create" + firstUpperName + "Resp); \n\n"
+		funcTpl += "\tpost " + "/create" + firstUpperName + " (" + m.Name + ") returns (Create" + firstUpperName + "Resp); \n\n"
 
 		funcTpl += "\t@doc  \"更新" + m.Name + "\"\n"
 		funcTpl += "\t@handler  update" + m.Name + "\n"
-		funcTpl += "\tpost /" + stringx.From(m.Name).ToSnake() + "/update" + firstUpperName + " (Update" + m.Name + "Req) returns (Update" + firstUpperName + "Resp); \n\n"
+		funcTpl += "\tpost " + "/update" + firstUpperName + " (Update" + m.Name + "Req) returns (Update" + firstUpperName + "Resp); \n\n"
 
 		funcTpl += "\t@doc  \"查找" + m.Name + "\"\n"
 		funcTpl += "\t@handler  query" + m.Name + "\n"
-		funcTpl += "\tget /" + stringx.From(m.Name).ToSnake() + "/query" + firstUpperName + " (Query" + firstUpperName + "Req) returns (" + m.Name + "); \n\n"
+		funcTpl += "\tget " + "/query" + firstUpperName + " (Query" + firstUpperName + "Req) returns (Query" + m.Name + "Resp); \n\n"
 
 	}
 	funcTpl = funcTpl + "\t // Service Record End\n"
 	funcTpl = funcTpl + "}"
 	buf.WriteString(funcTpl)
-	err := ioutil.WriteFile(s.Dir, []byte(buf.String()), 0666)
+	err := ioutil.WriteFile(fileName, []byte(buf.String()), 0666)
 	if err != nil {
 		return ""
 	}
@@ -453,7 +461,8 @@ func (s *Schema) CreateString() string {
 // String returns a string representation of a Schema.
 func (s *Schema) UpdateString() string {
 	bufNew := new(bytes.Buffer)
-	file, err := os.OpenFile(s.Dir, os.O_RDWR, 0666)
+	fileName := fmt.Sprintf("%s%s.api", s.Dir, s.ServiceName)
+	file, err := os.OpenFile(fileName, os.O_RDWR, 0666)
 	if err != nil {
 		return fmt.Sprintf("Open file error!%v", err)
 	}
@@ -575,22 +584,26 @@ func (s *Schema) UpdateString() string {
 			firstUpperName := FirstUpper(m.Name)
 			funcTpl += "\t@doc  \"创建" + m.Name + "\"\n"
 			funcTpl += "\t@handler  create" + m.Name + "\n"
-			funcTpl += "\tpost /" + stringx.From(m.Name).ToSnake() + "/create" + firstUpperName + " (" + m.Name + ") returns (Create" + firstUpperName + "Resp); \n\n"
+			funcTpl += "\tpost " + "/create" + firstUpperName + " (" + m.Name + ") returns (Create" + firstUpperName + "Resp); \n\n"
 
 			funcTpl += "\t@doc  \"更新" + m.Name + "\"\n"
 			funcTpl += "\t@handler  update" + m.Name + "\n"
-			funcTpl += "\tpost /" + stringx.From(m.Name).ToSnake() + "/update" + firstUpperName + " (Update" + m.Name + "Req) returns (Update" + firstUpperName + "Resp); \n\n"
+			funcTpl += "\tpost " + "/update" + firstUpperName + " (Update" + m.Name + "Req) returns (Update" + firstUpperName + "Resp); \n\n"
 
 			funcTpl += "\t@doc  \"查找" + m.Name + "\"\n"
 			funcTpl += "\t@handler  query" + m.Name + "\n"
-			funcTpl += "\tget /" + stringx.From(m.Name).ToSnake() + "/query" + firstUpperName + " (Query" + firstUpperName + "Req) returns (" + m.Name + "); \n\n"
+			funcTpl += "\tget " + "/query" + firstUpperName + " (Query" + firstUpperName + "Req) returns (" + m.Name + "); \n\n"
 		}
 	}
 	funcTpl = funcTpl + "\t // Service Record End\n"
 	funcTpl = funcTpl + "}"
 
 	bufNew.WriteString(funcTpl)
-	_ = ioutil.WriteFile(s.Dir, []byte(bufNew.String()), 0666) //写入文件(字节数组)
+
+	err = ioutil.WriteFile(fileName, []byte(bufNew.String()), 0666) //写入文件(字节数组)
+	if err != nil {
+		panic(err)
+	}
 	return "Done"
 }
 
@@ -744,7 +757,7 @@ func (m Message) GenApiQueryReq(buf *bytes.Buffer) {
 func (m Message) GenApiQueryResp(buf *bytes.Buffer) {
 	mOrginName := FirstUpper(m.Name)
 	buf.WriteString(fmt.Sprintf("%sQuery%sResp {\n", indent, mOrginName))
-	buf.WriteString(fmt.Sprintf("%s%s%s   []%s  `json:\"%s\"`   \n", indent, indent, mOrginName+"List", mOrginName, fmt.Sprintf("%s_list", m.Name)))
+	buf.WriteString(fmt.Sprintf("%s%s%s   []%s  `json:\"%s\"`   \n", indent, indent, m.Name+"List", mOrginName, fmt.Sprintf("%s_list", FirstToLower(m.Name))))
 	buf.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`   \n", indent, indent, "CurrPage", "int64", "curr_page"))
 	buf.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`   \n", indent, indent, "TotalPage", "int64", "total_page"))
 	buf.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`   \n", indent, indent, "TotalCount", "int64", "total_count"))
@@ -873,4 +886,11 @@ func FirstUpper(s string) string {
 		return ""
 	}
 	return strings.ToUpper(s[:1]) + s[1:]
+}
+
+func FirstToLower(s string) string {
+	if s == "" {
+		return ""
+	}
+	return strings.ToLower(s[:1]) + s[1:]
 }

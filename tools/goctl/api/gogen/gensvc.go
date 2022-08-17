@@ -3,11 +3,11 @@ package gogen
 import (
 	_ "embed"
 	"fmt"
+	"github.com/zeromicro/go-zero/tools/goctl/apigen"
 	"strings"
 
 	"github.com/zeromicro/go-zero/tools/goctl/api/spec"
 	"github.com/zeromicro/go-zero/tools/goctl/config"
-	"github.com/zeromicro/go-zero/tools/goctl/util"
 	"github.com/zeromicro/go-zero/tools/goctl/util/format"
 	"github.com/zeromicro/go-zero/tools/goctl/util/pathx"
 	"github.com/zeromicro/go-zero/tools/goctl/vars"
@@ -41,8 +41,8 @@ func genServiceContext(dir, rootPkg string, cfg *config.Config, api *spec.ApiSpe
 	rpcInit := ""
 	if len(need2gen) != 0 {
 		rpcImport = genRpcImport(api, need2gen)
-		rpc = genRpc(need2gen)
-		rpcInit = genRpcInit(need2gen)
+		rpc = genRpc(api, need2gen)
+		rpcInit = genRpcInit(api, need2gen)
 	}
 	for _, item := range middlewares {
 		middlewareStr += fmt.Sprintf("%s rest.Middleware\n", item)
@@ -79,33 +79,26 @@ func genServiceContext(dir, rootPkg string, cfg *config.Config, api *spec.ApiSpe
 
 func genRpcImport(api *spec.ApiSpec, types []spec.Type) string {
 	var build strings.Builder
+	serviceName := strings.ToLower(api.Service.Name)
 	build.WriteString("\"github.com/zeromicro/go-zero/zrpc\"\n")
-	for _, tp := range types {
-		tableName := util.Title(tp.Name())
-		lowerTableName := strings.ToLower(tableName)
-		str := fmt.Sprintf("\t\"go-service/app/%s/rpc/%s\"\n", api.Service.Name, lowerTableName)
-		build.WriteString(str)
-	}
+	build.WriteString(fmt.Sprintf("\"go-service/app/%s/rpc/%s\"", serviceName, serviceName))
+
 	return build.String()
 }
 
-func genRpc(types []spec.Type) string {
+func genRpc(api *spec.ApiSpec, types []spec.Type) string {
 	var build strings.Builder
-	for _, tp := range types {
-		tableName := util.Title(tp.Name())
-		str := fmt.Sprintf("%s %s.%s\n", tableName, strings.ToLower(tableName), tableName)
-		build.WriteString(str)
-	}
+	serviceName := api.Service.Name
+	build.WriteString(fmt.Sprintf("%s  %s.%s", apigen.FirstUpper(serviceName), serviceName, apigen.FirstUpper(serviceName)))
 	build.WriteString("")
 	return build.String()
 }
 
-func genRpcInit(types []spec.Type) string {
+func genRpcInit(api *spec.ApiSpec, types []spec.Type) string {
 	var build strings.Builder
-	for _, tp := range types {
-		tableName := util.Title(tp.Name())
-		str := fmt.Sprintf("%s: %s.New%s(zrpc.MustNewClient(c.%s)),\n", tableName, strings.ToLower(tableName), tableName, tableName)
-		build.WriteString(str)
-	}
+	serviceName := api.Service.Name
+	firstUpper := apigen.FirstUpper(serviceName)
+	build.WriteString(fmt.Sprintf("%s: %s.New%s(zrpc.MustNewClient(c.%s)),\n", firstUpper, serviceName, firstUpper, firstUpper))
+
 	return build.String()
 }
