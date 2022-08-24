@@ -55,7 +55,7 @@ func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 	}
 	{{.modelNameFirstLower}} := model.{{.modelName}}{}
 	{{.modelNameFirstLower}}.Marshal(in)
-	builder := util.NewUpdateBuiler(util.WithTable(where.TableName())).Where(&where)
+	builder := util.NewUpdateBuiler(util.WithTable(where.TableName())).Where(&where).Updates(&{{.modelNameFirstLower}})
 
 	// update
 	if err = l.svcCtx.{{.modelName}}Model.Update(l.ctx, nil, builder.UpdateBuilder); err != nil {
