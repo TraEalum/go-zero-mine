@@ -6,7 +6,8 @@ import (
 )
 
 // BuildVersion is the version of goctl.
-const BuildVersion = "1.3.6-beta"
+//const BuildVersion = "1.3.6-beta"
+const BuildVersion = "1.3.6-beta-2022-9-30"
 
 var tag = map[string]int{"pre-alpha": 0, "alpha": 1, "pre-bata": 2, "beta": 3, "released": 4, "": 5}
 
