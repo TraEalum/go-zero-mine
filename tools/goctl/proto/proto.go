@@ -12,11 +12,25 @@ import (
 	"github.com/spf13/cobra"
 )
 
+func reRootDir(dir string) string {
+	// re_root_dir= ./../../../go_service/
+	re_root_dir := os.Getenv("re_root_dir")
+	if re_root_dir == "" {
+		return dir
+	}
+	dir = re_root_dir + dir
+	curr_dir, _ := os.Getwd()
+	dir, _ = filepath.Abs(curr_dir + dir)
+	fmt.Println("re dir:", dir)
+	return dir
+}
+
 // Action provides the entry for goctl mongo code generation.
 func proto(_ *cobra.Command, _ []string) error {
 	port := intPort
 	password := stringPassword
 	dir := stringDir
+	dir = reRootDir(dir)
 	host := stringHost
 	user := stringUser
 	schema := stringSchema

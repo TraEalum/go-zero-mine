@@ -230,11 +230,14 @@ func (s *Schema) AppendImport(imports string) {
 }
 
 func (s *Schema) String() string {
+	fmt.Println("call .. func (s *Schema) String()", s.Dir)
 	_, err := os.Stat(s.Dir)
 	//如果返回的错误类型使用os.isNotExist()判断为true，说明文件或者文件夹不存在
 	if os.IsNotExist(err) {
+		fmt.Println("call ..s.CreateString()")
 		return s.CreateString()
 	}
+	fmt.Println("call ..s.UpdateString()")
 	return s.UpdateString()
 }
 
@@ -290,6 +293,7 @@ func (s *Schema) CreateString() string {
 	buf.WriteString(funcTpl)
 	err := ioutil.WriteFile(s.Dir, []byte(buf.String()), 0666)
 	if err != nil {
+		fmt.Println(err)
 		return ""
 	}
 	return "DONE"
@@ -335,6 +339,9 @@ func (s *Schema) UpdateString() string {
 		if strings.Contains(line, "Exist Table End") {
 			endLine = line
 			break
+		}
+		if len(line) < 3 {
+			// todo
 		}
 		existTableName = append(existTableName, strings.TrimRight(line[3:], "\n"))
 		bufNew.WriteString(line)
