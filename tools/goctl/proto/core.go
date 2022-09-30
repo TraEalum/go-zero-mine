@@ -341,7 +341,8 @@ func (s *Schema) UpdateString() string {
 			break
 		}
 		if len(line) < 3 {
-			// todo
+			fmt.Println("could be error")
+			continue
 		}
 		existTableName = append(existTableName, strings.TrimRight(line[3:], "\n"))
 		bufNew.WriteString(line)
