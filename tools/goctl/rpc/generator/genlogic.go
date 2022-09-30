@@ -135,8 +135,8 @@ func (g *Generator) genLogicFunction(serviceName, goPackage string, rpc *parser.
 	comment := parser.GetComment(rpc.Doc())
 	streamServer := fmt.Sprintf("%s.%s_%s%s", goPackage, parser.CamelCase(serviceName), parser.CamelCase(rpc.Name), "Server")
 	buffer, err := util.With("fun").Parse(text).Execute(map[string]interface{}{
-		"pK":pK,
-		"pV":pV,
+		"pK":                  pK,
+		"pV":                  pV,
 		"logicName":           logicName,
 		"method":              parser.CamelCase(rpc.Name),
 		"hasReq":              !rpc.StreamsRequest,
@@ -169,11 +169,10 @@ func FirstLower(s string) string {
 }
 
 var (
-	dbOnce sync.Once
+	dbOnce       sync.Once
 	VarStringURL string
-	DB *sql.DB
+	DB           *sql.DB
 )
-
 
 // 获取临时文件中的主键
 func getPrimaryKey(modelName string) (camels string, mark string, err error) {
@@ -183,10 +182,9 @@ func getPrimaryKey(modelName string) (camels string, mark string, err error) {
 		}
 	}()
 
-
 	type PKey struct {
 		ColumnName string
-		DataType string
+		DataType   string
 	}
 
 	var (
@@ -208,7 +206,7 @@ func getPrimaryKey(modelName string) (camels string, mark string, err error) {
 		mark = "0"
 	}
 
-	return camel(PK.ColumnName), mark,  nil
+	return camel(PK.ColumnName), mark, nil
 }
 
 func camel(name string) string {
@@ -216,7 +214,6 @@ func camel(name string) string {
 	name = strings.Title(name)
 	return strings.Replace(name, " ", "", -1)
 }
-
 
 func snakeString(s string) string {
 	data := make([]byte, 0, len(s)*2)
@@ -237,7 +234,7 @@ func snakeString(s string) string {
 	return strings.ToLower(string(data[:]))
 }
 
-func GetDb() *sql.DB{
+func GetDb() *sql.DB {
 	var err error
 
 	dbOnce.Do(func() {
