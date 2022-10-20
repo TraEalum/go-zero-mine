@@ -579,7 +579,14 @@ func (m Message) GenDefaultMessage(buf *bytes.Buffer) {
 		curFields = append(curFields, field)
 	}
 	m.Fields = curFields
-	buf.WriteString(fmt.Sprintf("%s\n", m))
+
+	tmpStr := fmt.Sprintf("%s\n", m)
+
+	//增加数据库字段开始结束标签, 自定义标签
+	tmpStr = strings.Replace(tmpStr, "{", "{\n  //Database Tag Begin. DO NOT EDIT !!! \n", 1)
+	tmpStr = strings.Replace(tmpStr, "}", "  //Database Tag End. DO NOT EDIT!!!  \n\n  //Custom Tag .You Can Edit. \n\n}", 1)
+
+	buf.WriteString(tmpStr)
 
 	//reset
 	m.Name = mOrginName
@@ -738,7 +745,14 @@ func (m Message) GenRpcSearchReqMessage(buf *bytes.Buffer) {
 		curFields = append(curFields, field)
 	}
 	m.Fields = curFields
-	buf.WriteString(fmt.Sprintf("%s\n", m))
+
+	tmpStr := fmt.Sprintf("%s\n", m)
+
+	//增加数据库字段开始结束标签, 自定义标签
+	tmpStr = strings.Replace(tmpStr, "{", "{\n  //Database Tag Begin. DO NOT EDIT!!! \n", 1)
+	tmpStr = strings.Replace(tmpStr, "}", "  //Database Tag End. DO NOT EDIT!!!  \n\n  //Custom Tag .You Can Edit. \n\n}", 1)
+
+	buf.WriteString(tmpStr)
 
 	//reset
 	m.Name = mOrginName
