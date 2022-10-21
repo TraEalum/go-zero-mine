@@ -22,6 +22,7 @@ func (m *default{{.upperStartCamelObject}}Model) Delete(ctx context.Context, ses
 	}, {{.keyValues}}){{else}}
 		if session != nil {
 			_, err = session.ExecCtx(ctx, query, data.{{.primaryKey}})
+			return err
 		}
 
 		_,err = m.conn.ExecCtx(ctx, query, data.{{.primaryKey}}){{end}}
