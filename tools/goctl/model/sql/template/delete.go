@@ -5,6 +5,7 @@ const (
 	Delete = `
 func (m *default{{.upperStartCamelObject}}Model) Delete(ctx context.Context, session sqlx.Session, data *{{.upperStartCamelObject}}) error {
 	query := util.Orm(data, util.OrmScopeDelete)
+	query = fmt.Sprintf(query, m.table) // 2022-10-22 fix bug eg:delete from %s where "id"" = 41
 	var err error
 	
 	{{if .withCache}}{{if .containsIndexCache}}data, err:=m.FindOne(ctx, data.{{.primaryKey}})
