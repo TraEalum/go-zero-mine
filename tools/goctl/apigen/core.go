@@ -855,8 +855,12 @@ func parseColumn(s *Schema, msg *Message, col Column) error {
 		fieldType = "bool"
 	case "tinyint", "smallint", "int", "mediumint", "bigint":
 		fieldType = "int64"
-	case "float", "decimal", "double":
-		fieldType = "double"
+	case "decimal":
+		fieldType = "string" // decimal diff float64  fix bug 2022-11-8
+	case "double":
+		fieldType = "float64" // fix bug 2022-11-8
+	case "float":
+		fieldType = "float64" // fix bug 2022-11-8
 	}
 
 	if "" == fieldType {
