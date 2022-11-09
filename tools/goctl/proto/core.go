@@ -529,7 +529,7 @@ func (s *Schema) makeInstanceMessage(buf *bytes.Buffer, m *Message, extStr strin
 		reg = fmt.Sprintf("Custom Tag .You Can Edit.%s", "([^}]+})")
 		re = regexp.MustCompile(reg)
 		oldCustomStrings := re.FindStringSubmatch(oldSubStrings[0])
-		if len(oldCustomStrings) > 0 && lastTag > 0 {
+		if len(oldCustomStrings) > 0 && lastTag > 0 && strings.Contains(oldSubStrings[0], "//Database Tag Begin. DO NOT EDIT!!!") {
 			oldEditTag := "Custom Tag .You Can Edit."
 			newCustomTag = strings.Replace(newTableString, oldEditTag, oldEditTag+s.makeCustomStr(oldCustomStrings[1], lastTag), 1)
 		} else {
