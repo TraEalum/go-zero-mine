@@ -435,17 +435,17 @@ func (s *Schema) CreateString() string {
 	for _, m := range s.Messages {
 		funcTpl += "\t//-----------------------" + m.Comment + "----------------------- \n"
 		firstUpperName := FirstUpper(m.Name)
-		funcTpl += "\t@doc  \"创建" + m.Name + "\"\n"
+		funcTpl += "\t@doc  \"" + m.Name + "创建[auto]\"\n"
 		funcTpl += "\t@handler  create" + m.Name + "\n"
-		funcTpl += "\tpost " + "/create" + firstUpperName + " (" + m.Name + ") returns (Create" + firstUpperName + "Resp); \n\n"
+		funcTpl += "\tpost /" + firstUpperName + "/create" + " (" + m.Name + ") returns (Create" + firstUpperName + "Resp); \n\n"
 
-		funcTpl += "\t@doc  \"更新" + m.Name + "\"\n"
+		funcTpl += "\t@doc  \"" + m.Name + "更新[auto]\"\n"
 		funcTpl += "\t@handler  update" + m.Name + "\n"
-		funcTpl += "\tpost " + "/update" + firstUpperName + " (Update" + m.Name + "Req) returns (Update" + firstUpperName + "Resp); \n\n"
+		funcTpl += "\tpost /" + firstUpperName + "/update" + " (Update" + m.Name + "Req) returns (Update" + firstUpperName + "Resp); \n\n"
 
-		funcTpl += "\t@doc  \"查找" + m.Name + "\"\n"
+		funcTpl += "\t@doc  \"" + m.Name + "查找[auto]\"\n"
 		funcTpl += "\t@handler  query" + m.Name + "\n"
-		funcTpl += "\tget " + "/query" + firstUpperName + " (Query" + firstUpperName + "Req) returns (Query" + m.Name + "Resp); \n\n"
+		funcTpl += "\tget /" + firstUpperName + "/query" + " (Query" + firstUpperName + "Req) returns (Query" + m.Name + "Resp); \n\n"
 
 	}
 	funcTpl = funcTpl + "\t // Service Record End\n"
@@ -855,8 +855,12 @@ func parseColumn(s *Schema, msg *Message, col Column) error {
 		fieldType = "bool"
 	case "tinyint", "smallint", "int", "mediumint", "bigint":
 		fieldType = "int64"
-	case "float", "decimal", "double":
-		fieldType = "double"
+	case "decimal":
+		fieldType = "string" // decimal diff float64  fix bug 2022-11-8
+	case "double":
+		fieldType = "float64" // fix bug 2022-11-8
+	case "float":
+		fieldType = "float64" // fix bug 2022-11-8
 	}
 
 	if "" == fieldType {

@@ -156,7 +156,8 @@ func genLogicContext(logic string, serviceName string) string {
 	} else if strings.Contains(title, "Query") {
 		tableName := title[5:]
 		paraName := strings.ToLower(tableName)
-		builder.WriteString(fmt.Sprintf("\tresp = &types.%s{}\n\n", tableName))
+		// fix bug 2022-11-08
+		builder.WriteString(fmt.Sprintf("\tresp = &types.Query%sResp{}\n\n", tableName))
 		builder.WriteString(fmt.Sprintf("\tvar %s proto.%sFilter\n", paraName, tableName))
 		builder.WriteString(fmt.Sprintf("\treq.Unmarshal(&%s)\n\n", paraName))
 		builder.WriteString(fmt.Sprintf("\trpcResp, err := l.svcCtx.%s.Query%sList(l.ctx, &%s)\n", apigen.FirstUpper(serviceName), tableName, paraName))

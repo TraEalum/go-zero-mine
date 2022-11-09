@@ -1,3 +1,4 @@
+// source:tools/goctl/api/gogen/svc.tpl
 package svc
 
 import (
@@ -8,7 +9,7 @@ import (
 type ServiceContext struct {
 	Config {{.config}}
 	{{.middleware}}
-	{{.rpc}}
+	{{.rpc}}Cli
 }
 
 func NewServiceContext(c {{.config}}) *ServiceContext {

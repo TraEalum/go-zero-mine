@@ -17,7 +17,7 @@ func main() {
 		conf.MustLoad(*configFile, &c)
 	} else {
 		configm.LoadConfig(configm.ConfigInfo{
-			ServerType: "rpc",
+			ServerType: "api",  // fix bug 2022-10-28
 			Server:     "{{.serviceKey}}",
 		}, &c)
 	}
