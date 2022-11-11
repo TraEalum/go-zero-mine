@@ -72,7 +72,7 @@ func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 		return nil, errorm.New(errorm.RecordCreateFailed, "create data fail.%v", err)
 	}
 
-	return &{{.responseType}}{}, nil
+	return &{{.responseType}}{{{.pK}}: in.{{.pK}}}, nil
 }
 `
 
