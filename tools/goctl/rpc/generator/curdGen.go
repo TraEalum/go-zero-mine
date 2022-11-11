@@ -37,7 +37,7 @@ func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 	var err error
 
 	// delete
-	if err = l.svcCtx.{{.modelName}}Model.Delete(l.ctx, nil, &model.{{.modelName}}{ {{.pK}}: &in.{{.pK}}}); err != nil {
+	if err = l.svcCtx.{{.modelName}}Model.Delete(l.ctx, nil, &model.{{.modelName}}{ {{.pK}}: in.{{.pK}}}); err != nil {
 		return nil, errorm.New(errorm.RecordDeleteFailed, "delete data fail.%v", err)
 	}
 
@@ -60,7 +60,7 @@ func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 	}
 
 	where := model.{{.modelName}}{
-		 {{.pK}}: &in.{{.pK}},
+		 {{.pK}}: in.{{.pK}},
 	}
 	{{.modelNameFirstLower}} := model.{{.modelName}}{}
 	{{.modelNameFirstLower}}.Marshal(in)
@@ -86,7 +86,7 @@ func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 
 	// build where
 	where := model.{{.modelName}}{
-		 {{.pK}}: &in.{{.pK}},
+		 {{.pK}}: in.{{.pK}},
 	}
 	builder := util.NewSelectBuilder(util.WithTable(where.TableName())).
 		Where(&where).
