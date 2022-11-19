@@ -732,7 +732,7 @@ func (m Message) GenApiUpdateReq(buf *bytes.Buffer) {
 	mOrginName := FirstUpper(m.Name)
 	buf.WriteString(fmt.Sprintf("%sUpdate%sReq {\n", indent, mOrginName))
 	for _, f := range m.Fields {
-		buf.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`   //%s\n", indent, indent, FirstUpper(stringx.From(f.Name).ToCamelWithStartLower()), f.Typ, f.ColumnName, f.Comment))
+		buf.WriteString(fmt.Sprintf("%s%s%s   *%s  `json:\"%s\"`   //%s\n", indent, indent, FirstUpper(stringx.From(f.Name).ToCamelWithStartLower()), f.Typ, f.ColumnName, f.Comment))
 	}
 	buf.WriteString(fmt.Sprintf("%s}\n", indent))
 }

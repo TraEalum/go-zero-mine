@@ -58,7 +58,7 @@ func (r *Update{{.upperStartCamelObject}}Req) Unmarshal(p *proto.{{.upperStartCa
     	}
 
 
-	{{.unmarshallFields}}
+	{{.unmarshallFieldsUpdate}}
 
 	return nil
 }

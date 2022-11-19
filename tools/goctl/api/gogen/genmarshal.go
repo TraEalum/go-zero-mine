@@ -43,6 +43,7 @@ func GenMarshal(api *spec.ApiSpec, category string) error {
 		return errors.New("no marshal and unMarsha func() to generate")
 	}
 
+
 	for _, tp := range need2gen {
 		var temp strings.Builder
 		tableName := util.Title(tp.Name())
@@ -57,7 +58,13 @@ func GenMarshal(api *spec.ApiSpec, category string) error {
 			return err
 		}
 
+
 		unMarshal, err := buildUnmarshalFieldWrite(structType)
+		if err != nil {
+			return err
+		}
+
+		unMarshalUpdate, err := buildUpdateUnmarshalFieldWrite(structType)
 		if err != nil {
 			return err
 		}
@@ -65,6 +72,7 @@ func GenMarshal(api *spec.ApiSpec, category string) error {
 		data := map[string]interface{}{
 			"upperStartCamelObject": tableName,
 			"unmarshallFields":      unMarshal,
+			"unmarshallFieldsUpdate": unMarshalUpdate,
 			"marshalFields":         marshal,
 			"importProto":           fmt.Sprintf("import \"go-service/app/%s/rpc/proto\"", serviceName),
 		}
@@ -137,10 +145,20 @@ func buildUnmarshalFieldWrite(tp spec.DefineStruct) (string, error) {
 
 func writeUmMarshalField(writer io.Writer, tp spec.DefineStruct) error {
 	for _, member := range tp.Members {
-		fmt.Fprintf(writer, "\tp.%s = *r.%s \n", member.Name, member.Name)
+		fmt.Fprintf(writer, "\tp.%s = r.%s \n", member.Name, member.Name)
 	}
 
 	return nil
+}
+
+func buildUpdateUnmarshalFieldWrite(tp spec.DefineStruct) (string, error) {
+	var builder strings.Builder
+
+	for _, member := range tp.Members {
+		fmt.Fprintf(&builder, "\tp.%s = *r.%s \n", member.Name, member.Name)
+	}
+
+	return builder.String(), nil
 }
 
 //获取表名

@@ -66,6 +66,7 @@ func genTypes(dir string, cfg *config.Config, api *spec.ApiSpec, marshalFlag str
 		return err
 	}
 
+
 	return genFile(fileGenConfig{
 		dir:             dir,
 		subdir:          typesDir,
