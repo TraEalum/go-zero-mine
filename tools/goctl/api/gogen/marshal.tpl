@@ -2,6 +2,12 @@ package types
 
 {{.importProto}}
 
+import (
+	"fmt"
+	"go-service/comm/define"
+	"reflect"
+)
+
 //start
 // ----------------create----------------
 func (r *Create{{.upperStartCamelObject}}Resp) Marshal(p *proto.{{.upperStartCamelObject}}) error {
@@ -26,6 +32,32 @@ func (r *Update{{.upperStartCamelObject}}Resp) Marshal(p *proto.{{.upperStartCam
 
 
 func (r *Update{{.upperStartCamelObject}}Req) Unmarshal(p *proto.{{.upperStartCamelObject}}) error {
+    var (
+    		v = reflect.ValueOf(r).Elem()
+    		t = reflect.TypeOf(r).Elem()
+    	)
+
+    	for i := 0; i < v.NumField(); i++ {
+
+    		tt := t.Field(i).Type.Elem()
+
+    		if fmt.Sprintf("%v", v.Field(i).Interface()) == "<nil>" {
+
+    			switch tt.Kind() {
+    			case reflect.Int64:
+    				var mark int64 = define.UpdateZeroMark
+    				// 为空指针赋值
+    				v.Field(i).Set(reflect.ValueOf(&mark))
+
+    			case reflect.String:
+    				var mark string = define.UpdateNullMark
+    				v.Field(i).Set(reflect.ValueOf(&mark))
+
+    			}
+    		}
+    	}
+
+
 	{{.unmarshallFields}}
 
 	return nil

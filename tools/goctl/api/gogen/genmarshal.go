@@ -137,7 +137,7 @@ func buildUnmarshalFieldWrite(tp spec.DefineStruct) (string, error) {
 
 func writeUmMarshalField(writer io.Writer, tp spec.DefineStruct) error {
 	for _, member := range tp.Members {
-		fmt.Fprintf(writer, "\tp.%s = r.%s \n", member.Name, member.Name)
+		fmt.Fprintf(writer, "\tp.%s = *r.%s \n", member.Name, member.Name)
 	}
 
 	return nil
