@@ -62,6 +62,16 @@ func genTypes(dir string, cfg *config.Config, api *spec.ApiSpec, marshalFlag str
 		}
 	}()
 
+	go func() {
+		err = GenCustomizeMarshal(api, dir)
+		if err != nil {
+			fmt.Println(err.Error())
+			fmt.Println("generate cusMarsha file error")
+			return
+		}
+	}()
+
+
 	if err != nil {
 		return err
 	}
