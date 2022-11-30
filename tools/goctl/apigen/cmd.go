@@ -14,6 +14,7 @@ var (
 	stringTable        string
 	stringServiceName  string
 	stringIgnoreTables string
+	stringProtoFile string
 
 	// Cmd describes a model command.
 	Cmd = &cobra.Command{
@@ -33,6 +34,7 @@ func init() {
 	Cmd.Flags().StringVar(&stringTable, "table", "", "the table schema，multiple tables ',' split. ")
 	Cmd.Flags().StringVar(&stringServiceName, "serviceName", "", "the protobuf service name , defaults to the database schema.")
 	Cmd.Flags().StringVar(&stringIgnoreTables, "ignore_tables", "", "a comma spaced list of tables to ignore")
+	Cmd.Flags().StringVar(&stringProtoFile, "proto", "", "the proto file path")
 
 	//Cmd.AddCommand(mysqlCmd)
 	//Cmd.AddCommand(mongoCmd)

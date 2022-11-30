@@ -20,6 +20,7 @@ func apigen(_ *cobra.Command, _ []string) error {
 	table := stringTable
 	serviceName := stringServiceName
 	ignoreTableStr := stringIgnoreTables
+	protoFile := stringProtoFile
 	flag.Parse()
 	connStr := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", user, password, host, port, schema)
 	db, err := sql.Open("mysql", connStr)
@@ -31,7 +32,9 @@ func apigen(_ *cobra.Command, _ []string) error {
 
 	ignoreTables := strings.Split(ignoreTableStr, ",")
 
-	s, err := GenerateSchema(db, table, ignoreTables, serviceName, dir)
+
+
+	s, err := GenerateSchema(db, table, ignoreTables, serviceName, dir, protoFile)
 
 	if nil != err {
 		log.Fatal(err)
