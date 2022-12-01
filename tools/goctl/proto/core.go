@@ -11,6 +11,7 @@ import (
 	"os"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/zeromicro/go-zero/tools/goctl/util"
@@ -56,6 +57,11 @@ func GenerateSchema(db *sql.DB, table string, ignoreTables []string, serviceName
 	} else {
 		s.GoPackage = "./" + s.Package
 	}
+
+	tmpName := stringx.From(table).ToCamelWithStartLower()
+	humpTableName := strings.ToUpper(string(tmpName[0])) + tmpName[1:]
+
+	s.HumpTbName = humpTableName
 
 	cols, err := dbColumns(db, dbs, table, subTableNumber, subTableKey)
 	if nil != err {
@@ -181,6 +187,7 @@ type Schema struct {
 	Imports     sort.StringSlice
 	Messages    MessageCollection
 	Enums       EnumCollection
+	HumpTbName  string
 }
 
 // MessageCollection represents a sortable collection of messages.
@@ -263,7 +270,7 @@ func (s *Schema) CreateString() string {
 		buf.WriteString("//--------------------------------" + m.Comment + "--------------------------------")
 		buf.WriteString("\n")
 		m.GenDefaultMessage(buf)
-		m.GenRpcSearchReqMessage(buf)
+		m.GenRpcSearchReqMessage(buf, true)
 	}
 	buf.WriteString("// Message Record End\n")
 	if len(s.Enums) > 0 {
@@ -381,11 +388,17 @@ func (s *Schema) UpdateString() string {
 	}
 
 	for _, m := range s.Messages {
+		//更新Default信息
+		s.updateDefaultMessage(bufNew, m)
+
+		//更新Filter信息
+		s.updateFilterMessage(bufNew, m)
+
 		if !isInSlice(existTableName, m.Name) {
 			bufNew.WriteString("//--------------------------------" + m.Comment + "--------------------------------")
 			bufNew.WriteString("\n")
 			m.GenDefaultMessage(bufNew)
-			m.GenRpcSearchReqMessage(bufNew)
+			m.GenRpcSearchReqMessage(bufNew, true)
 		}
 	}
 	if len(s.Messages) > 0 {
@@ -463,6 +476,98 @@ func (s *Schema) UpdateString() string {
 	bufNew.WriteString(funcTpl)
 	err = ioutil.WriteFile(s.Dir, []byte(bufNew.String()), 0666) //写入文件(字节数组)
 	return "Done"
+}
+
+func (s *Schema) updateDefaultMessage(buf *bytes.Buffer, m *Message) {
+	s.makeInstanceMessage(buf, m, "")
+}
+
+func (s *Schema) updateFilterMessage(buf *bytes.Buffer, m *Message) {
+	s.makeInstanceMessage(buf, m, "Filter")
+}
+
+func (s *Schema) makeInstanceMessage(buf *bytes.Buffer, m *Message, extStr string) {
+	oldTmp := buf.String()
+	if oldTmp == "" || s.HumpTbName == "" {
+		return
+	}
+
+	tmpName := stringx.From(s.HumpTbName).ToCamelWithStartLower()
+	name := strings.ToUpper(string(tmpName[0])) + tmpName[1:]
+
+	fmt.Println("name-----", name)
+	var lastTag int
+
+	//找到旧的内容,等下用来替换
+	reg := fmt.Sprintf("message %s%s %s", name, extStr, "{[^}]+}")
+	re := regexp.MustCompile(reg)
+	oldSubStrings := re.FindStringSubmatch(oldTmp)
+
+	if len(oldSubStrings) > 0 {
+		tmpBuf := new(bytes.Buffer)
+
+		switch extStr {
+		case "Filter":
+			m.GenRpcSearchReqMessage(tmpBuf, false)
+		default:
+			m.GenDefaultMessage(tmpBuf)
+		}
+
+		newTableString := strings.Replace(tmpBuf.String(), "}\n", "}", 1)
+
+		tmpBuf.Reset()
+
+		re = regexp.MustCompile("[1-9]\\d*")
+		nums := re.FindAllString(newTableString, -1)
+
+		if len(nums) > 0 {
+			lastTag, _ = strconv.Atoi(nums[len(nums)-1])
+		}
+
+		//重新生成自定义标签
+		var newCustomTag string
+		reg = fmt.Sprintf("Custom Tag .You Can Edit.%s", "([^}]+})")
+		re = regexp.MustCompile(reg)
+		oldCustomStrings := re.FindStringSubmatch(oldSubStrings[0])
+		if len(oldCustomStrings) > 0 && lastTag > 0 {
+			oldEditTag := "Custom Tag .You Can Edit."
+			newCustomTag = strings.Replace(newTableString, oldEditTag, oldEditTag+s.makeCustomStr(oldCustomStrings[1], lastTag), 1)
+		} else {
+			newCustomTag = newTableString
+		}
+
+		buf.Reset()
+		newCustomTag = strings.Replace(newCustomTag, "}\n", "}", 1)
+		newStr := strings.Replace(oldTmp, oldSubStrings[0], newCustomTag, 1)
+		buf.WriteString(newStr)
+	}
+
+	return
+}
+
+func (s *Schema) makeCustomStr(oldCustomStr string, count int) string {
+	if oldCustomStr == "" {
+		return oldCustomStr
+	}
+
+	var newCustomStr string
+	for _, v := range strings.Split(oldCustomStr, "\n") {
+		reg := fmt.Sprintf("= (%s+)", "\\d")
+		re := regexp.MustCompile(reg)
+
+		tmp := re.FindStringSubmatch(v)
+		if len(tmp) > 0 {
+			count++
+
+			oldStr := fmt.Sprintf("= %s", tmp[1])
+			newStr := fmt.Sprintf("= %d", count)
+
+			newCustomStr = fmt.Sprintf("%s\n%s", newCustomStr, strings.Replace(v, oldStr, newStr, 1))
+		}
+
+	}
+
+	return newCustomStr
 }
 
 // Enum represents a protocol buffer enumerated type.
@@ -579,7 +684,14 @@ func (m Message) GenDefaultMessage(buf *bytes.Buffer) {
 		curFields = append(curFields, field)
 	}
 	m.Fields = curFields
-	buf.WriteString(fmt.Sprintf("%s\n", m))
+
+	tmpStr := fmt.Sprintf("%s\n", m)
+
+	//增加数据库字段开始结束标签, 自定义标签
+	tmpStr = strings.Replace(tmpStr, "{", "{\n  //Database Tag Begin. DO NOT EDIT !!! ", 1)
+	tmpStr = strings.Replace(tmpStr, "}", "  //Database Tag End. DO NOT EDIT!!!  \n\n  //Custom Tag .You Can Edit. \n\n}", 1)
+
+	buf.WriteString(tmpStr)
 
 	//reset
 	m.Name = mOrginName
@@ -715,7 +827,7 @@ func (m Message) GenRpcGetByIdReqMessage(buf *bytes.Buffer) {
 }
 
 //gen add resp message
-func (m Message) GenRpcSearchReqMessage(buf *bytes.Buffer) {
+func (m Message) GenRpcSearchReqMessage(buf *bytes.Buffer, needList bool) {
 	mOrginName := m.Name
 	mOrginFields := m.Fields
 
@@ -738,22 +850,31 @@ func (m Message) GenRpcSearchReqMessage(buf *bytes.Buffer) {
 		curFields = append(curFields, field)
 	}
 	m.Fields = curFields
-	buf.WriteString(fmt.Sprintf("%s\n", m))
+
+	tmpStr := fmt.Sprintf("%s\n", m)
+
+	//增加数据库字段开始结束标签, 自定义标签
+	tmpStr = strings.Replace(tmpStr, "{", "{\n  //Database Tag Begin. DO NOT EDIT!!! ", 1)
+	tmpStr = strings.Replace(tmpStr, "}", "  //Database Tag End. DO NOT EDIT!!!  \n\n  //Custom Tag .You Can Edit. \n\n}", 1)
+
+	buf.WriteString(tmpStr)
 
 	//reset
 	m.Name = mOrginName
 	m.Fields = mOrginFields
 
-	//resp
-	firstWord := strings.ToLower(string(m.Name[0]))
-	m.Name = mOrginName + "List"
-	m.Fields = []MessageField{
-		{Typ: "repeated " + mOrginName, Name: stringx.From(firstWord + mOrginName[1:]).ToCamelWithStartLower(), tag: 1, Comment: stringx.From(firstWord+mOrginName[1:]).ToCamelWithStartLower() + "List"},
-		{Typ: "int64", Name: "totalPage", tag: 2},
-		{Typ: "int64", Name: "totalCount", tag: 3},
-		{Typ: "int64", Name: "curPage", tag: 4},
+	if needList {
+		//resp
+		firstWord := strings.ToLower(string(m.Name[0]))
+		m.Name = mOrginName + "List"
+		m.Fields = []MessageField{
+			{Typ: "repeated " + mOrginName, Name: stringx.From(firstWord + mOrginName[1:]).ToCamelWithStartLower(), tag: 1, Comment: stringx.From(firstWord+mOrginName[1:]).ToCamelWithStartLower() + "List"},
+			{Typ: "int64", Name: "totalPage", tag: 2},
+			{Typ: "int64", Name: "totalCount", tag: 3},
+			{Typ: "int64", Name: "curPage", tag: 4},
+		}
+		buf.WriteString(fmt.Sprintf("%s", m))
 	}
-	buf.WriteString(fmt.Sprintf("%s", m))
 
 	//reset
 	m.Name = mOrginName
