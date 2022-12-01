@@ -25,7 +25,7 @@ const (
 	indent = "  "
 )
 
-func GenerateSchema(db *sql.DB, table string, ignoreTables []string, serviceName string, dir string, protoFile string) (*Schema, error) {
+func GenerateSchema(db *sql.DB, table string, ignoreTables []string, serviceName string, dir string) (*Schema, error) {
 	dir = "api/desc/"
 	var err error
 
@@ -60,10 +60,6 @@ func GenerateSchema(db *sql.DB, table string, ignoreTables []string, serviceName
 	err = typesFromColumns(s, cols, ignoreTables)
 	if nil != err {
 		return nil, err
-	}
-
-	if err = typesFromProto(s, protoFile, serviceName); err != nil {
-		fmt.Println(err)
 	}
 
 	sort.Sort(s.Imports)
