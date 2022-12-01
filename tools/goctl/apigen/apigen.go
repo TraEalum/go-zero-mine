@@ -89,38 +89,3 @@ func apigen(_ *cobra.Command, _ []string) error {
 	return nil
 }
 
-// 指定proto文件生成xxxParam.api中type
-func GenerateProtoType(s *Schema, serviceName string, protoFile string) (*Schema, error) {
-	dir := "api/desc/"
-	var err error
-
-	_, err = os.Stat(dir)
-	if os.IsNotExist(err) {
-		err = os.MkdirAll(dir, os.ModePerm)
-		if err != nil {
-			fmt.Println(fmt.Sprintf("创建文件错误:%v", err))
-			panic(err)
-		}
-	}
-
-	if s == nil {
-		s = &Schema{
-			Dir: dir,
-		}
-	}
-
-
-	s.Syntax = synatx
-	s.ServiceName = serviceName
-
-
-	if err = typesFromProto(s, protoFile, serviceName); err != nil {
-		fmt.Println(err)
-	}
-
-	sort.Sort(s.Imports)
-	sort.Sort(s.Messages)
-	sort.Sort(s.Enums)
-
-	return s, nil
-}
