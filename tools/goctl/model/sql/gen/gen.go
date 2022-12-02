@@ -380,7 +380,7 @@ func (g *defaultGenerator) genModelCustom(in parser.Table, withCache bool) (stri
 	var table Table
 	table.Table = in
 
-	marshalFields, unmarshallFields, err := genFieldParser(table, table.Fields)
+	marshalFields, unmarshallFields, marshalFieldsUpdate, err := genFieldParser(table, table.Fields)
 
 	t := util.With("model-custom").
 		Parse(text).
@@ -392,6 +392,7 @@ func (g *defaultGenerator) genModelCustom(in parser.Table, withCache bool) (stri
 		"lowerStartCamelObject": stringx.From(in.Name.ToCamel()).Untitle(),
 		"serviceName":           g.service,
 		"marshalFields":         marshalFields,
+		"marshalFieldsUpdate": marshalFieldsUpdate,
 		"unmarshallFields":      unmarshallFields,
 		"table":                 in.Name.Source(),
 		"fmtSubTableName":       in.FmtString,

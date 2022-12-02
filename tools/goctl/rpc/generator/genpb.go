@@ -27,6 +27,9 @@ func (g *Generator) genPbDirect(ctx DirContext, c *ZRpcContext) error {
 	if err != nil {
 		return err
 	}
+
+
+
 	return g.setPbDir(ctx, c)
 }
 

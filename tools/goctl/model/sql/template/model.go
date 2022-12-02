@@ -43,6 +43,11 @@ func New{{.upperStartCamelObject}}Model(conn sqlx.SqlConn{{if .withCache}}, c ca
 	}
 }
 
+func (m *{{.upperStartCamelObject}}) Marshal2Update(p *proto.{{.upperStartCamelObject}}Update) error {
+	{{.marshalFieldsUpdate}}
+
+	return nil
+}
 
 func (m *{{.upperStartCamelObject}}) Marshal(p *proto.{{.upperStartCamelObject}}) error {
 	{{.marshalFields}}

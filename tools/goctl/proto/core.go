@@ -283,7 +283,7 @@ func (s *Schema) CreateString() string {
 	for _, m := range s.Messages {
 		funcTpl += "\t //-----------------------" + m.Comment + "----------------------- \n"
 		funcTpl += "\t rpc Create" + m.Name + "(" + m.Name + ") returns (" + m.Name + "); \n"
-		funcTpl += "\t rpc Update" + m.Name + "(" + m.Name + ") returns (" + m.Name + "); \n"
+		funcTpl += "\t rpc Update" + m.Name + "(" + m.Name + "Update) returns (" + m.Name + "); \n"
 		funcTpl += "\t rpc Delete" + m.Name + "(" + m.Name + ") returns (" + m.Name + "); \n"
 		funcTpl += "\t rpc Query" + m.Name + "Detail(" + m.Name + "Filter) returns (" + m.Name + "); \n"
 		funcTpl += "\t rpc Query" + m.Name + "List(" + m.Name + "Filter) returns (" + m.Name + "List); \n"
@@ -753,6 +753,26 @@ func (m Message) GenRpcSearchReqMessage(buf *bytes.Buffer) {
 		{Typ: "int64", Name: "totalCount", tag: 3},
 		{Typ: "int64", Name: "curPage", tag: 4},
 	}
+	buf.WriteString(fmt.Sprintf("%s", m))
+
+	//reset
+	m.Name = mOrginName
+	m.Fields = mOrginFields
+
+	//update
+	m.Name = mOrginName + "Update"
+	updateFields := make([]MessageField, 0, len(m.Fields))
+	for _, v := range m.Fields {
+		tmpField := MessageField{
+			Typ:     "optional " + v.Typ,
+			Name:    v.Name,
+			tag:     v.tag,
+			Comment: v.Comment,
+		}
+
+		updateFields = append(updateFields, tmpField)
+	}
+	m.Fields = updateFields
 	buf.WriteString(fmt.Sprintf("%s", m))
 
 	//reset

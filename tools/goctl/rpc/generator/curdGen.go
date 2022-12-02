@@ -50,7 +50,7 @@ func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 	var err error
 
 	// check whether it already exists
-	if _, err = l.svcCtx.{{.modelName}}Model.FindOne(l.ctx, in.{{.pK}}); err != nil && err != sqlc.ErrNotFound {
+	if _, err = l.svcCtx.{{.modelName}}Model.FindOne(l.ctx, *in.{{.pK}}); err != nil && err != sqlc.ErrNotFound {
 		logx.WithContext(l.ctx).Infof("find data fail. %v", err)
 		return nil, err
 	}else if err == sqlc.ErrNotFound{
@@ -60,10 +60,10 @@ func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 	}
 
 	where := model.{{.modelName}}{
-		 {{.pK}}: &in.{{.pK}},
+		 {{.pK}}: in.{{.pK}},
 	}
 	{{.modelNameFirstLower}} := model.{{.modelName}}{}
-	{{.modelNameFirstLower}}.Marshal(in)
+	{{.modelNameFirstLower}}.Marshal2Update(in)
 	builder := util.NewUpdateBuiler(util.WithTable(where.TableName())).Where(&where).Updates(&{{.modelNameFirstLower}})
 
 	// update
@@ -72,7 +72,7 @@ func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 		return nil, errorm.New(errorm.RecordCreateFailed, "create data fail.%v", err)
 	}
 
-	return &{{.responseType}}{{{.pK}}: in.{{.pK}}}, nil
+	return &{{.responseType}}{ {{.pK}}: *in.{{.pK}} }, nil
 }
 `
 

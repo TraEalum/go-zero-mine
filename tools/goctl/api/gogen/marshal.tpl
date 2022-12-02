@@ -25,7 +25,7 @@ func (r *Update{{.upperStartCamelObject}}Resp) Marshal(p *proto.{{.upperStartCam
 }
 
 
-func (r *Update{{.upperStartCamelObject}}Req) Unmarshal(p *proto.{{.upperStartCamelObject}}) error {
+func (r *Update{{.upperStartCamelObject}}Req) Unmarshal(p *proto.{{.upperStartCamelObject}}Update) error {
 	{{.unmarshallFields}}
 
 	return nil
