@@ -5,8 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"os"
-	"sort"
 	"strings"
 
 	"github.com/spf13/cobra"
