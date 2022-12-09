@@ -25,7 +25,7 @@ func (r *Update{{.upperStartCamelObject}}Resp) Marshal(p *proto.{{.upperStartCam
 }
 
 
-func (r *Update{{.upperStartCamelObject}}Req) Unmarshal(p *proto.{{.upperStartCamelObject}}Update) error {
+func (r *Update{{.upperStartCamelObject}}Req) Unmarshal(p *proto.{{.upperStartCamelObject}}) error {
 	{{.unmarshallFields}}
 
 	return nil
@@ -60,7 +60,7 @@ func (r *{{.upperStartCamelObject}}) Marshal(p *proto.{{.upperStartCamelObject}}
 
 
 func Marshal{{.upperStartCamelObject}}Lst(r *[]{{.upperStartCamelObject}},p []*proto.{{.upperStartCamelObject}}){
-	*r=[]{{.upperStartCamelObject}}{}  // 2022-11-11 fix object init not nil
+    *r=[]{{.upperStartCamelObject}}{}  // 2022-11-11 fix object init not nil
 	for _,item := range p {
 		var tmp {{.upperStartCamelObject}}
 		tmp.Marshal(item)
