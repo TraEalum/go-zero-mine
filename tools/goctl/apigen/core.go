@@ -182,6 +182,12 @@ func typesFromProto(s *Schema, file, serviceName string) error {
 				n+=1
 				i2[n] = "[]*" + i2[n]
 			}
+			
+
+			if len(i2) < 7 || strings.Contains(i2[n], "//"){
+				continue
+			}
+
 
 			field := NewMessageField(i2[n], i2[n+1], strings.Replace(i2[n+4], "//", "", -1), snaker.CamelToSnake(i2[n+1]))
 
