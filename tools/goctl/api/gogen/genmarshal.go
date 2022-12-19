@@ -21,12 +21,12 @@ import (
 //go:embed marshal.tpl
 var marshalTemplate string
 
-func GenMarshal(api *spec.ApiSpec, category string) error {
+func GenMarshal(api *spec.ApiSpec, category, apiFile string) error {
 	types := api.Types
 	need2gen := []spec.Type{}
 	serviceName := api.Service.Name
 	//获取table
-	tables := getTables(api)
+	tables := getTables(api, apiFile)
 	if len(tables) == 0 {
 		return errors.New("can not read table")
 	}
@@ -144,7 +144,7 @@ func writeUmMarshalField(writer io.Writer, tp spec.DefineStruct) error {
 }
 
 //获取表名
-func getTables(api *spec.ApiSpec) []string {
+func getTables(api *spec.ApiSpec, apiFile string) []string {
 	var res []string
 
 	//读取多个导入的文件
@@ -152,6 +152,8 @@ func getTables(api *spec.ApiSpec) []string {
 		for _, v := range api.Imports {
 			fileName := v.Value
 			name := strings.ReplaceAll(fileName, `"`, "")
+			name = path.Join(apiFile, name)
+			fmt.Println("name:", name)
 			tables, err := readFileTable(name)
 			if err != nil {
 				continue

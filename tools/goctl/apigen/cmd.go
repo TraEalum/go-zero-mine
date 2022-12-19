@@ -26,7 +26,7 @@ var (
 
 func init() {
 	Cmd.Flags().StringVar(&stringPassword, "password", "", "the database password")
-	//Cmd.Flags().StringVar(&stringDir, "dir", "api/desc/", "The target dir")
+	Cmd.Flags().StringVar(&stringDir, "dir", "api/desc/", "The target dir")
 	Cmd.Flags().StringVar(&stringHost, "host", "localhost", "the database host")
 	Cmd.Flags().IntVar(&intPort, "port", 3306, "the database port")
 	Cmd.Flags().StringVar(&stringUser, "user", "root", "the database user")

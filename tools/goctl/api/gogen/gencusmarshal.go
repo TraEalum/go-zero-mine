@@ -23,12 +23,12 @@ import (
 //go:embed customize_marshal.tpl
 var customizeMarshalTemplate string
 
-func GenCustomizeMarshal(api *spec.ApiSpec, category string) error {
+func GenCustomizeMarshal(api *spec.ApiSpec, category, apiFile string) error {
 	types := api.Types
 	need2gen := []spec.Type{}
 	serviceName := api.Service.Name
 	//获取fields
-	fields := getFields(api)
+	fields := getFields(api, apiFile)
 	if len(fields) == 0 {
 		return errors.New("can not read fields")
 	}
@@ -119,7 +119,7 @@ func GenCustomizeMarshal(api *spec.ApiSpec, category string) error {
 
 // 获取自定义结构体
 //获取表名
-func getFields(api *spec.ApiSpec) []string {
+func getFields(api *spec.ApiSpec, apiFile string) []string {
 	var res []string
 
 	//读取多个导入的文件
@@ -127,6 +127,7 @@ func getFields(api *spec.ApiSpec) []string {
 		for _, v := range api.Imports {
 			fileName := v.Value
 			name := strings.ReplaceAll(fileName, `"`, "")
+			name = path.Join(apiFile, name)
 			tables, err := readFileField(name)
 			if err != nil {
 				continue

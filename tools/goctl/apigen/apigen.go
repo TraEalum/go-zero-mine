@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"path"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -23,6 +24,8 @@ func apigen(_ *cobra.Command, _ []string) error {
 	protoFile := stringProtoFile
 	flag.Parse()
 
+	dir = path.Join(dir, "/") + "/"
+
 	if password != "" && schema != "" && table != "" && protoFile != "" {
 
 		connStr := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", user, password, host, port, schema)
@@ -40,7 +43,7 @@ func apigen(_ *cobra.Command, _ []string) error {
 			log.Fatal(err)
 		}
 
-		s, err = GenerateProtoType(s, serviceName, protoFile)
+		s, err = GenerateProtoType(s, serviceName, protoFile, dir)
 		if nil != err {
 			log.Fatal(err)
 		}
@@ -51,7 +54,7 @@ func apigen(_ *cobra.Command, _ []string) error {
 
 
 	} else if protoFile != "" && serviceName != "" {
-		s, err := GenerateProtoType(nil, serviceName, protoFile)
+		s, err := GenerateProtoType(nil, serviceName, protoFile, dir)
 
 		if nil != err {
 			log.Fatal(err)

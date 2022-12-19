@@ -26,7 +26,7 @@ const (
 )
 
 func GenerateSchema(db *sql.DB, table string, ignoreTables []string, serviceName string, dir string) (*Schema, error) {
-	dir = "api/desc/"
+
 	var err error
 
 	_, err = os.Stat(dir)
@@ -70,8 +70,7 @@ func GenerateSchema(db *sql.DB, table string, ignoreTables []string, serviceName
 }
 
 // 指定proto文件生成xxxParam.api中type
-func GenerateProtoType(s *Schema, serviceName string, protoFile string) (*Schema, error) {
-	dir := "api/desc/"
+func GenerateProtoType(s *Schema, serviceName string, protoFile, dir string) (*Schema, error) {
 	var err error
 
 	_, err = os.Stat(dir)
@@ -432,7 +431,6 @@ func (s *Schema) CreateParamString(fileName string) string {
 		
 		buf.WriteString(")")
 		buf.WriteString("\n\n")
-
 	}
 
 
