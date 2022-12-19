@@ -157,7 +157,7 @@ func typesFromProto(s *Schema, file, serviceName string) error {
 
 	for _, v := range strs {
 
-		reg := fmt.Sprintf("message %s %s", v, "{[^}]+}")
+		reg := fmt.Sprintf("message %s%s", v, `[\s]*{[^}]+}`)
 		re := regexp.MustCompile(reg)
 		oldSubStrings := re.FindStringSubmatch(tmpStr)
 
@@ -182,7 +182,7 @@ func typesFromProto(s *Schema, file, serviceName string) error {
 				n+=1
 				i2[n] = "[]*" + i2[n]
 			}
-			
+
 
 			if len(i2) < 7 || strings.Contains(i2[n], "//"){
 				continue
