@@ -264,6 +264,12 @@ func (s *Schema) CreateString() string {
 	}
 	buf.WriteString("// Exist Table End\n")
 	buf.WriteString("\n")
+
+	buf.WriteString("//指定message生成api struct\n")
+	buf.WriteString("// Api Struct Gen\n")
+	buf.WriteString("// Struct Gen End\n")
+	buf.WriteString("\n")
+
 	buf.WriteString("// Message Record Start\n")
 
 	for _, m := range s.Messages {

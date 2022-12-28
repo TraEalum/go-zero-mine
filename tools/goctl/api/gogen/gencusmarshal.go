@@ -6,35 +6,37 @@ import (
 	_ "embed"
 	"errors"
 	"fmt"
+	"github.com/zeromicro/go-zero/core/stringx"
+	"github.com/zeromicro/go-zero/tools/goctl/api/spec"
+	"github.com/zeromicro/go-zero/tools/goctl/util"
+
 	"io"
 	"os"
 	"path"
 	"strings"
 	"text/template"
 
-	"github.com/zeromicro/go-zero/core/stringx"
-	"github.com/zeromicro/go-zero/tools/goctl/api/spec"
 	util2 "github.com/zeromicro/go-zero/tools/goctl/api/util"
-	"github.com/zeromicro/go-zero/tools/goctl/util"
 )
 
-//go:embed marshal.tpl
-var marshalTemplate string
 
-func GenMarshal(api *spec.ApiSpec, category, apiFile string) error {
+//go:embed customize_marshal.tpl
+var customizeMarshalTemplate string
+
+func GenCustomizeMarshal(api *spec.ApiSpec, category, apiFile string) error {
 	types := api.Types
 	need2gen := []spec.Type{}
 	serviceName := api.Service.Name
-	//获取table
-	tables := getTables(api, apiFile)
-	if len(tables) == 0 {
-		return errors.New("can not read table")
+	//获取fields
+	fields := getFields(api, apiFile)
+	if len(fields) == 0 {
+		return errors.New("can not read fields")
 	}
 
 	//Filter out unnecessary generation types
 	for _, tp := range types {
 		name := tp.Name()
-		if stringx.Contains(tables, name) {
+		if stringx.Contains(fields, name) {
 			need2gen = append(need2gen, tp)
 		}
 	}
@@ -42,6 +44,7 @@ func GenMarshal(api *spec.ApiSpec, category, apiFile string) error {
 	if len(need2gen) == 0 {
 		return errors.New("no marshal and unMarsha func() to generate")
 	}
+
 
 	for _, tp := range need2gen {
 		var temp strings.Builder
@@ -69,7 +72,7 @@ func GenMarshal(api *spec.ApiSpec, category, apiFile string) error {
 			"importProto":           fmt.Sprintf("import \"go-service/app/%s/rpc/proto\"", serviceName),
 		}
 
-		t := template.Must(template.New("marshalTemplate").Parse(marshalTemplate))
+		t := template.Must(template.New("customizeMarshalTemplate").Parse(customizeMarshalTemplate))
 		buffer := new(bytes.Buffer)
 		err = t.Execute(buffer, data)
 		if err != nil {
@@ -113,38 +116,10 @@ func GenMarshal(api *spec.ApiSpec, category, apiFile string) error {
 	return nil
 }
 
-func buildMarshalFieldWrite(tp spec.DefineStruct) (string, error) {
-	var builder strings.Builder
-	writeMarshalField(&builder, tp)
-	return builder.String(), nil
-}
 
-func writeMarshalField(writer io.Writer, tp spec.DefineStruct) error {
-	for _, member := range tp.Members {
-		fmt.Fprintf(writer, "\tr.%s = p.%s\n", member.Name, member.Name)
-	}
-
-	return nil
-}
-
-func buildUnmarshalFieldWrite(tp spec.DefineStruct) (string, error) {
-	var builder strings.Builder
-	writeUmMarshalField(&builder, tp)
-
-	return builder.String(), nil
-
-}
-
-func writeUmMarshalField(writer io.Writer, tp spec.DefineStruct) error {
-	for _, member := range tp.Members {
-		fmt.Fprintf(writer, "\tp.%s = r.%s \n", member.Name, member.Name)
-	}
-
-	return nil
-}
-
+// 获取自定义结构体
 //获取表名
-func getTables(api *spec.ApiSpec, apiFile string) []string {
+func getFields(api *spec.ApiSpec, apiFile string) []string {
 	var res []string
 
 	//读取多个导入的文件
@@ -153,8 +128,7 @@ func getTables(api *spec.ApiSpec, apiFile string) []string {
 			fileName := v.Value
 			name := strings.ReplaceAll(fileName, `"`, "")
 			name = path.Join(apiFile, name)
-			fmt.Println("name:", name)
-			tables, err := readFileTable(name)
+			tables, err := readFileField(name)
 			if err != nil {
 				continue
 			}
@@ -168,8 +142,8 @@ func getTables(api *spec.ApiSpec, apiFile string) []string {
 	return res
 }
 
-//读取参数文件，获取里面的表名称
-func readFileTable(path string) ([]string, error) {
+// 读取参数文件， 获取自定义字段名称
+func readFileField(path string) ([]string, error) {
 	var res []string
 	file, err := os.OpenFile(path, os.O_RDWR, 0666)
 	if err != nil {
@@ -189,7 +163,7 @@ func readFileTable(path string) ([]string, error) {
 
 	for {
 		line, err := bufR.ReadString('\n')
-		if strings.Contains(line, "Already Exist Table") {
+		if strings.Contains(line, "Proto Customize Type:") {
 			break
 		}
 		if err != nil {
@@ -203,7 +177,7 @@ func readFileTable(path string) ([]string, error) {
 
 	for {
 		line, err := bufR.ReadString('\n')
-		if strings.Contains(line, "Exist Table End") {
+		if strings.Contains(line, "Customize Type End") {
 			break
 		}
 
@@ -223,58 +197,4 @@ func readFileTable(path string) ([]string, error) {
 	}
 
 	return res, nil
-}
-
-//获取原有自定义的内容，如果存在的情况下
-func getCustomizationContext(filePath string) (string, error) {
-	f, err := os.Open(filePath)
-	if err != nil {
-		return "", err
-	}
-
-	stat, err := f.Stat()
-	if err != nil {
-		return "", err
-	}
-
-	//空文件
-	if stat.Size() == 0 {
-		return "", errors.New("empty file")
-	}
-
-	bufW := new(bytes.Buffer)
-	bufR := bufio.NewReader(f)
-
-	//找到结束标志
-	for {
-		line, err := bufR.ReadString('\n')
-		if strings.Contains(line, "TheEndLine") {
-			break
-		}
-		if err != nil {
-			if err == io.EOF {
-				break
-			} else {
-				return "", err
-			}
-		}
-	}
-
-	bufW.WriteString("\n")
-
-	//开始读取自定义的内容
-	for {
-		line, err := bufR.ReadString('\n')
-		bufW.WriteString(line)
-
-		if err != nil {
-			if err == io.EOF {
-				break
-			} else {
-				return "", err
-			}
-		}
-	}
-
-	return bufW.String(), nil
 }

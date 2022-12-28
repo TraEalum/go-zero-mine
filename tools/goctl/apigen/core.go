@@ -26,7 +26,7 @@ const (
 )
 
 func GenerateSchema(db *sql.DB, table string, ignoreTables []string, serviceName string, dir string) (*Schema, error) {
-	dir = "api/desc/"
+
 	var err error
 
 	_, err = os.Stat(dir)
@@ -67,6 +67,137 @@ func GenerateSchema(db *sql.DB, table string, ignoreTables []string, serviceName
 	sort.Sort(s.Enums)
 
 	return s, nil
+}
+
+// 指定proto文件生成xxxParam.api中type
+func GenerateProtoType(s *Schema, serviceName string, protoFile, dir string) (*Schema, error) {
+	var err error
+
+	_, err = os.Stat(dir)
+	if os.IsNotExist(err) {
+		err = os.MkdirAll(dir, os.ModePerm)
+		if err != nil {
+			fmt.Println(fmt.Sprintf("创建文件错误:%v", err))
+			panic(err)
+		}
+	}
+
+	if s == nil {
+		s = &Schema{
+			Dir: dir,
+		}
+	}
+
+
+	s.Syntax = synatx
+	s.ServiceName = serviceName
+
+
+	if err = typesFromProto(s, protoFile, serviceName); err != nil {
+		fmt.Println(err)
+	}
+
+	sort.Sort(s.Imports)
+	sort.Sort(s.Messages)
+	sort.Sort(s.Enums)
+
+	return s, nil
+}
+
+func typesFromProto(s *Schema, file, serviceName string) error {
+	if file == "" {
+		file = "./rpc/proto/" + serviceName + ".proto"
+	}
+
+	f, err := os.Open(file)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+
+	buf := bufio.NewReader(f)
+	var strs []string
+
+	Loop:
+	for {
+		line, err := buf.ReadString('\n')
+		if err != nil {
+			if err == io.EOF {
+				break
+			} else {
+				return errors.New("Read file error!")
+			}
+		}
+
+		if strings.Contains(line, "Api Struct Gen") {
+			for {
+				line, _ := buf.ReadString('\n')
+				if strings.Contains(line, "Struct Gen End") {
+					break Loop
+				}
+
+				str := strings.Replace(line, "//", "", -1)
+				str = strings.TrimSpace(str)
+				strs = append(strs, str)
+			}
+		}
+
+	}
+
+
+	bufNew := new(bytes.Buffer)
+
+	if _, err = buf.WriteTo(bufNew); err != nil {
+		return err
+	}
+
+	tmpStr := bufNew.String()
+
+	for _, v := range strs {
+
+		reg := fmt.Sprintf("message %s%s", v, `[\s]*{[^}]+}`)
+		re := regexp.MustCompile(reg)
+		oldSubStrings := re.FindStringSubmatch(tmpStr)
+
+		if oldSubStrings[0] == "" {
+			continue
+		}
+
+		split := strings.Split(oldSubStrings[0], "\n")
+
+		message := &Message{
+			Name:    snaker.SnakeToCamel(v),
+			Fields:make([]MessageField, 0, len(split)-1),
+		}
+
+
+
+		for i := 1; i < len(split)-1; i++ {
+			var n = 2
+
+			i2 := strings.Split(split[i], " ")
+			if len(i2) == 8 && i2[n] == "repeated" {
+				n+=1
+				i2[n] = "[]*" + i2[n]
+			}
+
+
+			if len(i2) < 7 || strings.Contains(i2[n], "//"){
+				continue
+			}
+
+
+			field := NewMessageField(i2[n], i2[n+1], strings.Replace(i2[n+4], "//", "", -1), snaker.CamelToSnake(i2[n+1]))
+
+			message.AppendField(field)
+		}
+
+		s.CusMessages = append(s.CusMessages, message)
+	}
+
+
+	return nil
 }
 
 // typesFromColumns creates the appropriate schema properties from a collection of column types.
@@ -171,6 +302,7 @@ type Schema struct {
 	Dir         string
 	Imports     sort.StringSlice
 	Messages    MessageCollection
+	CusMessages MessageCollection
 	Enums       EnumCollection
 }
 
@@ -251,6 +383,15 @@ func (s *Schema) CreateParamString(fileName string) string {
 	}
 	buf.WriteString("// Exist Table End\n")
 	buf.WriteString("\n")
+
+	buf.WriteString("// Proto Customize Type:\n")
+	for _, m := range s.CusMessages {
+		buf.WriteString("// " + m.Name)
+		buf.WriteString("\n")
+	}
+	buf.WriteString("// Customize Type End\n")
+	buf.WriteString("\n")
+
 	buf.WriteString("// Type Record Start\n")
 
 	for _, m := range s.Messages {
@@ -277,6 +418,23 @@ func (s *Schema) CreateParamString(fileName string) string {
 		buf.WriteString(")")
 		buf.WriteString("\n\n")
 	}
+
+
+	for _, m := range s.CusMessages {
+
+		// 创建
+		buf.WriteString("//--------------------------------" + "customize_proto" + m.Name + "--------------------------------")
+		buf.WriteString("\n")
+		buf.WriteString("type (\n")
+
+		m.GenApiDefault(buf)
+		
+		buf.WriteString(")")
+		buf.WriteString("\n\n")
+	}
+
+
+
 
 	buf.WriteString("// Type Record End\n")
 	err := ioutil.WriteFile(fileName, []byte(buf.String()), 0666)
@@ -337,6 +495,9 @@ func (s *Schema) UpdateParamString(fileName string) string {
 		}
 	}
 
+
+
+
 	var newTableNames []string
 
 	for _, m := range s.Messages {
@@ -346,6 +507,56 @@ func (s *Schema) UpdateParamString(fileName string) string {
 		}
 	}
 	bufNew.WriteString(endLine)
+
+
+	//写已存在结构体
+	for {
+		line, err := buf.ReadString('\n')
+		bufNew.WriteString(line)
+		if strings.Contains(line, "Proto Customize Type") {
+			break
+		}
+		if err != nil {
+			if err == io.EOF {
+				break
+			} else {
+				return "Read file error!"
+			}
+		}
+	}
+
+	var existFieldName []string
+
+	for {
+		line, err := buf.ReadString('\n')
+		if strings.Contains(line, "Customize Type End") {
+			endLine = line
+			break
+		}
+		existFieldName = append(existFieldName, line[3:])
+		bufNew.WriteString(line)
+		if err != nil {
+			if err == io.EOF {
+				break
+			} else {
+				return "Read file error!"
+			}
+		}
+	}
+
+
+
+
+	var newFieldNames []string
+
+	for _, m := range s.CusMessages {
+		if !isInSlice(existFieldName, m.Name) {
+			newFieldNames = append(newFieldNames, m.Name)
+			bufNew.WriteString("// " + m.Name + "\n")
+		}
+	}
+	bufNew.WriteString(endLine)
+
 
 	// 写Messages
 	for {
@@ -392,6 +603,23 @@ func (s *Schema) UpdateParamString(fileName string) string {
 
 		}
 	}
+
+	for _, m := range s.CusMessages {
+		if !isInSlice(existFieldName, m.Name) {
+			bufNew.WriteString("//--------------------------------" + "customize_proto" + m.Name + "--------------------------------")
+			bufNew.WriteString("\n")
+			bufNew.WriteString("type (\n")
+
+			// 创建
+			m.GenApiDefault(bufNew)
+			bufNew.WriteString("\n")
+
+			bufNew.WriteString(")")
+			bufNew.WriteString("\n\n")
+
+		}
+	}
+
 
 	bufNew.WriteString("// Type Record End\n")
 	err = ioutil.WriteFile(fileName, []byte(bufNew.String()), 0666)

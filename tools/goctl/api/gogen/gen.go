@@ -93,11 +93,27 @@ func DoGenProject(apiFile, dir, style, marshal string) error {
 		return err
 	}
 
+	// var sep = `\`
+	// if runtime.GOOS == "linux" {
+	// 	sep = "/"
+	// }
+	//
+	// split := strings.Split(apiFile, sep)
+	//
+	// importFile := ""
+	//
+	// for i := 0; i < len(split) -1 ; i++ {
+	// 	importFile = path.Join(importFile, split[i])
+	// }
+
+
+
+
 	logx.Must(genEtc(dir, cfg, api))
 	logx.Must(genConfig(dir, cfg, api))
 	logx.Must(genMain(dir, rootPkg, cfg, api))
 	logx.Must(genServiceContext(dir, rootPkg, cfg, api))
-	logx.Must(genTypes(dir, cfg, api, marshal))
+	logx.Must(genTypes(dir, cfg, api, marshal, apiFile))
 	logx.Must(genRoutes(dir, rootPkg, cfg, api))
 	logx.Must(genHandlers(dir, rootPkg, cfg, api))
 	logx.Must(genLogic(dir, rootPkg, cfg, api))
