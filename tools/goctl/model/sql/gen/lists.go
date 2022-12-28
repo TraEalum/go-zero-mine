@@ -24,6 +24,7 @@ func genLists(table Table, withCache, postgreSql bool) (string, string, error) {
 			"primaryKey":                table.PrimaryKey.Name.ToSnake(),
 			"withCache":                 withCache,
 			"upperStartCamelObject":     camel,
+			"camel2Snake": stringx.From(camel).ToSnake(),
 			"lowerStartCamelObject":     stringx.From(camel).Untitle(),
 			"originalPrimaryKey":        wrapWithRawString(table.PrimaryKey.Name.Source(), postgreSql),
 			"lowerStartCamelPrimaryKey": util.EscapeGolangKeyword(stringx.From(table.PrimaryKey.Name.ToCamel()).Untitle()),

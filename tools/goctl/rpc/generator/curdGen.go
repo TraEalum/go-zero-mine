@@ -84,6 +84,10 @@ func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 		{{.modelName}}: []*proto.{{.modelName}}{},
 	}
 
+	if in.{{.pK}} == 0 {
+		return nil, errorm.New(errorm.ParamError, "where id = 0")
+	}
+
 	// build where
 	where := model.{{.modelName}}{
 		 {{.pK}}: in.{{.pK}},
@@ -123,7 +127,7 @@ func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 		return nil, errorm.New(errorm.RecordFindFailed, "FindOne fail.%v", err)
 	}
 
-	{{.modelNameFirstLower}}.Marshal(&resp)
+	{{.modelNameFirstLower}}.Unmarshal(&resp)
 
 	return &resp, nil
 }

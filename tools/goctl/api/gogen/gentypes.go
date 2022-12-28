@@ -30,6 +30,8 @@ func BuildTypes(types []spec.Type) (string, error) {
 		} else {
 			builder.WriteString("\n\n")
 		}
+
+		// TODO get req
 		if err := writeType(&builder, tp); err != nil {
 			return "", apiutil.WrapErr(err, "Type "+tp.Name()+" generate error")
 		}
@@ -89,6 +91,11 @@ func writeType(writer io.Writer, tp spec.Type) error {
 
 	fmt.Fprintf(writer, "type %s struct {\n", util.Title(tp.Name()))
 	for _, member := range structType.Members {
+
+		js := strings.Replace(member.Tag, "`", "", -1)
+		form := strings.Replace(js, "json", "form", -1)
+		member.Tag = "`" + js + " " + form + "`"
+
 		if member.IsInline {
 			if _, err := fmt.Fprintf(writer, "%s\n", strings.Title(member.Type.Name())); err != nil {
 				return err
