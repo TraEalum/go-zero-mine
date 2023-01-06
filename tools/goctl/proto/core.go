@@ -714,7 +714,7 @@ func (m Message) GenRpcAddReqRespMessage(buf *bytes.Buffer) {
 	curFields := []MessageField{}
 	var filedTag int
 	for _, field := range m.Fields {
-		if isInSlice([]string{"id", "create_time", "update_time", "version", "del_state", "delete_time"}, field.Name) {
+		if isInSlice([]string{"id", "create_time", "update_time", "del_state", "delete_time"}, field.Name) {
 			continue
 		}
 		filedTag++
@@ -751,7 +751,7 @@ func (m Message) GenRpcUpdateReqMessage(buf *bytes.Buffer) {
 	curFields := []MessageField{}
 	var filedTag int
 	for _, field := range m.Fields {
-		if isInSlice([]string{"create_time", "update_time", "version", "del_state", "delete_time"}, field.Name) {
+		if isInSlice([]string{"create_time", "update_time", "del_state", "delete_time"}, field.Name) {
 			continue
 		}
 		filedTag++
@@ -844,7 +844,7 @@ func (m Message) GenRpcSearchReqMessage(buf *bytes.Buffer, needList bool) {
 	}
 	var filedTag = len(curFields)
 	for _, field := range m.Fields {
-		if isInSlice([]string{"version", "del_state", "delete_time"}, field.Name) {
+		if isInSlice([]string{"del_state", "delete_time"}, field.Name) {
 			continue
 		}
 		filedTag++
