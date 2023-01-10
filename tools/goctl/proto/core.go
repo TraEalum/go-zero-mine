@@ -50,28 +50,35 @@ func GenerateSchema(db *sql.DB, table string, ignoreTables []string, serviceName
 
 	s.Syntax = proto3
 	s.ServiceName = serviceName
-	if "" != pkg {
+	if pkg != "" {
 		s.Package = pkg
 	}
-	if "" != goPkg {
+	if goPkg != "" {
 		s.GoPackage = goPkg
 	} else {
 		s.GoPackage = "./" + s.Package
 	}
 
+	var humpTableName string
+
+	table = strings.TrimSpace(table)
 	tmpName := stringx.From(table).ToCamelWithStartLower()
-	humpTableName := strings.ToUpper(string(tmpName[0])) + tmpName[1:]
+	if table != "" {
+		humpTableName = strings.ToUpper(string(tmpName[0])) + tmpName[1:]
+	}
 
 	s.HumpTbName = humpTableName
 
-	cols, err := dbColumns(db, dbs, table, subTableNumber, subTableKey)
-	if nil != err {
-		return nil, err
-	}
+	if s.HumpTbName != "" {
+		cols, err := dbColumns(db, dbs, table, subTableNumber, subTableKey)
+		if nil != err {
+			return nil, err
+		}
 
-	err = typesFromColumns(s, cols, ignoreTables)
-	if nil != err {
-		return nil, err
+		err = typesFromColumns(s, cols, ignoreTables)
+		if nil != err {
+			return nil, err
+		}
 	}
 
 	sort.Sort(s.Imports)
@@ -94,9 +101,6 @@ func typesFromColumns(s *Schema, cols []Column, ignoreTables []string) error {
 			continue
 		}
 		messageName := snaker.SnakeToCamel(c.TableName)
-		// messageName = inflect.Singularize(messageName)
-
-		// fmt.Printf("print table origin[%s] snaker[%s]", messageName, c.TableName)
 
 		msg, ok := messageMap[messageName]
 		if !ok {
@@ -295,7 +299,7 @@ func (s *Schema) CreateString() string {
 	funcTpl := "service " + s.ServiceName + "{\n"
 	for _, m := range s.Messages {
 		funcTpl += "\t //-----------------------" + m.Comment + "----------------------- \n"
-		if s.GenerateMethod == nil || len(s.GenerateMethod) == 0 {
+		if len(s.GenerateMethod) == 1 && strings.TrimSpace(s.GenerateMethod[0]) == "" {
 			funcTpl += "\t rpc Query" + m.Name + "Detail(" + m.Name + "Filter) returns (" + m.Name + "); \n"
 			funcTpl += "\t rpc Query" + m.Name + "List(" + m.Name + "Filter) returns (" + m.Name + "List); \n"
 		} else {
@@ -483,7 +487,7 @@ func (s *Schema) UpdateString() string {
 	for _, m := range s.Messages {
 		if !isInSlice(existTableName, m.Name) {
 			funcTpl += "\t //-----------------------" + m.Comment + "----------------------- \n"
-			if s.GenerateMethod == nil || len(s.GenerateMethod) == 0 {
+			if len(s.GenerateMethod) == 1 && strings.TrimSpace(s.GenerateMethod[0]) == "" {
 				funcTpl += "\t rpc Query" + m.Name + "Detail(" + m.Name + "Filter) returns (" + m.Name + "); \n"
 				funcTpl += "\t rpc Query" + m.Name + "List(" + m.Name + "Filter) returns (" + m.Name + "List); \n"
 			} else {
