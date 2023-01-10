@@ -37,9 +37,10 @@ const (
 // Do not rely on the structure of the Generated schema to provide any context about
 // the protobuf types. The schema reflects the layout of a protobuf file and should be used
 // to pipe the output of the `Schema.String()` to a file.
-func GenerateSchema(db *sql.DB, table string, ignoreTables []string, serviceName, goPkg, pkg string, dir string, subTableNumber int, subTableKey string) (*Schema, error) {
+func GenerateSchema(db *sql.DB, table string, ignoreTables []string, serviceName, goPkg, pkg string, dir string, subTableNumber int, subTableKey string, genrateMethods []string) (*Schema, error) {
 	s := &Schema{
-		Dir: dir,
+		Dir:            dir,
+		GenerateMethod: genrateMethods,
 	}
 
 	dbs, err := dbSchema(db)
@@ -67,8 +68,6 @@ func GenerateSchema(db *sql.DB, table string, ignoreTables []string, serviceName
 	if nil != err {
 		return nil, err
 	}
-
-	// fmt.Println("log print:" + table)
 
 	err = typesFromColumns(s, cols, ignoreTables)
 	if nil != err {
@@ -179,15 +178,16 @@ func dbColumns(db *sql.DB, schema, table string, subTableNumber int, subTableKey
 
 // Schema is a representation of a protobuf schema.
 type Schema struct {
-	Syntax      string
-	ServiceName string
-	GoPackage   string
-	Package     string
-	Dir         string
-	Imports     sort.StringSlice
-	Messages    MessageCollection
-	Enums       EnumCollection
-	HumpTbName  string
+	Syntax         string
+	ServiceName    string
+	GoPackage      string
+	Package        string
+	Dir            string
+	Imports        sort.StringSlice
+	Messages       MessageCollection
+	Enums          EnumCollection
+	HumpTbName     string
+	GenerateMethod []string
 }
 
 // MessageCollection represents a sortable collection of messages.
@@ -295,11 +295,25 @@ func (s *Schema) CreateString() string {
 	funcTpl := "service " + s.ServiceName + "{\n"
 	for _, m := range s.Messages {
 		funcTpl += "\t //-----------------------" + m.Comment + "----------------------- \n"
-		funcTpl += "\t rpc Create" + m.Name + "(" + m.Name + ") returns (" + m.Name + "); \n"
-		funcTpl += "\t rpc Update" + m.Name + "(" + m.Name + ") returns (" + m.Name + "); \n"
-		funcTpl += "\t rpc Delete" + m.Name + "(" + m.Name + ") returns (" + m.Name + "); \n"
-		funcTpl += "\t rpc Query" + m.Name + "Detail(" + m.Name + "Filter) returns (" + m.Name + "); \n"
-		funcTpl += "\t rpc Query" + m.Name + "List(" + m.Name + "Filter) returns (" + m.Name + "List); \n"
+		if s.GenerateMethod == nil || len(s.GenerateMethod) == 0 {
+			funcTpl += "\t rpc Query" + m.Name + "Detail(" + m.Name + "Filter) returns (" + m.Name + "); \n"
+			funcTpl += "\t rpc Query" + m.Name + "List(" + m.Name + "Filter) returns (" + m.Name + "List); \n"
+		} else {
+			if isInSlice(s.GenerateMethod, INSERT) {
+				funcTpl += "\t rpc Create" + m.Name + "(" + m.Name + ") returns (" + m.Name + "); \n"
+			}
+			if isInSlice(s.GenerateMethod, DELETE) {
+				funcTpl += "\t rpc Delete" + m.Name + "(" + m.Name + ") returns (" + m.Name + "); \n"
+			}
+			if isInSlice(s.GenerateMethod, UPDATE) {
+				funcTpl += "\t rpc Update" + m.Name + "(" + m.Name + ") returns (" + m.Name + "); \n"
+			}
+			if isInSlice(s.GenerateMethod, QUERY) {
+				funcTpl += "\t rpc Query" + m.Name + "Detail(" + m.Name + "Filter) returns (" + m.Name + "); \n"
+				funcTpl += "\t rpc Query" + m.Name + "List(" + m.Name + "Filter) returns (" + m.Name + "List); \n"
+			}
+		}
+
 	}
 	funcTpl = funcTpl + "\t // Service Record End\n"
 	funcTpl = funcTpl + "}"
@@ -469,11 +483,24 @@ func (s *Schema) UpdateString() string {
 	for _, m := range s.Messages {
 		if !isInSlice(existTableName, m.Name) {
 			funcTpl += "\t //-----------------------" + m.Comment + "----------------------- \n"
-			funcTpl += "\t rpc Create" + m.Name + "(" + m.Name + ") returns (" + m.Name + "); \n"
-			funcTpl += "\t rpc Update" + m.Name + "(" + m.Name + ") returns (" + m.Name + "); \n"
-			funcTpl += "\t rpc Delete" + m.Name + "(" + m.Name + ") returns (" + m.Name + "); \n"
-			funcTpl += "\t rpc Query" + m.Name + "Detail(" + m.Name + "Filter) returns (" + m.Name + "); \n"
-			funcTpl += "\t rpc Query" + m.Name + "List(" + m.Name + "Filter) returns (" + m.Name + "List); \n"
+			if s.GenerateMethod == nil || len(s.GenerateMethod) == 0 {
+				funcTpl += "\t rpc Query" + m.Name + "Detail(" + m.Name + "Filter) returns (" + m.Name + "); \n"
+				funcTpl += "\t rpc Query" + m.Name + "List(" + m.Name + "Filter) returns (" + m.Name + "List); \n"
+			} else {
+				if isInSlice(s.GenerateMethod, INSERT) {
+					funcTpl += "\t rpc Create" + m.Name + "(" + m.Name + ") returns (" + m.Name + "); \n"
+				}
+				if isInSlice(s.GenerateMethod, DELETE) {
+					funcTpl += "\t rpc Delete" + m.Name + "(" + m.Name + ") returns (" + m.Name + "); \n"
+				}
+				if isInSlice(s.GenerateMethod, UPDATE) {
+					funcTpl += "\t rpc Update" + m.Name + "(" + m.Name + ") returns (" + m.Name + "); \n"
+				}
+				if isInSlice(s.GenerateMethod, QUERY) {
+					funcTpl += "\t rpc Query" + m.Name + "Detail(" + m.Name + "Filter) returns (" + m.Name + "); \n"
+					funcTpl += "\t rpc Query" + m.Name + "List(" + m.Name + "Filter) returns (" + m.Name + "List); \n"
+				}
+			}
 		}
 	}
 	funcTpl = funcTpl + "\t // Service Record End\n"
@@ -670,7 +697,7 @@ type Message struct {
 	Fields  []MessageField
 }
 
-//gen default message
+// gen default message
 func (m Message) GenDefaultMessage(buf *bytes.Buffer) {
 	mOrginName := m.Name
 	mOrginFields := m.Fields
@@ -704,7 +731,7 @@ func (m Message) GenDefaultMessage(buf *bytes.Buffer) {
 	m.Fields = mOrginFields
 }
 
-//gen add req message
+// gen add req message
 func (m Message) GenRpcAddReqRespMessage(buf *bytes.Buffer) {
 	mOrginName := m.Name
 	mOrginFields := m.Fields
@@ -742,7 +769,7 @@ func (m Message) GenRpcAddReqRespMessage(buf *bytes.Buffer) {
 	// m.Fields = mOrginFields
 }
 
-//gen add resp message
+// gen add resp message
 func (m Message) GenRpcUpdateReqMessage(buf *bytes.Buffer) {
 	mOrginName := m.Name
 	mOrginFields := m.Fields
@@ -779,7 +806,7 @@ func (m Message) GenRpcUpdateReqMessage(buf *bytes.Buffer) {
 	// m.Fields = mOrginFields
 }
 
-//gen add resp message
+// gen add resp message
 func (m Message) GenRpcDelReqMessage(buf *bytes.Buffer) {
 	mOrginName := m.Name
 	mOrginFields := m.Fields
@@ -804,7 +831,7 @@ func (m Message) GenRpcDelReqMessage(buf *bytes.Buffer) {
 	m.Fields = mOrginFields
 }
 
-//gen add resp message
+// gen add resp message
 func (m Message) GenRpcGetByIdReqMessage(buf *bytes.Buffer) {
 	mOrginName := m.Name
 	mOrginFields := m.Fields
@@ -832,7 +859,7 @@ func (m Message) GenRpcGetByIdReqMessage(buf *bytes.Buffer) {
 	// m.Fields = mOrginFields
 }
 
-//gen add resp message
+// gen add resp message
 func (m Message) GenRpcSearchReqMessage(buf *bytes.Buffer, needList bool) {
 	mOrginName := m.Name
 	mOrginFields := m.Fields

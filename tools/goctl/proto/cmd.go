@@ -4,6 +4,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	//update、insert、query、delete
+	UPDATE string = "update"
+	INSERT string = "insert"
+	QUERY  string = "query"
+	DELETE string = "delete"
+)
+
 var (
 	intPort        int
 	stringPassword string
@@ -21,6 +29,9 @@ var (
 	//sub table
 	stringSubTableKey string
 	intSubTableNumber int
+
+	//根据table的传参来决定是否生成curd方法
+	stringCurdMethod string
 
 	// Cmd describes a model command.
 	Cmd = &cobra.Command{
@@ -45,6 +56,7 @@ func init() {
 	Cmd.Flags().StringVar(&stringIgnoreTables, "ignore_tables", "", "a comma spaced list of tables to ignore")
 	Cmd.Flags().IntVarP(&intSubTableNumber, "subTableNumber", "s", 0, "Sub table number")
 	Cmd.Flags().StringVarP(&stringSubTableKey, "subTableKey", "k", "", "Sub table key")
+	Cmd.Flags().StringVar(&stringCurdMethod, "i", "", "生成update、insert、query、delete方法，不传默认只生成查询方法,多个方法之间用逗号(,)分割")
 
 	//Cmd.AddCommand(mysqlCmd)
 	//Cmd.AddCommand(mongoCmd)

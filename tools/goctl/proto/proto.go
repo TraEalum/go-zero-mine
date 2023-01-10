@@ -41,9 +41,8 @@ func proto(_ *cobra.Command, _ []string) error {
 	ignoreTableStr := stringIgnoreTables
 	subTableKey := stringSubTableKey
 	subTableNumber := intSubTableNumber
+	generateCurdMethod := stringCurdMethod
 	flag.Parse()
-	//fmt.Println(port)
-	//return nil
 
 	if err := ifNotExistThenCreate(dir); err != nil {
 		log.Fatal(err)
@@ -59,7 +58,10 @@ func proto(_ *cobra.Command, _ []string) error {
 
 	ignoreTables := strings.Split(ignoreTableStr, ",")
 
-	s, err := GenerateSchema(db, table, ignoreTables, serviceName, goPackageName, packageName, dir, subTableNumber, subTableKey)
+	generateCurdMethod = strings.TrimSpace(generateCurdMethod)
+	generateMethod := strings.Split(generateCurdMethod, ",")
+
+	s, err := GenerateSchema(db, table, ignoreTables, serviceName, goPackageName, packageName, dir, subTableNumber, subTableKey, generateMethod)
 
 	if nil != err {
 		log.Fatal(err)
