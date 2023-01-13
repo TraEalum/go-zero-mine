@@ -35,6 +35,10 @@ const (
 	errTemplateFile                       = "err.tpl"
 	marshalFile                           = "marshal.tpl"
 	unmarshalFile                         = "unmarshal.tpl"
+	findOneByConditionFile                = "findOneByCondition.tpl"
+	findOneByConditionMethodTemplateFile  = "findOneByConditionMethod.tpl"
+	transFile                             = "trans.tpl"
+	transMethodTemplateFile               = "transMethod.tpl"
 )
 
 var templates = map[string]string{
@@ -62,6 +66,10 @@ var templates = map[string]string{
 	updateMethodTemplateFile:              template.UpdateMethod,
 	varTemplateFile:                       template.Vars,
 	errTemplateFile:                       template.Error,
+	findOneByConditionFile:                template.FindOneByCondition,
+	findOneByConditionMethodTemplateFile:  template.FindOneByConditionMethod,
+	transFile:                             template.Trans,
+	transMethodTemplateFile:               template.TransMethod,
 }
 
 // Category returns model const value

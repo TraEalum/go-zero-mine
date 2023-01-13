@@ -1,6 +1,7 @@
 package template
 
 const (
+	//FindOneByCondition defines find a row method.
 	FindOneByCondition = `
 func (m *default{{.upperStartCamelObject}}Model) FindOneByCondition(ctx context.Context, builder squirrel.SelectBuilder) (*{{.upperStartCamelObject}},error) {
 	query, values, err := builder.ToSql()
@@ -21,6 +22,6 @@ func (m *default{{.upperStartCamelObject}}Model) FindOneByCondition(ctx context.
 		return nil, err
 	}
 }
-`
-	FindOneByConditionMethod = `func (m *default{{.upperStartCamelObject}}Model) FindOneByCondition(ctx context.Context, builder squirrel.SelectBuilder) (*{{.upperStartCamelObject}},error) `
+`  //FindOneByConditionMethod defines find a row method.
+	FindOneByConditionMethod = `FindOneByCondition(ctx context.Context, builder squirrel.SelectBuilder) (*{{.upperStartCamelObject}},error) `
 )
