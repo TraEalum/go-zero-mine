@@ -43,6 +43,8 @@ const (
 	findListByTransTemplateFile           = "findListByTransMethod.tpl"
 	findListBatchFile                     = "findListBatch.tpl"
 	findListBatchTemplateFile             = "findListBatchMethod.tpl"
+	insertBatchFile                       = "insertBatch.tpl"
+	insertBatchFileTemplate               = "insertBatchMethod.tpl"
 )
 
 var templates = map[string]string{
@@ -78,6 +80,8 @@ var templates = map[string]string{
 	findListByTransTemplateFile:           template.FindListByTransMethod,
 	findListBatchFile:                     template.FindListBatch,
 	findListBatchTemplateFile:             template.FindListBatchMethod,
+	insertBatchFile:                       template.InsertBatch,
+	insertBatchFileTemplate:               template.InsertBatchMethod,
 }
 
 // Category returns model const value

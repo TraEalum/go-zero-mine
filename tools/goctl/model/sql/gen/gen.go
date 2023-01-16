@@ -340,7 +340,12 @@ func (g *defaultGenerator) genModel(in parser.Table, withCache bool) (string, er
 		return "", err
 	}
 
-	findCode = append(findCode, findOneByConditionCode, transCode, findListByTransCode, findListBatchCode)
+	insertBatchCode, insertBatchInterface, err := genInsertBatch(table)
+	if err != nil {
+		return "", err
+	}
+
+	findCode = append(findCode, findOneByConditionCode, transCode, findListByTransCode, findListBatchCode, insertBatchCode)
 
 	deleteCode, deleteCodeMethod, err := genDelete(table, withCache, g.isPostgreSql)
 	if err != nil {
@@ -350,7 +355,7 @@ func (g *defaultGenerator) genModel(in parser.Table, withCache bool) (string, er
 	var list []string
 	list = append(list, insertCodeMethod, findOneCodeMethod, ret.findOneInterfaceMethod,
 		updateCodeMethod, deleteCodeMethod, listsCodeMethod, findOneByConditionInterface, transInterface,
-		findListByTransCodeInterface, findListBatchInterface)
+		findListByTransCodeInterface, findListBatchInterface, insertBatchInterface)
 	typesCode, err := genTypes(table, strings.Join(modelutil.TrimStringSlice(list), pathx.NL), withCache)
 	if err != nil {
 		return "", err
