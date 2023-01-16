@@ -320,18 +320,27 @@ func (g *defaultGenerator) genModel(in parser.Table, withCache bool) (string, er
 		return "", err
 	}
 
-	findOneByConditionCode, findOneByConditionInterface, err2 := genFindOneByCondition(table)
-	if err2 != nil {
-		return "", err2
+	findOneByConditionCode, findOneByConditionInterface, err := genFindOneByCondition(table)
+	if err != nil {
+		return "", err
 	}
 
-	transCode, transInterface, err3 := genTrans(table)
-	if err3 != nil {
-		return "", err3
+	transCode, transInterface, err := genTrans(table)
+	if err != nil {
+		return "", err
 	}
 
-	findCode = append(findCode, findOneByConditionCode)
-	findCode = append(findCode, transCode)
+	findListByTransCode, findListByTransCodeInterface, err := genFindListByTrans(table)
+	if err != nil {
+		return "", err
+	}
+
+	findListBatchCode, findListBatchInterface, err := genFindListBatch(table)
+	if err != nil {
+		return "", err
+	}
+
+	findCode = append(findCode, findOneByConditionCode, transCode, findListByTransCode, findListBatchCode)
 
 	deleteCode, deleteCodeMethod, err := genDelete(table, withCache, g.isPostgreSql)
 	if err != nil {
@@ -340,7 +349,8 @@ func (g *defaultGenerator) genModel(in parser.Table, withCache bool) (string, er
 
 	var list []string
 	list = append(list, insertCodeMethod, findOneCodeMethod, ret.findOneInterfaceMethod,
-		updateCodeMethod, deleteCodeMethod, listsCodeMethod, findOneByConditionInterface, transInterface)
+		updateCodeMethod, deleteCodeMethod, listsCodeMethod, findOneByConditionInterface, transInterface,
+		findListByTransCodeInterface, findListBatchInterface)
 	typesCode, err := genTypes(table, strings.Join(modelutil.TrimStringSlice(list), pathx.NL), withCache)
 	if err != nil {
 		return "", err
