@@ -6,7 +6,6 @@ func (m *default{{.upperStartCamelObject}}Model)FindListBatch(ctx context.Contex
 	var resp []{{.upperStartCamelObject}}
 	var totalCount *int64
 
-	selectBuilder.RemoveLimit()
 	_, _, err := selectBuilder.ToSql()
 	if err != nil {
 		return nil, err
@@ -26,12 +25,16 @@ func (m *default{{.upperStartCamelObject}}Model)FindListBatch(ctx context.Contex
 	//if origin sql have limit offset
 	offset, b := sqlBuilder.Get(selectBuilder, "Offset")
 	if b {
-		startIndex = offset.(int64)
+		index, _ := offset.(string)
+		idx, _ := strconv.ParseInt(index, 10, 64)
+		startIndex = idx
 	}
 
 	limit, b := sqlBuilder.Get(selectBuilder, "Limit")
 	if b {
-		*totalCount = limit.(int64)
+		c, _ := limit.(string)
+		ct, _ := strconv.ParseInt(c, 10, 64)
+		*totalCount = ct
 	}
 
 	//batch search
@@ -41,12 +44,9 @@ func (m *default{{.upperStartCamelObject}}Model)FindListBatch(ctx context.Contex
 		if limitSize > *totalCount {
 			limitSize = *totalCount
 		}
-		query, values, err = selectBuilder.Offset(uint64(startIndex)).Limit(uint64(limitSize)).ToSql()
-		if  err != nil {
-			return nil,err
-		}
+		query, values, _ = selectBuilder.Offset(uint64(startIndex)).Limit(uint64(limitSize)).ToSql()
 
-		err = m.conn.QueryRowCtx(ctx, &temp, query, values...)
+		err = m.conn.QueryRowsCtx(ctx, &temp, query, values...)
 		if err != nil && err != ErrNotFound{
 			return nil,err
 		}
