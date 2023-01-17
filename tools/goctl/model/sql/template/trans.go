@@ -10,5 +10,5 @@ func (m *default{{.upperStartCamelObject}}Model) Trans(ctx context.Context, fn f
 }
 `
 	//TransMethod define a trans method
-	TransMethod = `Trans(ctx context.Context, fn func(ctx context.Context, session sqlx.Session)) error`
+	TransMethod = `Trans(ctx context.Context, fn func(ctx context.Context, session sqlx.Session) error) error`
 )

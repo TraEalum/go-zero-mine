@@ -7,14 +7,14 @@ func (m *default{{.upperStartCamelObject}}Model)FindListBatch(ctx context.Contex
 	var totalCount *int64
 
 	selectBuilder.RemoveLimit()
-	query, values, err := selectBuilder.ToSql()
+	_, _, err := selectBuilder.ToSql()
 	if err != nil {
 		return nil, err
 	}
 
 	count := struct{Count int64 {{.countTag}}}{}
 
-	query, values, err = sqlBuilder.Delete(selectBuilder, "Columns").(squirrel.SelectBuilder).Columns("COUNT(*) as count").ToSql()
+	query, values, err := sqlBuilder.Delete(selectBuilder, "Columns").(squirrel.SelectBuilder).Columns("COUNT(*) as count").ToSql()
 	if err = m.conn.QueryRowCtx(ctx, &count, query, values...); err != nil {
 		return nil, err
 	}
