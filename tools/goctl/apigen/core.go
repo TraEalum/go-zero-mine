@@ -88,10 +88,8 @@ func GenerateProtoType(s *Schema, serviceName string, protoFile, dir string) (*S
 		}
 	}
 
-
 	s.Syntax = synatx
 	s.ServiceName = serviceName
-
 
 	if err = typesFromProto(s, protoFile, serviceName); err != nil {
 		fmt.Println(err)
@@ -115,11 +113,10 @@ func typesFromProto(s *Schema, file, serviceName string) error {
 	}
 	defer f.Close()
 
-
 	buf := bufio.NewReader(f)
 	var strs []string
 
-	Loop:
+Loop:
 	for {
 		line, err := buf.ReadString('\n')
 		if err != nil {
@@ -145,7 +142,6 @@ func typesFromProto(s *Schema, file, serviceName string) error {
 
 	}
 
-
 	bufNew := new(bytes.Buffer)
 
 	if _, err = buf.WriteTo(bufNew); err != nil {
@@ -167,26 +163,22 @@ func typesFromProto(s *Schema, file, serviceName string) error {
 		split := strings.Split(oldSubStrings[0], "\n")
 
 		message := &Message{
-			Name:    snaker.SnakeToCamel(v),
-			Fields:make([]MessageField, 0, len(split)-1),
+			Name:   snaker.SnakeToCamel(v),
+			Fields: make([]MessageField, 0, len(split)-1),
 		}
-
-
 
 		for i := 1; i < len(split)-1; i++ {
 			var n = 2
 
 			i2 := strings.Split(split[i], " ")
 			if len(i2) == 8 && i2[n] == "repeated" {
-				n+=1
+				n += 1
 				i2[n] = "[]*" + i2[n]
 			}
 
-
-			if len(i2) < 7 || strings.Contains(i2[n], "//"){
+			if len(i2) < 7 || strings.Contains(i2[n], "//") {
 				continue
 			}
-
 
 			field := NewMessageField(i2[n], i2[n+1], strings.Replace(i2[n+4], "//", "", -1), snaker.CamelToSnake(i2[n+1]))
 
@@ -195,7 +187,6 @@ func typesFromProto(s *Schema, file, serviceName string) error {
 
 		s.CusMessages = append(s.CusMessages, message)
 	}
-
 
 	return nil
 }
@@ -297,13 +288,14 @@ func dbColumns(db *sql.DB, schema, table string) ([]Column, error) {
 
 // Schema is a representation of a protobuf schema.
 type Schema struct {
-	Syntax      string
-	ServiceName string
-	Dir         string
-	Imports     sort.StringSlice
-	Messages    MessageCollection
-	CusMessages MessageCollection
-	Enums       EnumCollection
+	Syntax             string
+	ServiceName        string
+	Dir                string
+	Imports            sort.StringSlice
+	Messages           MessageCollection
+	CusMessages        MessageCollection
+	Enums              EnumCollection
+	GenerateCurdMethod []string
 }
 
 // MessageCollection represents a sortable collection of messages.
@@ -398,27 +390,38 @@ func (s *Schema) CreateParamString(fileName string) string {
 		buf.WriteString("//--------------------------------" + m.Comment + "--------------------------------")
 		buf.WriteString("\n")
 		buf.WriteString("type (\n")
-		// 创建
-		m.GenApiDefault(buf)
-		buf.WriteString("\n")
-		m.GenApiDefaultResp(buf)
-		buf.WriteString("\n")
 
-		//更新
-		m.GenApiUpdateReq(buf)
-		buf.WriteString("\n")
-		m.GenApiUpdateResp(buf)
-		buf.WriteString("\n")
-
-		//查询
-		m.GenApiQueryReq(buf)
-		buf.WriteString("\n")
-		m.GenApiQueryResp(buf)
+		if len(s.GenerateCurdMethod) == 1 && strings.TrimSpace(s.GenerateCurdMethod[0]) == "" {
+			//查询
+			m.GenApiQueryReq(buf)
+			buf.WriteString("\n")
+			m.GenApiQueryResp(buf)
+		} else {
+			if isInSlice(s.GenerateCurdMethod, INSERT) {
+				// 创建
+				m.GenApiDefault(buf)
+				buf.WriteString("\n")
+				m.GenApiDefaultResp(buf)
+				buf.WriteString("\n")
+			}
+			if isInSlice(s.GenerateCurdMethod, UPDATE) {
+				//更新
+				m.GenApiUpdateReq(buf)
+				buf.WriteString("\n")
+				m.GenApiUpdateResp(buf)
+				buf.WriteString("\n")
+			}
+			if isInSlice(s.GenerateCurdMethod, QUERY) {
+				//查询
+				m.GenApiQueryReq(buf)
+				buf.WriteString("\n")
+				m.GenApiQueryResp(buf)
+			}
+		}
 
 		buf.WriteString(")")
 		buf.WriteString("\n\n")
 	}
-
 
 	for _, m := range s.CusMessages {
 
@@ -428,13 +431,10 @@ func (s *Schema) CreateParamString(fileName string) string {
 		buf.WriteString("type (\n")
 
 		m.GenApiDefault(buf)
-		
+
 		buf.WriteString(")")
 		buf.WriteString("\n\n")
 	}
-
-
-
 
 	buf.WriteString("// Type Record End\n")
 	err := ioutil.WriteFile(fileName, []byte(buf.String()), 0666)
@@ -495,9 +495,6 @@ func (s *Schema) UpdateParamString(fileName string) string {
 		}
 	}
 
-
-
-
 	var newTableNames []string
 
 	for _, m := range s.Messages {
@@ -507,7 +504,6 @@ func (s *Schema) UpdateParamString(fileName string) string {
 		}
 	}
 	bufNew.WriteString(endLine)
-
 
 	//写已存在结构体
 	for {
@@ -544,9 +540,6 @@ func (s *Schema) UpdateParamString(fileName string) string {
 		}
 	}
 
-
-
-
 	var newFieldNames []string
 
 	for _, m := range s.CusMessages {
@@ -556,7 +549,6 @@ func (s *Schema) UpdateParamString(fileName string) string {
 		}
 	}
 	bufNew.WriteString(endLine)
-
 
 	// 写Messages
 	for {
@@ -581,23 +573,33 @@ func (s *Schema) UpdateParamString(fileName string) string {
 			bufNew.WriteString("\n")
 			bufNew.WriteString("type (\n")
 
-			// 创建
-			m.GenApiDefault(bufNew)
-			bufNew.WriteString("\n")
-			m.GenApiDefaultResp(bufNew)
-			bufNew.WriteString("\n")
-
-			//更新
-			m.GenApiUpdateReq(bufNew)
-			bufNew.WriteString("\n")
-			m.GenApiUpdateResp(bufNew)
-			bufNew.WriteString("\n")
-
-			//查询
-			m.GenApiQueryReq(bufNew)
-			bufNew.WriteString("\n")
-			m.GenApiQueryResp(bufNew)
-
+			if len(s.GenerateCurdMethod) == 1 && strings.TrimSpace(s.GenerateCurdMethod[0]) == "" {
+				//查询
+				m.GenApiQueryReq(bufNew)
+				bufNew.WriteString("\n")
+				m.GenApiQueryResp(bufNew)
+			} else {
+				if isInSlice(s.GenerateCurdMethod, INSERT) {
+					// 创建
+					m.GenApiDefault(bufNew)
+					bufNew.WriteString("\n")
+					m.GenApiDefaultResp(bufNew)
+					bufNew.WriteString("\n")
+				}
+				if isInSlice(s.GenerateCurdMethod, UPDATE) {
+					//更新
+					m.GenApiUpdateReq(bufNew)
+					bufNew.WriteString("\n")
+					m.GenApiUpdateResp(bufNew)
+					bufNew.WriteString("\n")
+				}
+				if isInSlice(s.GenerateCurdMethod, QUERY) {
+					//查询
+					m.GenApiQueryReq(bufNew)
+					bufNew.WriteString("\n")
+					m.GenApiQueryResp(bufNew)
+				}
+			}
 			bufNew.WriteString(")")
 			bufNew.WriteString("\n\n")
 
@@ -619,7 +621,6 @@ func (s *Schema) UpdateParamString(fileName string) string {
 
 		}
 	}
-
 
 	bufNew.WriteString("// Type Record End\n")
 	err = ioutil.WriteFile(fileName, []byte(bufNew.String()), 0666)

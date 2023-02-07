@@ -22,6 +22,11 @@ func apigen(_ *cobra.Command, _ []string) error {
 	serviceName := stringServiceName
 	ignoreTableStr := stringIgnoreTables
 	protoFile := stringProtoFile
+	generateCurdMethod := stringCurdMethod
+
+	generateCurdMethod = strings.TrimSpace(generateCurdMethod)
+	generateMethod := strings.Split(generateCurdMethod, ",")
+
 	flag.Parse()
 
 	dir = path.Join(dir, "/") + "/"
@@ -42,6 +47,7 @@ func apigen(_ *cobra.Command, _ []string) error {
 		if nil != err {
 			log.Fatal(err)
 		}
+		s.GenerateCurdMethod = generateMethod
 
 		s, err = GenerateProtoType(s, serviceName, protoFile, dir)
 		if nil != err {
@@ -51,7 +57,6 @@ func apigen(_ *cobra.Command, _ []string) error {
 		if nil != s {
 			fmt.Println(s)
 		}
-
 
 	} else if protoFile != "" && serviceName != "" {
 		s, err := GenerateProtoType(nil, serviceName, protoFile, dir)
@@ -79,14 +84,12 @@ func apigen(_ *cobra.Command, _ []string) error {
 		if nil != err {
 			log.Fatal(err)
 		}
+		s.GenerateCurdMethod = generateMethod
 
 		if nil != s {
 			fmt.Println(s)
 		}
 	}
 
-
-
 	return nil
 }
-

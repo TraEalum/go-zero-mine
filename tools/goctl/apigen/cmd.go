@@ -4,6 +4,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	//update、insert、query、delete
+	UPDATE string = "update"
+	INSERT string = "insert"
+	QUERY  string = "query"
+	DELETE string = "delete"
+)
+
 var (
 	intPort            int
 	stringPassword     string
@@ -14,7 +22,8 @@ var (
 	stringTable        string
 	stringServiceName  string
 	stringIgnoreTables string
-	stringProtoFile string
+	stringProtoFile    string
+	stringCurdMethod   string
 
 	// Cmd describes a model command.
 	Cmd = &cobra.Command{
@@ -35,6 +44,7 @@ func init() {
 	Cmd.Flags().StringVar(&stringServiceName, "serviceName", "", "the protobuf service name , defaults to the database schema.")
 	Cmd.Flags().StringVar(&stringIgnoreTables, "ignore_tables", "", "a comma spaced list of tables to ignore")
 	Cmd.Flags().StringVar(&stringProtoFile, "proto", "", "the proto file path")
+	Cmd.Flags().StringVar(&stringCurdMethod, "i", "", "生成update、insert、query、delete方法，不传默认只生成查询方法,多个方法之间用逗号(,)分割")
 
 	//Cmd.AddCommand(mysqlCmd)
 	//Cmd.AddCommand(mongoCmd)
