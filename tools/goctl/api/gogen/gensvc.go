@@ -3,8 +3,9 @@ package gogen
 import (
 	_ "embed"
 	"fmt"
-	"github.com/zeromicro/go-zero/tools/goctl/apigen"
 	"strings"
+
+	"github.com/zeromicro/go-zero/tools/goctl/apigen"
 
 	"github.com/zeromicro/go-zero/tools/goctl/api/spec"
 	"github.com/zeromicro/go-zero/tools/goctl/config"
@@ -81,7 +82,7 @@ func genRpcImport(api *spec.ApiSpec, types []spec.Type) string {
 	var build strings.Builder
 	serviceName := strings.ToLower(api.Service.Name)
 	build.WriteString("\"github.com/zeromicro/go-zero/zrpc\"\n")
-	build.WriteString(fmt.Sprintf("\"go-service/app/%s/rpc/%s\"", serviceName, serviceName))
+	build.WriteString(fmt.Sprintf("\"%s-service/rpc/%s\"", serviceName, serviceName))
 
 	return build.String()
 }

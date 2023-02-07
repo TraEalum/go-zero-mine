@@ -6,7 +6,7 @@ import (
 	json "github.com/json-iterator/go"
 
 	{{.ImportPackages}}
-	"go-service/comm/httpm"
+	"comm/httpm"
 
 	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/rest/httpx"

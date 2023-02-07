@@ -40,11 +40,10 @@ func (m *default{{.upperStartCamelObject}}Model)FindListBatch(ctx context.Contex
 	//batch search
 	for startIndex <= *totalCount{
 		var temp []{{.upperStartCamelObject}}
-		limitSize := startIndex+batchSize
-		if limitSize > *totalCount {
-			limitSize = *totalCount
+		if startIndex > *totalCount {
+			startIndex = *totalCount
 		}
-		query, values, _ = selectBuilder.Offset(uint64(startIndex)).Limit(uint64(limitSize)).ToSql()
+		query, values, _ = selectBuilder.Offset(uint64(startIndex)).Limit(uint64(batchSize)).ToSql()
 
 		err = m.conn.QueryRowsCtx(ctx, &temp, query, values...)
 		if err != nil && err != ErrNotFound{

@@ -31,10 +31,13 @@ func (g *Generator) GenServer(ctx DirContext, proto parser.Proto, cfg *conf.Conf
 	dir := ctx.GetServer()
 	logicImport := fmt.Sprintf(`"%v"`, ctx.GetLogic().Package)
 	svcImport := fmt.Sprintf(`"%v"`, ctx.GetSvc().Package)
-	pbImport := fmt.Sprintf(`"%v"`, ctx.GetPb().Package)
+	//pbImport := fmt.Sprintf(`"%v"`, ctx.GetPb().Package)
+	pbImport := fmt.Sprintf("proto \"proto/%s\"", proto.Service.Name)
 
 	imports := collection.NewSet()
 	imports.AddStr(logicImport, svcImport, pbImport)
+
+	fmt.Printf("GenServer:[%v]", imports.Keys())
 
 	head := util.GetHead(proto.Name)
 	service := proto.Service
@@ -64,7 +67,7 @@ func (g *Generator) GenServer(ctx DirContext, proto parser.Proto, cfg *conf.Conf
 
 	err = util.With("server").GoFmt(true).Parse(text).SaveTo(map[string]interface{}{
 		"head":                head,
-		"unimplementedServer": fmt.Sprintf("%s.Unimplemented%sServer", proto.PbPackage, stringx.From(service.Name).ToCamel()),
+		"unimplementedServer": fmt.Sprintf("%s.Unimplemented%sServer", "proto", stringx.From(service.Name).ToCamel()),
 		"server":              stringx.From(service.Name).ToCamel(),
 		"imports":             strings.Join(imports.KeysStr(), pathx.NL),
 		"funcs":               strings.Join(funcList, pathx.NL),

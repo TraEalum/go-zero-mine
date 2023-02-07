@@ -26,7 +26,8 @@ func (g *Generator) GenMain(ctx DirContext, proto parser.Proto, cfg *conf.Config
 
 	fileName := filepath.Join(ctx.GetMain().Filename, fmt.Sprintf("%v.go", mainFilename))
 	imports := make([]string, 0)
-	pbImport := fmt.Sprintf(`"%v"`, ctx.GetPb().Package)
+	//pbImport := fmt.Sprintf(`"%v"`, ctx.GetPb().Package)
+	pbImport := fmt.Sprintf(`proto "proto/%s"`, proto.Service.Name)
 	svcImport := fmt.Sprintf(`"%v"`, ctx.GetSvc().Package)
 	remoteImport := fmt.Sprintf(`"%v"`, ctx.GetServer().Package)
 	configImport := fmt.Sprintf(`"%v"`, ctx.GetConfig().Package)

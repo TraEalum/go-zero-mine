@@ -3,10 +3,11 @@ package gogen
 import (
 	_ "embed"
 	"fmt"
-	"github.com/zeromicro/go-zero/tools/goctl/apigen"
 	"path"
 	"strconv"
 	"strings"
+
+	"github.com/zeromicro/go-zero/tools/goctl/apigen"
 
 	"github.com/zeromicro/go-zero/tools/goctl/api/parser/g4/gen/api"
 	"github.com/zeromicro/go-zero/tools/goctl/api/spec"
@@ -53,7 +54,7 @@ func genLogicByRoute(dir, rootPkg string, cfg *config.Config, group spec.Group, 
 	if len(route.RequestTypeName()) > 0 {
 		requestString = "req *" + requestGoTypeName(route, typesPacket)
 	}
-	path := fmt.Sprintf("\"go-service/app/%s/rpc/proto\"", api.Service.Name)
+	path := fmt.Sprintf("proto \"proto/%s\"", api.Service.Name)
 	subDir := getLogicFolderPath(group, route)
 	return genFile(fileGenConfig{
 		dir:             dir,

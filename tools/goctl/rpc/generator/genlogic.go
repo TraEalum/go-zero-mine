@@ -3,8 +3,11 @@ package generator
 import (
 	"database/sql"
 	_ "embed"
-	"errors"
 	"fmt"
+	"path/filepath"
+	"strings"
+	"sync"
+
 	"github.com/zeromicro/go-zero/core/collection"
 	conf "github.com/zeromicro/go-zero/tools/goctl/config"
 	"github.com/zeromicro/go-zero/tools/goctl/rpc/parser"
@@ -12,9 +15,6 @@ import (
 	"github.com/zeromicro/go-zero/tools/goctl/util/format"
 	"github.com/zeromicro/go-zero/tools/goctl/util/pathx"
 	"github.com/zeromicro/go-zero/tools/goctl/util/stringx"
-	"path/filepath"
-	"strings"
-	"sync"
 )
 
 const logicFunctionTemplate = `{{if .hasComment}}{{.comment}}{{end}}
@@ -58,16 +58,18 @@ func (g *Generator) GenLogic(ctx DirContext, proto parser.Proto, cfg *conf.Confi
 
 		imports := collection.NewSet()
 		imports.AddStr(fmt.Sprintf(`"%v"`, ctx.GetSvc().Package))
-		imports.AddStr(fmt.Sprintf(`"%v"`, ctx.GetPb().Package))
-		imports.AddStr(fmt.Sprintf(`"go-service/comm/errorm"`))
+		//imports.AddStr(fmt.Sprintf(`"%v"`, ctx.GetPb().Package))
+		imports.AddStr(fmt.Sprintf(`proto "proto/%s"`, service))
+
+		imports.AddStr("\"comm/errorm\"")
 		if functions.HasSqlc {
-			imports.AddStr(fmt.Sprintf(`"github.com/zeromicro/go-zero/core/stores/sqlc"`))
+			imports.AddStr("\"github.com/zeromicro/go-zero/core/stores/sqlc\"")
 		}
 		if functions.HasUtil {
-			imports.AddStr(fmt.Sprintf(`"go-service/comm/util"`))
+			imports.AddStr("\"comm/util\"")
 		}
 		if functions.HasModel {
-			imports.AddStr(fmt.Sprintf(`"go-service/app/%s/model"`, proto.Service.Name))
+			imports.AddStr(fmt.Sprintf(`"%s-service/model"`, proto.Service.Name))
 		}
 		text, err := pathx.LoadTemplate(category, logicTemplateFileFile, logicTemplate)
 		if err != nil {
@@ -178,7 +180,7 @@ var (
 func getPrimaryKey(modelName string) (camels string, mark string, err error) {
 	defer func() {
 		if msg := recover(); err != nil {
-			err = errors.New(fmt.Sprintf("getPrimaryKey recover%v", msg))
+			err = fmt.Errorf("getPrimaryKey recover%v", msg)
 		}
 	}()
 

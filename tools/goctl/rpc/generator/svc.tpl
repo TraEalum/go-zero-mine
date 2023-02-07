@@ -4,7 +4,7 @@ package svc
 
 import (
 	{{.imports}}
-	"go-service/app/{{.serviceName}}/model"
+	"{{.serviceName}}-service/model"
 
 	"github.com/zeromicro/go-zero/core/stores/sqlx"
 	)

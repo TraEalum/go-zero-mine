@@ -6,8 +6,8 @@ import (
 
 	{{.imports}}
 
-	"go-service/comm/configm"
-	"go-service/comm/util"
+	"comm/configm"
+	"comm/util"
 	
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/core/service"

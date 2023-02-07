@@ -71,8 +71,9 @@ func (g *Generator) GenCall(ctx DirContext, proto parser.Proto, cfg *conf.Config
 		}
 	}
 
-	pbPackage := fmt.Sprintf(`"%s"`, ctx.GetPb().Package)
-	protoGoPackage := fmt.Sprintf(`"%s"`, ctx.GetProtoGo().Package)
+	pbPackage := fmt.Sprintf(`proto "proto/%s"`, proto.Service.Name)
+	//protoGoPackage := fmt.Sprintf(`"%s"`, ctx.GetProtoGo().Package)
+	protoGoPackage := ""
 	if isCallPkgSameToGrpcPkg {
 		pbPackage = ""
 		protoGoPackage = ""

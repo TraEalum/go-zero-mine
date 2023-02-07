@@ -66,7 +66,7 @@ func GenMarshal(api *spec.ApiSpec, category, apiFile string) error {
 			"upperStartCamelObject": tableName,
 			"unmarshallFields":      unMarshal,
 			"marshalFields":         marshal,
-			"importProto":           fmt.Sprintf("import \"go-service/app/%s/rpc/proto\"", serviceName),
+			"importProto":           fmt.Sprintf("import proto \"proto/%s\"", serviceName),
 		}
 
 		t := template.Must(template.New("marshalTemplate").Parse(marshalTemplate))
@@ -143,7 +143,7 @@ func writeUmMarshalField(writer io.Writer, tp spec.DefineStruct) error {
 	return nil
 }
 
-//获取表名
+// 获取表名
 func getTables(api *spec.ApiSpec, apiFile string) []string {
 	var res []string
 
@@ -168,7 +168,7 @@ func getTables(api *spec.ApiSpec, apiFile string) []string {
 	return res
 }
 
-//读取参数文件，获取里面的表名称
+// 读取参数文件，获取里面的表名称
 func readFileTable(path string) ([]string, error) {
 	var res []string
 	file, err := os.OpenFile(path, os.O_RDWR, 0666)
@@ -225,7 +225,7 @@ func readFileTable(path string) ([]string, error) {
 	return res, nil
 }
 
-//获取原有自定义的内容，如果存在的情况下
+// 获取原有自定义的内容，如果存在的情况下
 func getCustomizationContext(filePath string) (string, error) {
 	f, err := os.Open(filePath)
 	if err != nil {

@@ -6,6 +6,7 @@ import (
 	_ "embed"
 	"errors"
 	"fmt"
+
 	"github.com/zeromicro/go-zero/core/stringx"
 	"github.com/zeromicro/go-zero/tools/goctl/api/spec"
 	"github.com/zeromicro/go-zero/tools/goctl/util"
@@ -18,7 +19,6 @@ import (
 
 	util2 "github.com/zeromicro/go-zero/tools/goctl/api/util"
 )
-
 
 //go:embed customize_marshal.tpl
 var customizeMarshalTemplate string
@@ -45,7 +45,6 @@ func GenCustomizeMarshal(api *spec.ApiSpec, category, apiFile string) error {
 		return errors.New("no marshal and unMarsha func() to generate")
 	}
 
-
 	for _, tp := range need2gen {
 		var temp strings.Builder
 		tableName := util.Title(tp.Name())
@@ -69,7 +68,7 @@ func GenCustomizeMarshal(api *spec.ApiSpec, category, apiFile string) error {
 			"upperStartCamelObject": tableName,
 			"unmarshallFields":      unMarshal,
 			"marshalFields":         marshal,
-			"importProto":           fmt.Sprintf("import \"go-service/app/%s/rpc/proto\"", serviceName),
+			"importProto":           fmt.Sprintf("import proto \"/proto/%s\"", serviceName),
 		}
 
 		t := template.Must(template.New("customizeMarshalTemplate").Parse(customizeMarshalTemplate))
@@ -116,9 +115,8 @@ func GenCustomizeMarshal(api *spec.ApiSpec, category, apiFile string) error {
 	return nil
 }
 
-
 // 获取自定义结构体
-//获取表名
+// 获取表名
 func getFields(api *spec.ApiSpec, apiFile string) []string {
 	var res []string
 
