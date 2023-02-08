@@ -10,14 +10,14 @@ import (
 const ModelCustom = `package {{.pkg}}
 {{if .withCache}}
 import (
-	"go-service/app/{{.serviceName}}/rpc/proto"
+	proto "proto/{{.serviceName}}"
 
 	"github.com/zeromicro/go-zero/core/stores/cache"
 	"github.com/zeromicro/go-zero/core/stores/sqlx"
 )
 {{else}}
 import (
-	"go-service/app/{{.serviceName}}/rpc/proto"
+	proto "proto/{{.serviceName}}"
 
 	"github.com/zeromicro/go-zero/core/stores/sqlx"
 )
@@ -82,14 +82,14 @@ const ModelCustomSubTable = `package {{.pkg}}
 {{if .withCache}}
 import (
     "fmt"
-	"go-service/app/{{.serviceName}}/rpc/proto"
+	proto "proto/{{.serviceName}}"
 
 	"github.com/zeromicro/go-zero/core/stores/cache"
 	"github.com/zeromicro/go-zero/core/stores/sqlx"
 )
 {{else}}
 import (
-	"go-service/app/{{.serviceName}}/rpc/proto"
+	proto "proto/{{.serviceName}}"
 
 	"github.com/zeromicro/go-zero/core/stores/sqlx"
 )

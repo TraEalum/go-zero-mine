@@ -123,7 +123,7 @@ func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 		return nil, errorm.New(errorm.RecordFindFailed, "FindOne fail.%v", err)
 	}
 
-	{{.modelNameFirstLower}}.Marshal(&resp)
+	{{.modelNameFirstLower}}.Unmarshal(&resp)
 
 	return &resp, nil
 }

@@ -9,9 +9,9 @@ const (
 	"strconv"
 	"strings"
 	{{if .time}}"time"{{end}}
-	"go-service/comm/util"
+	"comm/util"
 
-	"go-service/app/{{.serviceName}}/rpc/proto"
+	"proto/{{.serviceName}}"
 	"github.com/Masterminds/squirrel"
 	sqlBuilder "github.com/lann/builder"
 	"github.com/zeromicro/go-zero/core/stores/builder"
@@ -26,9 +26,10 @@ const (
 	"context"
 	"database/sql"
 	"fmt"
+	"strconv"
 	"strings"
 	{{if .time}}"time"{{end}}
-	"go-service/comm/util"
+	"comm/util"
 	
 	"github.com/Masterminds/squirrel"
 	sqlBuilder "github.com/lann/builder"

@@ -991,9 +991,9 @@ func (m Message) GenApiUpdateResp(buf *bytes.Buffer) {
 func (m Message) GenApiQueryListReq(buf *bytes.Buffer) {
 	mOrginName := FirstUpper(m.Name)
 	buf.WriteString(fmt.Sprintf("%sQuery%sReq {\n", indent, mOrginName))
-	buf.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s,optional\"`   \n", indent, indent, "Id", "int64", "id"))
-	buf.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s,optional\"`   \n", indent, indent, "PageNo", "int64", "page_no"))
-	buf.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s,optional\"`   \n", indent, indent, "PageSize", "int64", "page_size"))
+	buf.WriteString(fmt.Sprintf("%s%s%s   %s  `form:\"%s,optional\"`   \n", indent, indent, "Id", "int64", "id"))
+	buf.WriteString(fmt.Sprintf("%s%s%s   %s  `form:\"%s,optional\"`   \n", indent, indent, "PageNo", "int64", "page_no"))
+	buf.WriteString(fmt.Sprintf("%s%s%s   %s  `form:\"%s,optional\"`   \n", indent, indent, "PageSize", "int64", "page_size"))
 	buf.WriteString(fmt.Sprintf("%s}\n", indent))
 }
 
