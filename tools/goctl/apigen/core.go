@@ -33,7 +33,7 @@ func GenerateSchema(db *sql.DB, table string, ignoreTables []string, serviceName
 	if os.IsNotExist(err) {
 		err = os.MkdirAll(dir, os.ModePerm)
 		if err != nil {
-			fmt.Println(fmt.Sprintf("创建文件错误:%v", err))
+			fmt.Printf("创建文件错误:%v", err)
 			panic(err)
 		}
 	}
@@ -77,7 +77,7 @@ func GenerateProtoType(s *Schema, serviceName string, protoFile, dir string) (*S
 	if os.IsNotExist(err) {
 		err = os.MkdirAll(dir, os.ModePerm)
 		if err != nil {
-			fmt.Println(fmt.Sprintf("创建文件错误:%v", err))
+			fmt.Printf("创建文件错误:%v", err)
 			panic(err)
 		}
 	}
@@ -390,38 +390,27 @@ func (s *Schema) CreateParamString(fileName string) string {
 		buf.WriteString("//--------------------------------" + m.Comment + "--------------------------------")
 		buf.WriteString("\n")
 		buf.WriteString("type (\n")
+		// 创建
+		m.GenApiDefault(buf)
+		buf.WriteString("\n")
+		m.GenApiDefaultResp(buf)
+		buf.WriteString("\n")
 
-		if len(s.GenerateCurdMethod) == 1 && strings.TrimSpace(s.GenerateCurdMethod[0]) == "" {
-			//查询
-			m.GenApiQueryReq(buf)
-			buf.WriteString("\n")
-			m.GenApiQueryResp(buf)
-		} else {
-			if isInSlice(s.GenerateCurdMethod, INSERT) {
-				// 创建
-				m.GenApiDefault(buf)
-				buf.WriteString("\n")
-				m.GenApiDefaultResp(buf)
-				buf.WriteString("\n")
-			}
-			if isInSlice(s.GenerateCurdMethod, UPDATE) {
-				//更新
-				m.GenApiUpdateReq(buf)
-				buf.WriteString("\n")
-				m.GenApiUpdateResp(buf)
-				buf.WriteString("\n")
-			}
-			if isInSlice(s.GenerateCurdMethod, QUERY) {
-				//查询
-				m.GenApiQueryReq(buf)
-				buf.WriteString("\n")
-				m.GenApiQueryResp(buf)
-			}
-		}
+		//更新
+		m.GenApiUpdateReq(buf)
+		buf.WriteString("\n")
+		m.GenApiUpdateResp(buf)
+		buf.WriteString("\n")
 
-		buf.WriteString(")")
-		buf.WriteString("\n\n")
+		//查询
+		m.GenApiQueryListReq(buf)
+		buf.WriteString("\n")
+		m.GenApiQueryListResp(buf)
+
 	}
+
+	buf.WriteString(")")
+	buf.WriteString("\n\n")
 
 	for _, m := range s.CusMessages {
 
@@ -437,9 +426,9 @@ func (s *Schema) CreateParamString(fileName string) string {
 	}
 
 	buf.WriteString("// Type Record End\n")
-	err := ioutil.WriteFile(fileName, []byte(buf.String()), 0666)
+	err := ioutil.WriteFile(fileName, buf.Bytes(), 0666)
 	if err != nil {
-		fmt.Println(fmt.Sprintf("生成paramFile文件失败:%v", err.Error()))
+		fmt.Printf("生成paramFile文件失败:%v", err.Error())
 		return ""
 	}
 
@@ -573,36 +562,25 @@ func (s *Schema) UpdateParamString(fileName string) string {
 			bufNew.WriteString("\n")
 			bufNew.WriteString("type (\n")
 
-			if len(s.GenerateCurdMethod) == 1 && strings.TrimSpace(s.GenerateCurdMethod[0]) == "" {
-				//查询
-				m.GenApiQueryReq(bufNew)
-				bufNew.WriteString("\n")
-				m.GenApiQueryResp(bufNew)
-			} else {
-				if isInSlice(s.GenerateCurdMethod, INSERT) {
-					// 创建
-					m.GenApiDefault(bufNew)
-					bufNew.WriteString("\n")
-					m.GenApiDefaultResp(bufNew)
-					bufNew.WriteString("\n")
-				}
-				if isInSlice(s.GenerateCurdMethod, UPDATE) {
-					//更新
-					m.GenApiUpdateReq(bufNew)
-					bufNew.WriteString("\n")
-					m.GenApiUpdateResp(bufNew)
-					bufNew.WriteString("\n")
-				}
-				if isInSlice(s.GenerateCurdMethod, QUERY) {
-					//查询
-					m.GenApiQueryReq(bufNew)
-					bufNew.WriteString("\n")
-					m.GenApiQueryResp(bufNew)
-				}
-			}
+			// 创建
+			m.GenApiDefault(bufNew)
+			bufNew.WriteString("\n")
+			m.GenApiDefaultResp(bufNew)
+			bufNew.WriteString("\n")
+
+			//更新
+			m.GenApiUpdateReq(bufNew)
+			bufNew.WriteString("\n")
+			m.GenApiUpdateResp(bufNew)
+			bufNew.WriteString("\n")
+
+			//查询
+			m.GenApiQueryListReq(bufNew)
+			bufNew.WriteString("\n")
+			m.GenApiQueryListResp(bufNew)
+
 			bufNew.WriteString(")")
 			bufNew.WriteString("\n\n")
-
 		}
 	}
 
@@ -623,7 +601,7 @@ func (s *Schema) UpdateParamString(fileName string) string {
 	}
 
 	bufNew.WriteString("// Type Record End\n")
-	err = ioutil.WriteFile(fileName, []byte(bufNew.String()), 0666)
+	err = ioutil.WriteFile(fileName, bufNew.Bytes(), 0666)
 
 	return "paramFile DONE"
 }
@@ -664,23 +642,41 @@ func (s *Schema) CreateString() string {
 	for _, m := range s.Messages {
 		funcTpl += "\t//-----------------------" + m.Comment + "----------------------- \n"
 		firstUpperName := FirstUpper(m.Name)
-		funcTpl += "\t@doc  \"" + m.Name + "创建[auto]\"\n"
-		funcTpl += "\t@handler  create" + m.Name + "\n"
-		funcTpl += "\tpost /" + firstUpperName + "/create" + " (" + m.Name + ") returns (Create" + firstUpperName + "Resp); \n\n"
+		if len(s.GenerateCurdMethod) == 1 && strings.TrimSpace(s.GenerateCurdMethod[0]) == "" {
+			funcTpl += "\t@doc  \"" + m.Name + "列表查找[auto]\"\n"
+			funcTpl += "\t@handler  query" + m.Name + "List\n"
+			funcTpl += "\tget /" + firstUpperName + "/query" + " (Query" + firstUpperName + "Req) returns (Query" + m.Name + "Resp); \n\n"
 
-		funcTpl += "\t@doc  \"" + m.Name + "更新[auto]\"\n"
-		funcTpl += "\t@handler  update" + m.Name + "\n"
-		funcTpl += "\tpost /" + firstUpperName + "/update" + " (Update" + m.Name + "Req) returns (Update" + firstUpperName + "Resp); \n\n"
+			funcTpl += "\t@doc  \"" + m.Name + "查找[auto]\"\n"
+			funcTpl += "\t@handler  query" + m.Name + "\n"
+			funcTpl += "\tget /" + firstUpperName + " (Query" + firstUpperName + "Req) returns (" + firstUpperName + "); \n\n"
+		} else {
+			if isInSlice(s.GenerateCurdMethod, INSERT) {
+				funcTpl += "\t@doc  \"" + m.Name + "创建[auto]\"\n"
+				funcTpl += "\t@handler  create" + m.Name + "\n"
+				funcTpl += "\tpost /" + firstUpperName + "/create" + " (" + m.Name + ") returns (Create" + firstUpperName + "Resp); \n\n"
+			}
+			if isInSlice(s.GenerateCurdMethod, UPDATE) {
+				funcTpl += "\t@doc  \"" + m.Name + "更新[auto]\"\n"
+				funcTpl += "\t@handler  update" + m.Name + "\n"
+				funcTpl += "\tpost /" + firstUpperName + "/update" + " (Update" + m.Name + "Req) returns (Update" + firstUpperName + "Resp); \n\n"
+			}
+			if isInSlice(s.GenerateCurdMethod, QUERY) {
+				funcTpl += "\t@doc  \"" + m.Name + "列表查找[auto]\"\n"
+				funcTpl += "\t@handler  query" + m.Name + "List\n"
+				funcTpl += "\tget /" + firstUpperName + "/query" + " (Query" + firstUpperName + "Req) returns (Query" + m.Name + "Resp); \n\n"
 
-		funcTpl += "\t@doc  \"" + m.Name + "查找[auto]\"\n"
-		funcTpl += "\t@handler  query" + m.Name + "\n"
-		funcTpl += "\tget /" + firstUpperName + "/query" + " (Query" + firstUpperName + "Req) returns (Query" + m.Name + "Resp); \n\n"
+				funcTpl += "\t@doc  \"" + m.Name + "查找[auto]\"\n"
+				funcTpl += "\t@handler  query" + m.Name + "\n"
+				funcTpl += "\tget /" + firstUpperName + " (Query" + firstUpperName + "Req) returns (" + firstUpperName + "); \n\n"
+			}
+		}
 
 	}
 	funcTpl = funcTpl + "\t // Service Record End\n"
 	funcTpl = funcTpl + "}"
 	buf.WriteString(funcTpl)
-	err := ioutil.WriteFile(fileName, []byte(buf.String()), 0666)
+	err := ioutil.WriteFile(fileName, buf.Bytes(), 0666)
 	if err != nil {
 		return ""
 	}
@@ -811,17 +807,35 @@ func (s *Schema) UpdateString() string {
 			funcTpl += "\t//-----------------------" + m.Comment + "----------------------- \n"
 
 			firstUpperName := FirstUpper(m.Name)
-			funcTpl += "\t@doc  \"创建" + m.Name + "\"\n"
-			funcTpl += "\t@handler  create" + m.Name + "\n"
-			funcTpl += "\tpost " + "/create" + firstUpperName + " (" + m.Name + ") returns (Create" + firstUpperName + "Resp); \n\n"
+			if len(s.GenerateCurdMethod) == 1 && strings.TrimSpace(s.GenerateCurdMethod[0]) == "" {
+				funcTpl += "\t@doc  \"" + m.Name + "列表查找[auto]\"\n"
+				funcTpl += "\t@handler  query" + m.Name + "List\n"
+				funcTpl += "\tget /" + firstUpperName + "/query" + " (Query" + firstUpperName + "Req) returns (Query" + m.Name + "Resp); \n\n"
 
-			funcTpl += "\t@doc  \"更新" + m.Name + "\"\n"
-			funcTpl += "\t@handler  update" + m.Name + "\n"
-			funcTpl += "\tpost " + "/update" + firstUpperName + " (Update" + m.Name + "Req) returns (Update" + firstUpperName + "Resp); \n\n"
+				funcTpl += "\t@doc  \"" + m.Name + "查找[auto]\"\n"
+				funcTpl += "\t@handler  query" + m.Name + "\n"
+				funcTpl += "\tget /" + firstUpperName + " (Query" + firstUpperName + "Req) returns (" + firstUpperName + "); \n\n"
+			} else {
+				if isInSlice(s.GenerateCurdMethod, INSERT) {
+					funcTpl += "\t@doc  \"" + m.Name + "创建[auto]\"\n"
+					funcTpl += "\t@handler  create" + m.Name + "\n"
+					funcTpl += "\tpost /" + firstUpperName + "/create" + " (" + m.Name + ") returns (Create" + firstUpperName + "Resp); \n\n"
+				}
+				if isInSlice(s.GenerateCurdMethod, UPDATE) {
+					funcTpl += "\t@doc  \"" + m.Name + "更新[auto]\"\n"
+					funcTpl += "\t@handler  update" + m.Name + "\n"
+					funcTpl += "\tpost /" + firstUpperName + "/update" + " (Update" + m.Name + "Req) returns (Update" + firstUpperName + "Resp); \n\n"
+				}
+				if isInSlice(s.GenerateCurdMethod, QUERY) {
+					funcTpl += "\t@doc  \"" + m.Name + "列表查找[auto]\"\n"
+					funcTpl += "\t@handler  query" + m.Name + "List\n"
+					funcTpl += "\tget /" + firstUpperName + "/query" + " (Query" + firstUpperName + "Req) returns (Query" + m.Name + "Resp); \n\n"
 
-			funcTpl += "\t@doc  \"查找" + m.Name + "\"\n"
-			funcTpl += "\t@handler  query" + m.Name + "\n"
-			funcTpl += "\tget " + "/query" + firstUpperName + " (Query" + firstUpperName + "Req) returns (" + m.Name + "); \n\n"
+					funcTpl += "\t@doc  \"" + m.Name + "查找[auto]\"\n"
+					funcTpl += "\t@handler  query" + m.Name + "\n"
+					funcTpl += "\tget /" + firstUpperName + " (Query" + firstUpperName + "Req) returns (" + firstUpperName + "); \n\n"
+				}
+			}
 		}
 	}
 	funcTpl = funcTpl + "\t // Service Record End\n"
@@ -829,7 +843,7 @@ func (s *Schema) UpdateString() string {
 
 	bufNew.WriteString(funcTpl)
 
-	err = ioutil.WriteFile(fileName, []byte(bufNew.String()), 0666) //写入文件(字节数组)
+	err = ioutil.WriteFile(fileName, bufNew.Bytes(), 0666) //写入文件(字节数组)
 	if err != nil {
 		panic(err)
 	}
@@ -926,7 +940,7 @@ type Message struct {
 	Fields  []MessageField
 }
 
-//gen default message
+// gen default message
 func (m Message) GenApiDefault(buf *bytes.Buffer) {
 	mOrginName := m.Name
 	mOrginFields := m.Fields
@@ -973,8 +987,8 @@ func (m Message) GenApiUpdateResp(buf *bytes.Buffer) {
 	buf.WriteString(fmt.Sprintf("%s}\n", indent))
 }
 
-//先固定三个参数
-func (m Message) GenApiQueryReq(buf *bytes.Buffer) {
+// 先固定三个参数
+func (m Message) GenApiQueryListReq(buf *bytes.Buffer) {
 	mOrginName := FirstUpper(m.Name)
 	buf.WriteString(fmt.Sprintf("%sQuery%sReq {\n", indent, mOrginName))
 	buf.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s,optional\"`   \n", indent, indent, "Id", "int64", "id"))
@@ -983,7 +997,7 @@ func (m Message) GenApiQueryReq(buf *bytes.Buffer) {
 	buf.WriteString(fmt.Sprintf("%s}\n", indent))
 }
 
-func (m Message) GenApiQueryResp(buf *bytes.Buffer) {
+func (m Message) GenApiQueryListResp(buf *bytes.Buffer) {
 	mOrginName := FirstUpper(m.Name)
 	buf.WriteString(fmt.Sprintf("%sQuery%sResp {\n", indent, mOrginName))
 	buf.WriteString(fmt.Sprintf("%s%s%s   []%s  `json:\"%s\"`   \n", indent, indent, m.Name+"List", mOrginName, fmt.Sprintf("%s_list", FirstToLower(m.Name))))

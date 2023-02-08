@@ -154,8 +154,8 @@ func genLogicContext(logic string, serviceName string) string {
 		builder.WriteString("\t\treturn nil,err\n")
 		builder.WriteString("\t}\n\n")
 		builder.WriteString("\tresp.Marshal(rpcResp)\n")
-	} else if strings.Contains(title, "Query") {
-		tableName := title[5:]
+	} else if strings.Contains(title, "List") {
+		tableName := title[5 : len(title)-4]
 		paraName := strings.ToLower(tableName)
 		// fix bug 2022-11-08
 		builder.WriteString(fmt.Sprintf("\tresp = &types.Query%sResp{}\n\n", tableName))
@@ -166,6 +166,19 @@ func genLogicContext(logic string, serviceName string) string {
 		builder.WriteString("\t\treturn nil,err\n")
 		builder.WriteString("\t}\n\n")
 		builder.WriteString("\tresp.Marshal(rpcResp)\n")
+	} else if strings.Contains(title, "Query") {
+		tableName := title[5:]
+		paraName := strings.ToLower(tableName)
+		// fix bug 2022-11-08
+		builder.WriteString(fmt.Sprintf("\tresp = &types.%s{}\n\n", tableName))
+		builder.WriteString(fmt.Sprintf("\tvar %s proto.%sFilter\n", paraName, tableName))
+		builder.WriteString(fmt.Sprintf("\treq.Unmarshal(&%s)\n\n", paraName))
+		builder.WriteString(fmt.Sprintf("\trpcResp, err := l.svcCtx.%s.Query%sDetail(l.ctx, &%s)\n", apigen.FirstUpper(serviceName), tableName, paraName))
+		builder.WriteString("\tif err != nil {\n")
+		builder.WriteString("\t\treturn nil,err\n")
+		builder.WriteString("\t}\n\n")
+		builder.WriteString("\tresp.Marshal(rpcResp)\n")
+
 	} else if strings.Contains(title, "Update") {
 		tableName := title[6:]
 		paraName := strings.ToLower(tableName)
