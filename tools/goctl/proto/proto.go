@@ -21,7 +21,7 @@ func reRootDir(dir string) string {
 	dir = re_root_dir + dir
 	curr_dir, _ := os.Getwd()
 	dir, _ = filepath.Abs(curr_dir + dir)
-	log.Println("re dir:", dir)
+	// log.Println("re dir:", dir)
 	return dir
 }
 

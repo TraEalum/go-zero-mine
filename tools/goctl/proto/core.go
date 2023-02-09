@@ -241,14 +241,11 @@ func (s *Schema) AppendImport(imports string) {
 }
 
 func (s *Schema) String() string {
-	log.Println("call .. func (s *Schema) String()", s.Dir)
 	_, err := os.Stat(s.Dir)
 	//如果返回的错误类型使用os.isNotExist()判断为true，说明文件或者文件夹不存在
 	if os.IsNotExist(err) {
-		log.Println("call ..s.CreateString()")
 		return s.CreateString()
 	}
-	log.Println("call ..s.UpdateString()")
 	return s.UpdateString()
 }
 
@@ -532,7 +529,7 @@ func (s *Schema) makeInstanceMessage(buf *bytes.Buffer, m *Message, extStr strin
 	tmpName := stringx.From(s.HumpTbName).ToCamelWithStartLower()
 	name := strings.ToUpper(string(tmpName[0])) + tmpName[1:]
 
-	fmt.Println("name-----", name)
+	// fmt.Println("name-----", name)
 	var lastTag int
 
 	//找到旧的内容,等下用来替换

@@ -63,7 +63,9 @@ func mkdir(ctx *ctx.ProjectContext, proto parser.Proto, _ *conf.Config, c *ZRpcC
 	logicDir := filepath.Join(internalDir, "logic")
 	serverDir := filepath.Join(internalDir, "server")
 	svcDir := filepath.Join(internalDir, "svc")
-	pbDir := filepath.Join(ctx.WorkDir, proto.GoPackage)
+	// pbDir := filepath.Join(ctx.WorkDir, proto.GoPackage)
+	// protoGoDir := pbDir
+	pbDir := ctx.WorkDir
 	protoGoDir := pbDir
 	if c != nil {
 		pbDir = c.ProtoGenGrpcDir
@@ -145,14 +147,16 @@ func mkdir(ctx *ctx.ProjectContext, proto parser.Proto, _ *conf.Config, c *ZRpcC
 func (d *defaultDirContext) SetPbDir(pbDir, grpcDir string) {
 	d.inner[pb] = Dir{
 		Filename: pbDir,
-		Package:  filepath.ToSlash(filepath.Join(d.ctx.Path, strings.TrimPrefix(pbDir, d.ctx.Dir))),
-		Base:     filepath.Base(pbDir),
+		// Package:  filepath.ToSlash(filepath.Join(d.ctx.Path, strings.TrimPrefix(pbDir, d.ctx.Dir))),
+		Package: filepath.ToSlash(filepath.Join(d.ctx.Path, pbDir)),
+		Base:    filepath.Base(pbDir),
 	}
 
 	d.inner[protoGo] = Dir{
 		Filename: grpcDir,
-		Package:  filepath.ToSlash(filepath.Join(d.ctx.Path, strings.TrimPrefix(grpcDir, d.ctx.Dir))),
-		Base:     filepath.Base(grpcDir),
+		// Package:  filepath.ToSlash(filepath.Join(d.ctx.Path, strings.TrimPrefix(grpcDir, d.ctx.Dir))),
+		Package: filepath.ToSlash(filepath.Join(d.ctx.Path, grpcDir)),
+		Base:    filepath.Base(grpcDir),
 	}
 }
 

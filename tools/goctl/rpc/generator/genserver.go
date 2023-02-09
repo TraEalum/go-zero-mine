@@ -37,7 +37,7 @@ func (g *Generator) GenServer(ctx DirContext, proto parser.Proto, cfg *conf.Conf
 	imports := collection.NewSet()
 	imports.AddStr(logicImport, svcImport, pbImport)
 
-	fmt.Printf("GenServer:[%v]", imports.Keys())
+	// fmt.Printf("GenServer:[%v]", imports.Keys())
 
 	head := util.GetHead(proto.Name)
 	service := proto.Service
