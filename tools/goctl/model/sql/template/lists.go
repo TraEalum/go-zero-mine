@@ -15,15 +15,29 @@ func (m *default{{.upperStartCamelObject}}Model) FindList(ctx context.Context, s
 		return nil, err
 	}
 
-	if len(totalCount) != 0 {
-		count := struct{Count int64 {{.countTag}}}{}
-		query, values, err =sqlBuilder.Delete(selectBuilder, "Columns").(squirrel.SelectBuilder).Columns("COUNT(*) as count").RemoveOffset().ToSql()
-		if err = m.conn.QueryRowCtx(ctx, &count, query, values...);err != nil {
-			return nil, err
-		}
-
-		*totalCount[0] = count.Count
+	if len(totalCount) == 0 {
+		return &resp, nil
 	}
+
+	count := struct{Count int64 {{.countTag}}}{}
+	//  type assertion must be checked
+	sb, ok := sqlBuilder.Delete(selectBuilder, "Columns").(squirrel.SelectBuilder)
+
+	if !ok {
+		return nil, errNotSelectBuilder
+	}
+
+	query, values, err =sb.Columns("COUNT(*) as count").RemoveOffset().ToSql()
+
+	if err != nil {
+		return nil, err
+	}
+
+	if err = m.conn.QueryRowCtx(ctx, &count, query, values...);err != nil {
+		return nil, err
+	}
+
+	*totalCount[0] = count.Count
 
 	return &resp, nil
 }
