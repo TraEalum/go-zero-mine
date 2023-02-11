@@ -299,6 +299,7 @@ func (s *Schema) CreateString() string {
 	funcTpl := "service " + s.ServiceName + "{\n"
 	for _, m := range s.Messages {
 		funcTpl += "\t //-----------------------" + m.Comment + "----------------------- \n"
+
 		if len(s.GenerateMethod) == 1 && strings.TrimSpace(s.GenerateMethod[0]) == "" {
 			funcTpl += "\t rpc Query" + m.Name + "Detail(" + m.Name + "Filter) returns (" + m.Name + "); \n"
 			funcTpl += "\t rpc Query" + m.Name + "List(" + m.Name + "Filter) returns (" + m.Name + "List); \n"
@@ -310,7 +311,10 @@ func (s *Schema) CreateString() string {
 				funcTpl += "\t rpc Delete" + m.Name + "(" + m.Name + ") returns (" + m.Name + "); \n"
 			}
 			if isInSlice(s.GenerateMethod, UPDATE) {
-				funcTpl += "\t rpc Update" + m.Name + "(" + m.Name + ") returns (" + m.Name + "); \n"
+				// ptr funcTpl += "\t rpc Update" + m.Name + "(" + m.Name + "Update) returns (" + m.Name + "); \n"
+				// curr head funcTpl += "\t rpc Update" + m.Name + "(" + m.Name + ") returns (" + m.Name + "); \n"
+				// use ptr
+				funcTpl += "\t rpc Update" + m.Name + "(" + m.Name + "Update) returns (" + m.Name + "); \n"
 			}
 			if isInSlice(s.GenerateMethod, QUERY) {
 				funcTpl += "\t rpc Query" + m.Name + "Detail(" + m.Name + "Filter) returns (" + m.Name + "); \n"
@@ -532,7 +536,7 @@ func (s *Schema) makeInstanceMessage(buf *bytes.Buffer, m *Message, extStr strin
 	tmpName := stringx.From(s.HumpTbName).ToCamelWithStartLower()
 	name := strings.ToUpper(string(tmpName[0])) + tmpName[1:]
 
-	fmt.Println("name-----", name)
+	//fmt.Println("name-----", name)
 	var lastTag int
 
 	//找到旧的内容,等下用来替换
@@ -912,6 +916,26 @@ func (m Message) GenRpcSearchReqMessage(buf *bytes.Buffer, needList bool) {
 		}
 		buf.WriteString(fmt.Sprintf("%s", m))
 	}
+
+	//reset
+	m.Name = mOrginName
+	m.Fields = mOrginFields
+
+	//update
+	m.Name = mOrginName + "Update"
+	updateFields := make([]MessageField, 0, len(m.Fields))
+	for _, v := range m.Fields {
+		tmpField := MessageField{
+			Typ:     "optional " + v.Typ,
+			Name:    v.Name,
+			tag:     v.tag,
+			Comment: v.Comment,
+		}
+
+		updateFields = append(updateFields, tmpField)
+	}
+	m.Fields = updateFields
+	buf.WriteString(fmt.Sprintf("%s", m))
 
 	//reset
 	m.Name = mOrginName

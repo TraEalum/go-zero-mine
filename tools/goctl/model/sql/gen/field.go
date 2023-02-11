@@ -24,26 +24,33 @@ func genFields(table Table, fields []*parser.Field) (string, error) {
 	return strings.Join(list, "\n"), nil
 }
 
-func genFieldParser(table Table, fields []*parser.Field) (string, string, error) {
+func genFieldParser(table Table, fields []*parser.Field) (string, string, string, error) {
 	var marshalList []string
 	var unmarshalList []string
+	var marshalUpdateList []string
 
 	for _, field := range fields {
 		marshalRes, err := genMarshalFields(table, field)
 		if err != nil {
-			return "", "", err
+			return "", "", "", err
 		}
 
 		unmarshalRes, err := genUnmarshalFields(table, field)
 		if err != nil {
-			return "", "", err
+			return "", "", "", err
+		}
+
+		marshalUpdateRes, err := genMarshalFieldsUpdate(table, field)
+		if err != nil {
+			return "", "", "", err
 		}
 
 		marshalList = append(marshalList, marshalRes)
 		unmarshalList = append(unmarshalList, unmarshalRes)
+		marshalUpdateList = append(marshalUpdateList, marshalUpdateRes)
 	}
 
-	return strings.Join(marshalList, "\n"), strings.Join(unmarshalList, "\n"), nil
+	return strings.Join(marshalList, "\n"), strings.Join(unmarshalList, "\n"), strings.Join(marshalUpdateList, "\n"), nil
 }
 
 func genField(table Table, field *parser.Field) (string, error) {
@@ -66,6 +73,24 @@ func genField(table Table, field *parser.Field) (string, error) {
 			"hasComment": field.Comment != "",
 			"comment":    field.Comment,
 			"data":       table,
+		})
+	if err != nil {
+		return "", err
+	}
+
+	return output.String(), nil
+}
+
+func genMarshalFieldsUpdate(table Table, field *parser.Field) (string, error) {
+	text, err := pathx.LoadTemplate(category, fieldTemplateFile, template.MarshalFieldsUpdate)
+	if err != nil {
+		return "", err
+	}
+
+	output, err := util.With("types").
+		Parse(text).
+		Execute(map[string]interface{}{
+			"name": util.SafeString(field.Name.ToCamel()),
 		})
 	if err != nil {
 		return "", err

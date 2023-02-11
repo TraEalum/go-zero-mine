@@ -183,7 +183,7 @@ func genLogicContext(logic string, serviceName string) string {
 		tableName := title[6:]
 		paraName := strings.ToLower(tableName)
 		builder.WriteString(fmt.Sprintf("\tresp = &types.%sResp{}\n\n", title))
-		builder.WriteString(fmt.Sprintf("\tvar %s proto.%s\n", paraName, tableName))
+		builder.WriteString(fmt.Sprintf("\tvar %s proto.%sUpdate\n", paraName, tableName))
 		builder.WriteString(fmt.Sprintf("\treq.Unmarshal(&%s)\n\n", paraName))
 		builder.WriteString(fmt.Sprintf("\trpcResp, err := l.svcCtx.%s.Update%s(l.ctx, &%s)\n", apigen.FirstUpper(serviceName), tableName, paraName))
 		builder.WriteString("\tif err != nil {\n")

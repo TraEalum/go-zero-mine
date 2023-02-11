@@ -125,13 +125,14 @@ func (g *Generator) genLogicFunction(serviceName, goPackage string, rpc *parser.
 		gen.HasUtil = true
 		gen.HasModel = true
 
-	case fmt.Sprintf("Update%s", parser.CamelCase(rpc.RequestType)):
+	case fmt.Sprintf("Update%s",  strings.Replace(parser.CamelCase(rpc.RequestType), "Update", "", 1)):
 		text = UpdateLogic
 		gen.HasSqlc = true
 		gen.HasUtil = true
-		modelName = parser.CamelCase(rpc.RequestType)
+		modelName = strings.Replace(parser.CamelCase(rpc.RequestType), "Update", "", 1)
 		gen.HasModel = true
 	}
+
 
 	logicName := stringx.From(rpc.Name + "_logic").ToCamel()
 	comment := parser.GetComment(rpc.Doc())
