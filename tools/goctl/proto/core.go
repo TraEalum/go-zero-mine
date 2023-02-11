@@ -495,7 +495,7 @@ func (s *Schema) makeInstanceMessage(buf *bytes.Buffer, m *Message, extStr strin
 	tmpName := stringx.From(s.HumpTbName).ToCamelWithStartLower()
 	name := strings.ToUpper(string(tmpName[0])) + tmpName[1:]
 
-	fmt.Println("name-----", name)
+	//fmt.Println("name-----", name)
 	var lastTag int
 
 	//找到旧的内容,等下用来替换
