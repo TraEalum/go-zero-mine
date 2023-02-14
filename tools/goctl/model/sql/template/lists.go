@@ -22,7 +22,6 @@ func (m *default{{.upperStartCamelObject}}Model) FindList(ctx context.Context, s
 	count := struct{Count int64 {{.countTag}}}{}
 	//  type assertion must be checked
 	sb, ok := sqlBuilder.Delete(selectBuilder, "Columns").(squirrel.SelectBuilder)
-
 	if !ok {
 		return nil, errNotSelectBuilder
 	}
