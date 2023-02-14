@@ -43,7 +43,7 @@ func (m *default{{.upperStartCamelObject}}Model)FindListBatch(ctx context.Contex
 		if startIndex > *totalCount {
 			startIndex = *totalCount
 		}
-		query, values, _ = selectBuilder.Offset(uint64(startIndex)).Limit(uint64(batchSize)).ToSql()
+		query, values, _ = selectBuilder.Where("id between ? and ?",startIndex,batchSize).ToSql()
 
 		err = m.conn.QueryRowsCtx(ctx, &temp, query, values...)
 		if err != nil && err != ErrNotFound{
