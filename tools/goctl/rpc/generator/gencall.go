@@ -71,7 +71,7 @@ func (g *Generator) GenCall(ctx DirContext, proto parser.Proto, cfg *conf.Config
 		}
 	}
 
-	pbPackage := fmt.Sprintf(`proto "%s"`, proto.Service.Name)
+	pbPackage := fmt.Sprintf(`proto "proto/%s"`, proto.Service.Name)
 	// protoGoPackage := fmt.Sprintf(`"%s"`, ctx.GetProtoGo().Package)
 	protoGoPackage := ""
 	// fmt.Printf("head[%s] dir.Base[%s] protoGoPackage[%s] pbPackage[%s]", head, dir.Base, protoGoPackage, pbPackage)
