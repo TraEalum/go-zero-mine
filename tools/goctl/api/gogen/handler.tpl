@@ -17,8 +17,10 @@ func {{.HandlerName}}(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		{{if .HasRequest}}var req types.{{.RequestType}}
 		if err := httpx.Parse(r, &req); err != nil {
 			httpm.ParamErrorResult(w, err)
+
 			return
 		}
+
 		reqJson, _ := json.Marshal(&req)
 		logx.WithContext(r.Context()).Infof("req: %s", string(reqJson))
 
