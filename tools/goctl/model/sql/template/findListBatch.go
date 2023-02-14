@@ -2,25 +2,31 @@ package template
 
 const (
 	FindListBatch = `
+	//id不连续的时候有bug，慎用
 func (m *default{{.upperStartCamelObject}}Model)FindListBatch(ctx context.Context,selectBuilder squirrel.SelectBuilder)(*[]{{.upperStartCamelObject}}, error){
 	var resp []{{.upperStartCamelObject}}
-	var totalCount *int64
+	var maxId *int64
+	var minId *int64
+	var limit int64
 
 	_, _, err := selectBuilder.ToSql()
 	if err != nil {
 		return nil, err
 	}
 
-	count := struct{Count int64 {{.countTag}}}{}
+	count := struct {
+		MaxId int64 {{.maxTag}}
+		MinId int64 {{.minTag}}
+		}{}
 
-	query, values, err := sqlBuilder.Delete(selectBuilder, "Columns").(squirrel.SelectBuilder).Columns("COUNT(*) as count").ToSql()
+	query, values, err := selectBuilder.Columns("MAX(id) as MaxId").Column("MIN(id) as MinId").ToSql()
 	if err = m.conn.QueryRowCtx(ctx, &count, query, values...); err != nil {
 		return nil, err
 	}
-	totalCount = &count.Count
+	maxId = &count.MaxId
+	minId = &count.MinId
 
 	var batchSize int64 = 1000
-	var startIndex int64 = 0
 
 	//if origin sql have limit offset
 	offset, b := sqlBuilder.Get(selectBuilder, "Offset")
@@ -34,16 +40,18 @@ func (m *default{{.upperStartCamelObject}}Model)FindListBatch(ctx context.Contex
 	if b {
 		c, _ := limit.(string)
 		ct, _ := strconv.ParseInt(c, 10, 64)
-		*totalCount = ct
+		limit = ct
 	}
 
 	//batch search
-	for startIndex <= *totalCount{
+	for *minId < *maxId {
 		var temp []{{.upperStartCamelObject}}
-		if startIndex > *totalCount {
-			startIndex = *totalCount
+		end :=*minId+batchSize
+		if end > maxId{
+			end = maxId
 		}
-		query, values, _ = selectBuilder.Where("id between ? and ?",startIndex,batchSize).ToSql()
+		
+		query, values, _ = selectBuilder.Where("id between ? and ?",minId, end).ToSql()
 
 		err = m.conn.QueryRowsCtx(ctx, &temp, query, values...)
 		if err != nil && err != ErrNotFound{
@@ -53,8 +61,13 @@ func (m *default{{.upperStartCamelObject}}Model)FindListBatch(ctx context.Contex
 			return &resp,nil
 		}
 
+		*minId = *minId+batchSize
 		resp = append(resp, temp...)
-		startIndex = startIndex+batchSize
+
+		//if origin sql had limit condition
+		if b && len(resp)>=int(limitSize){
+			return &resp,nil
+		}
 	}
 
 
