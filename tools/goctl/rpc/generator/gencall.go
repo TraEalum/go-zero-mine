@@ -67,7 +67,7 @@ func (g *Generator) GenCall(ctx DirContext, proto parser.Proto, cfg *conf.Config
 	if !isCallPkgSameToPbPkg {
 		for _, item := range proto.Message {
 			msgName := getMessageName(*item.Message)
-			alias.AddStr(fmt.Sprintf("%s = %s", parser.CamelCase(msgName), fmt.Sprintf("%s.%s", proto.PbPackage, parser.CamelCase(msgName))))
+			alias.AddStr(fmt.Sprintf("%s = %s", parser.CamelCase(msgName), fmt.Sprintf("%s.%s", "proto", parser.CamelCase(msgName))))
 		}
 	}
 
@@ -135,7 +135,7 @@ func (g *Generator) genFunction(goPackage string, service parser.Service, isCall
 			"serviceName":            stringx.From(service.Name).ToCamel(),
 			"rpcServiceName":         parser.CamelCase(service.Name),
 			"method":                 parser.CamelCase(rpc.Name),
-			"package":                goPackage,
+			"package":                "proto",
 			"pbRequest":              parser.CamelCase(rpc.RequestType),
 			"pbResponse":             parser.CamelCase(rpc.ReturnsType),
 			"hasComment":             len(comment) > 0,
