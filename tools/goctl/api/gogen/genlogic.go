@@ -143,6 +143,7 @@ func shallImportTypesPackage(route spec.Route) bool {
 func genLogicContext(logic string, serviceName string) string {
 	var builder strings.Builder
 	title := strings.Title(strings.TrimSuffix(logic, "Logic"))
+	length := len(title)
 	if strings.Contains(title, "Create") {
 		tableName := title[6:]
 		paraName := strings.ToLower(tableName)
@@ -154,7 +155,7 @@ func genLogicContext(logic string, serviceName string) string {
 		builder.WriteString("\t\treturn nil,err\n")
 		builder.WriteString("\t}\n\n")
 		builder.WriteString("\tresp.Marshal(rpcResp)\n")
-	} else if strings.Contains(title, "List") {
+	} else if strings.Contains(title, "List") && length > 9 { //length 大于9 是因为 QueryXXXList
 		tableName := title[5 : len(title)-4]
 		paraName := strings.ToLower(tableName)
 		// fix bug 2022-11-08
