@@ -9,13 +9,13 @@ func (m *default{{.upperStartCamelObject}}Model)FindListBatch(ctx context.Contex
 	}
 
 	if sortById {
-		return findListSortById(ctx,selectBuilder,m.conn)
+		return m.findListSortById(ctx,selectBuilder)
 	}
 
-	return findListBatch(ctx,selectBuilder,m.conn)
+	return m.findListBatch(ctx,selectBuilder)
 }
 
-func findListSortById(ctx context.Context,selectBuilder squirrel.SelectBuilder,conn sqlx.SqlConn) (*[]{{.upperStartCamelObject}},error){
+func (m *default{{.upperStartCamelObject}}Model) findListSortById(ctx context.Context,selectBuilder squirrel.SelectBuilder) (*[]{{.upperStartCamelObject}},error){
 	var resp []{{.upperStartCamelObject}}
 	var maxId *int64
 	var minId *int64
@@ -27,7 +27,7 @@ func findListSortById(ctx context.Context,selectBuilder squirrel.SelectBuilder,c
 		}{}
 
 	query, values, err := selectBuilder.Columns("MAX(id) as MaxId").Column("MIN(id) as MinId").ToSql()
-	if err = conn.QueryRowCtx(ctx, &count, query, values...); err != nil {
+	if err = m.conn.QueryRowCtx(ctx, &count, query, values...); err != nil {
 		return nil, err
 	}
 	maxId = &count.MaxId
@@ -53,7 +53,7 @@ func findListSortById(ctx context.Context,selectBuilder squirrel.SelectBuilder,c
 		
 		query, values, _ = selectBuilder.Where("id between ? and ?",minId, end).ToSql()
 
-		err = conn.QueryRowsCtx(ctx, &temp, query, values...)
+		err = m.conn.QueryRowsCtx(ctx, &temp, query, values...)
 		if err != nil && err != ErrNotFound {
 			return nil,err
 		}
@@ -74,7 +74,7 @@ func findListSortById(ctx context.Context,selectBuilder squirrel.SelectBuilder,c
 	return &resp,nil
 }
 
-func findListBatch(ctx context.Context,selectBuilder squirrel.SelectBuilder,conn sqlx.SqlConn) (*[]{{.upperStartCamelObject}},error){
+func (m *default{{.upperStartCamelObject}}Model) findListBatch(ctx context.Context,selectBuilder squirrel.SelectBuilder) (*[]{{.upperStartCamelObject}},error){
 	var resp []{{.upperStartCamelObject}}
 	var totalCount *int64
 	var limitSize int64
@@ -87,7 +87,7 @@ func findListBatch(ctx context.Context,selectBuilder squirrel.SelectBuilder,conn
 	count := struct{Count int64 {{.countTag}}}{}
 
 	query, values, err := sqlBuilder.Delete(selectBuilder, "Columns").(squirrel.SelectBuilder).Columns("COUNT(*) as count").ToSql()
-	if err = conn.QueryRowCtx(ctx, &count, query, values...); err != nil {
+	if err = m.conn.QueryRowCtx(ctx, &count, query, values...); err != nil {
 		return nil, err
 	}
 	totalCount = &count.Count
@@ -117,7 +117,7 @@ func findListBatch(ctx context.Context,selectBuilder squirrel.SelectBuilder,conn
 		
 		query, values, _ = selectBuilder.Offset(uint64(startIndex)).Limit(uint64(batchSize)).ToSql()
 
-		err = conn.QueryRowsCtx(ctx, &temp, query, values...)
+		err = m.conn.QueryRowsCtx(ctx, &temp, query, values...)
 		if err != nil && err != ErrNotFound{
 			return nil,err
 		}
