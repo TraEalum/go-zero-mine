@@ -131,5 +131,5 @@ func findListBatch(ctx context.Context,selectBuilder squirrel.SelectBuilder,conn
 	return &resp,nil
 }
 	`
-	FindListBatchMethod = `FindListBatch(ctx context.Context,selectBuilder squirrel.SelectBuilder)(*[]{{.upperStartCamelObject}}, error)`
+	FindListBatchMethod = `FindListBatch(ctx context.Context,selectBuilder squirrel.SelectBuilder,sortById bool)(*[]{{.upperStartCamelObject}}, error)`
 )
