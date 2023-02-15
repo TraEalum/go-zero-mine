@@ -28,6 +28,7 @@ func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 	if err != nil {
 		logx.Error(err)
 	}
+	
 	return &{{.responseType}}{ {{.pK}} :id }, nil
 }
 `
