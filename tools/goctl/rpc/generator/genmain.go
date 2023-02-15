@@ -45,7 +45,7 @@ func (g *Generator) GenMain(ctx DirContext, proto parser.Proto, cfg *conf.Config
 	return util.With("main").GoFmt(true).Parse(text).SaveTo(map[string]interface{}{
 		"serviceName": etcFileName,
 		"imports":     strings.Join(imports, pathx.NL),
-		"pkg":         proto.PbPackage,
+		"pkg":         "proto",
 		"serviceNew":  stringx.From(proto.Service.Name).ToCamel(),
 		"service":     parser.CamelCase(proto.Service.Name),
 		"serviceKey":  proto.Service.Name,
