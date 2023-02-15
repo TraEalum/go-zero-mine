@@ -77,6 +77,7 @@ func findListSortById(ctx context.Context,selectBuilder squirrel.SelectBuilder,c
 func findListBatch(ctx context.Context,selectBuilder squirrel.SelectBuilder,conn sqlx.SqlConn) (*[]{{.upperStartCamelObject}},error){
 	var resp []{{.upperStartCamelObject}}
 	var totalCount *int64
+	var limitSize int64
 
 	_, _, err := selectBuilder.ToSql()
 	if err != nil {
@@ -102,6 +103,13 @@ func findListBatch(ctx context.Context,selectBuilder squirrel.SelectBuilder,conn
 		startIndex = idx
 	}
 
+	limit, b := sqlBuilder.Get(selectBuilder,"Limit")
+	if b {
+		lm,_ := limit.(string)
+		lmt,_ := strconv.ParseInt(lm,10,64)
+		limitSize = lmt
+	}
+
 
 	//batch search
 	for startIndex <= *totalCount {
@@ -118,10 +126,9 @@ func findListBatch(ctx context.Context,selectBuilder squirrel.SelectBuilder,conn
 		}
 
 		resp = append(resp, temp...)
-		if len(resp) >= int(*totalCount) {
-			length :=*totalCount
-			resp = resp[:length]
-			return &resp,nil
+		if b && len(resp) >= int(limitSize) {
+			resp = resp[:limitSize]
+			return &resp, nil
 		}
 
 		startIndex = startIndex+batchSize
