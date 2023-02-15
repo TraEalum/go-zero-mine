@@ -18,6 +18,7 @@ func genFindListBatch(table Table) (string, string, error) {
 
 	maxTag := fmt.Sprintf("`db:%s`", "\"MaxId\"")
 	minTag := fmt.Sprintf("`db:%s`", "\"MinId\"")
+	countTag := fmt.Sprintf("`db:%s`", "\"count\"")
 
 	findListByTrans, err := util.With("findListBatch").
 		Parse(text).
@@ -25,6 +26,7 @@ func genFindListBatch(table Table) (string, string, error) {
 			"upperStartCamelObject": camel,
 			"maxTag":                maxTag,
 			"minTag":                minTag,
+			"countTag":              countTag,
 		})
 	if err != nil {
 		return "", "", nil
