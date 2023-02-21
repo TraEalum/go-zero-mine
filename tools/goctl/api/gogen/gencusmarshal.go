@@ -68,7 +68,7 @@ func GenCustomizeMarshal(api *spec.ApiSpec, category, apiFile string) error {
 			"upperStartCamelObject": tableName,
 			"unmarshallFields":      unMarshal,
 			"marshalFields":         marshal,
-			"importProto":           fmt.Sprintf("import proto \"/proto/%s\"", serviceName),
+			"importProto":           fmt.Sprintf("import proto \"proto/%s\"", serviceName),
 		}
 
 		t := template.Must(template.New("customizeMarshalTemplate").Parse(customizeMarshalTemplate))
