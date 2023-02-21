@@ -18,4 +18,4 @@ func (r *{{.upperStartCamelObject}}) Marshal(p *proto.{{.upperStartCamelObject}}
 }
 
 
-//TheEndLine   please do not delete this line
+// TheEndLine please do not delete this line
