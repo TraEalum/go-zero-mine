@@ -33,6 +33,7 @@ func (g *Generator) GenSvc(ctx DirContext, proto parser.Proto, cfg *conf.Config)
 		return err
 	}
 
+	// fmt.Println(proto.Tables)
 	modelDefine, modelInit := genModels(proto.Tables)
 
 	fileName := filepath.Join(dir.Filename, svcFilename+".go")
@@ -89,9 +90,10 @@ func dealExistsModelInit(modelInit string, fileName string, tables []string) (st
 
 	for _, v := range tmpModelInit {
 		match := re.FindAllString(v, -1)
-		if len(match) == 0 {
+		if len(match) == 0 || !strings.Contains(v, "Model") {
 			continue
 		}
+
 		modelInitMap[match[0]] = strings.Trim(v, "\r\n")
 	}
 	//前数据  正则 标签: // <codeGeneratedModelDefine>
@@ -111,13 +113,16 @@ func dealExistsModelInit(modelInit string, fileName string, tables []string) (st
 	re = regexp.MustCompile("[a-zA-z]+Model:")
 	var tmpModelDefineNoMatch []string
 	for _, v := range tmpModelDefineArr {
+		if !strings.Contains(v, "Model") {
+			continue
+		}
+
 		match := re.FindAllString(v, -1)
 		if len(match) == 0 {
 			tmpModelDefineNoMatch = append(tmpModelDefineNoMatch, strings.Trim(v, "\r\n"))
 		} else {
 			modelExMap[match[0]] = strings.Trim(v, "\r\n")
 		}
-
 	}
 
 	//modelInitMap modelExMap  制作完成
@@ -128,12 +133,16 @@ func dealExistsModelInit(modelInit string, fileName string, tables []string) (st
 			//存在,则沿用之前的
 			newTagInfo = append(newTagInfo, modelExMap[tmpName])
 		} else {
+			if !strings.Contains(modelInitMap[tmpName], "Model") {
+				continue
+			}
+
 			newTagInfo = append(newTagInfo, modelInitMap[tmpName])
 		}
 	}
 
 	for _, v := range tmpModelDefineNoMatch {
-		newTagInfo = append(newTagInfo, v)
+		newTagInfo = append(newTagInfo, v+",")
 	}
 
 	newTagStr := strings.Join(newTagInfo, ",\r\n")

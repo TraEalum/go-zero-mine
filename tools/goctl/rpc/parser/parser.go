@@ -43,6 +43,8 @@ func (p *DefaultProtoParser) Parse(src string) (Proto, error) {
 
 	ret.Tables = getTables(abs)
 
+	// fmt.Println(ret.Tables)
+
 	parser := proto.NewParser(r)
 	set, err := parser.Parse()
 	if err != nil {
