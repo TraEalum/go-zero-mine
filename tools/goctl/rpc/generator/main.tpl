@@ -6,6 +6,9 @@ import (
 
 	{{.imports}}
 
+	"comm/configm"
+	"comm/util"
+	
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/core/service"
 	"github.com/zeromicro/go-zero/zrpc"
@@ -13,13 +16,21 @@ import (
 	"google.golang.org/grpc/reflection"
 )
 
-var configFile = flag.String("f", "etc/{{.serviceName}}.yaml", "the config file")
+var configFile = flag.String("f", "", "the config file")
 
 func main() {
 	flag.Parse()
 
 	var c config.Config
-	conf.MustLoad(*configFile, &c)
+	if configFile != nil && *configFile != "" {
+		conf.MustLoad(*configFile, &c)
+	} else {
+		configm.LoadConfig(configm.ConfigInfo{
+			ServerType: "rpc",
+			Server:     "{{.serviceKey}}",
+		}, &c)
+	}
+
 	ctx := svc.NewServiceContext(c)
 
 	s := zrpc.MustNewServer(c.RpcServerConf, func(grpcServer *grpc.Server) {
@@ -30,6 +41,8 @@ func main() {
 		}
 	})
 	defer s.Stop()
+
+	s.AddUnaryInterceptors(util.LoggerInterceptor)
 
 	fmt.Printf("Starting rpc server at %s...\n", c.ListenOn)
 	s.Start()

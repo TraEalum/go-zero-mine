@@ -27,6 +27,7 @@ func (g *Generator) genPbDirect(ctx DirContext, c *ZRpcContext) error {
 	if err != nil {
 		return err
 	}
+
 	return g.setPbDir(ctx, c)
 }
 
@@ -38,6 +39,7 @@ func (g *Generator) setPbDir(ctx DirContext, c *ZRpcContext) error {
 	if len(pbDir) == 0 {
 		return fmt.Errorf("pg.go is not found under %q", c.GoOutput)
 	}
+
 	grpcDir, err := findPbFile(c.GrpcOutput, true)
 	if err != nil {
 		return err
@@ -64,7 +66,7 @@ const (
 
 func findPbFile(current string, grpc bool) (string, error) {
 	fileSystem := os.DirFS(current)
-	var ret string
+	// var ret string
 	err := fs.WalkDir(fileSystem, ".", func(path string, d fs.DirEntry, err error) error {
 		if d.IsDir() {
 			return nil
@@ -72,18 +74,19 @@ func findPbFile(current string, grpc bool) (string, error) {
 		if strings.HasSuffix(path, pbSuffix) {
 			if grpc {
 				if strings.HasSuffix(path, grpcSuffix) {
-					ret = path
+					// ret = path
 					return os.ErrExist
 				}
 			} else if !strings.HasSuffix(path, grpcSuffix) {
-				ret = path
+				// ret = path
 				return os.ErrExist
 			}
 		}
 		return nil
 	})
 	if err == os.ErrExist {
-		return filepath.Dir(filepath.Join(current, ret)), nil
+		// return filepath.Dir(filepath.Join(current, ret)), nil
+		return filepath.Dir(current), nil
 	}
 	return "", err
 }

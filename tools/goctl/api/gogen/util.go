@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"path/filepath"
 	"strings"
 	"text/template"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/zeromicro/go-zero/tools/goctl/api/spec"
 	"github.com/zeromicro/go-zero/tools/goctl/api/util"
 	"github.com/zeromicro/go-zero/tools/goctl/pkg/golang"
+	"github.com/zeromicro/go-zero/tools/goctl/util/ctx"
 	"github.com/zeromicro/go-zero/tools/goctl/util/pathx"
 )
 
@@ -55,6 +57,34 @@ func genFile(c fileGenConfig) error {
 	code := golang.FormatCode(buffer.String())
 	_, err = fp.WriteString(code)
 	return err
+}
+
+func getParentPackage(dir string) (string, error) {
+	abs, err := filepath.Abs(dir)
+	if err != nil {
+		return "", err
+	}
+
+	//这里检查生成go.mod
+	projectCtx, err := ctx.Prepare(abs)
+	if err != nil {
+		return "", err
+	}
+
+	// fix https://github.com/zeromicro/go-zero/issues/1058
+	wd := projectCtx.WorkDir
+	d := projectCtx.Dir
+	same, err := pathx.SameFile(wd, d)
+	if err != nil {
+		return "", err
+	}
+
+	trim := strings.TrimPrefix(projectCtx.WorkDir, projectCtx.Dir)
+	if same {
+		trim = strings.TrimPrefix(strings.ToLower(projectCtx.WorkDir), strings.ToLower(projectCtx.Dir))
+	}
+
+	return filepath.ToSlash(filepath.Join(projectCtx.Path, trim)), nil
 }
 
 func writeProperty(writer io.Writer, name, tag, comment string, tp spec.Type, indent int) error {
@@ -180,4 +210,23 @@ func golangExpr(ty spec.Type, pkg ...string) string {
 	}
 
 	return ""
+}
+
+func isStartWith(arr []string, target string) bool {
+	for _, value := range arr {
+		if strings.Contains(target, value) {
+			return true
+		}
+	}
+	return false
+}
+
+func isContain(arr []string, target string) bool {
+	for _, v := range arr {
+		if v == target {
+			return true
+		}
+	}
+
+	return false
 }

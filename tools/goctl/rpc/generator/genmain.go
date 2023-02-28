@@ -11,6 +11,7 @@ import (
 	"github.com/zeromicro/go-zero/tools/goctl/util"
 	"github.com/zeromicro/go-zero/tools/goctl/util/format"
 	"github.com/zeromicro/go-zero/tools/goctl/util/pathx"
+	"github.com/zeromicro/go-zero/tools/goctl/util/stringx"
 )
 
 //go:embed main.tpl
@@ -32,7 +33,8 @@ func (g *Generator) GenMain(ctx DirContext, proto parser.Proto, cfg *conf.Config
 
 	fileName := filepath.Join(ctx.GetMain().Filename, fmt.Sprintf("%v.go", mainFilename))
 	imports := make([]string, 0)
-	pbImport := fmt.Sprintf(`"%v"`, ctx.GetPb().Package)
+	//pbImport := fmt.Sprintf(`"%v"`, ctx.GetPb().Package)
+	pbImport := fmt.Sprintf(`proto "proto/%s"`, proto.Service[0].Name)
 	svcImport := fmt.Sprintf(`"%v"`, ctx.GetSvc().Package)
 	configImport := fmt.Sprintf(`"%v"`, ctx.GetConfig().Package)
 	imports = append(imports, configImport, pbImport, svcImport)
@@ -59,7 +61,7 @@ func (g *Generator) GenMain(ctx DirContext, proto parser.Proto, cfg *conf.Config
 		serviceNames = append(serviceNames, MainServiceTemplateData{
 			Service:   parser.CamelCase(e.Name),
 			ServerPkg: serverPkg,
-			Pkg:       proto.PbPackage,
+			Pkg:       "proto",
 		})
 	}
 
@@ -75,8 +77,11 @@ func (g *Generator) GenMain(ctx DirContext, proto parser.Proto, cfg *conf.Config
 
 	return util.With("main").GoFmt(true).Parse(text).SaveTo(map[string]interface{}{
 		"serviceName":  etcFileName,
-		"imports":      strings.Join(imports, pathx.NL),
-		"pkg":          proto.PbPackage,
 		"serviceNames": serviceNames,
+		"imports":      strings.Join(imports, pathx.NL),
+		"pkg":          "proto",
+		"serviceNew":   stringx.From(proto.Service[0].Name).ToCamel(),
+		"service":      parser.CamelCase(proto.Service[0].Name),
+		"serviceKey":   proto.Service[0].Name,
 	}, fileName, false)
 }

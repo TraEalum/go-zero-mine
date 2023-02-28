@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/zeromicro/go-zero/tools/goctl/config"
@@ -26,26 +27,30 @@ type (
 	defaultGenerator struct {
 		console.Console
 		// source string
-		dir          string
-		pkg          string
-		cfg          *config.Config
-		isPostgreSql bool
+		dir            string
+		pkg            string
+		cfg            *config.Config
+		isPostgreSql   bool
+		service        string
+		subTableNumber int
+		subTableKey    string
 	}
 
 	// Option defines a function with argument defaultGenerator
 	Option func(generator *defaultGenerator)
 
 	code struct {
-		importsCode string
-		varsCode    string
-		typesCode   string
-		newCode     string
-		insertCode  string
-		findCode    []string
-		updateCode  string
-		deleteCode  string
-		cacheExtra  string
-		tableName   string
+		importsCode  string
+		varsCode     string
+		typesCode    string
+		newCode      string
+		insertCode   string
+		findCode     []string
+		updateCode   string
+		deleteCode   string
+		cacheExtra   string
+		tableName    string
+		findListCode string
 	}
 
 	codeTuple struct {
@@ -96,6 +101,27 @@ func WithPostgreSql() Option {
 	}
 }
 
+// WithPostgreSql marks  defaultGenerator.isPostgreSql true
+func WithServiceName(service string) Option {
+	return func(generator *defaultGenerator) {
+		generator.service = service
+	}
+}
+
+// WithSubTableNumber marks  defaultGenerator.subTableNumber true
+func WithSubTableNumber(subTableNumber int) Option {
+	return func(generator *defaultGenerator) {
+		generator.subTableNumber = subTableNumber
+	}
+}
+
+// WithSubTableKey marks  defaultGenerator.subTableKey true
+func WithSubTableKey(subTableKey string) Option {
+	return func(generator *defaultGenerator) {
+		generator.subTableKey = subTableKey
+	}
+}
+
 func newDefaultOption() Option {
 	return func(generator *defaultGenerator) {
 		generator.Console = console.NewColorConsole()
@@ -117,6 +143,15 @@ func (g *defaultGenerator) StartFromInformationSchema(tables map[string]*model.T
 		table, err := parser.ConvertDataType(each)
 		if err != nil {
 			return err
+		}
+
+		if g.subTableNumber > 1 && g.subTableKey != "" {
+			//从0下标开始，需要减一
+			splitNum := util.GetSplitNum(g.subTableNumber - 1)
+			tmpName := table.Name.Source()
+			//把最后得特殊符号"_"去掉，需要减一
+			table.Name = stringx.From(tmpName[0 : len(tmpName)-splitNum-1])
+			table.FmtString = table.Name.Source() + "_%0" + strconv.Itoa(splitNum) + "d"
 		}
 
 		code, err := g.genModel(*table, withCache)
@@ -241,7 +276,6 @@ func (g *defaultGenerator) genModel(in parser.Table, withCache bool) (string, er
 	if len(in.PrimaryKey.Name.Source()) == 0 {
 		return "", fmt.Errorf("table %s: missing primary key", in.Name.Source())
 	}
-
 	primaryKey, uniqueKey := genCacheKeys(in)
 
 	var table Table
@@ -249,8 +283,8 @@ func (g *defaultGenerator) genModel(in parser.Table, withCache bool) (string, er
 	table.PrimaryCacheKey = primaryKey
 	table.UniqueCacheKey = uniqueKey
 	table.ContainsUniqueCacheKey = len(uniqueKey) > 0
-
-	importsCode, err := genImports(table, withCache, in.ContainsTime())
+	// modify import time
+	importsCode, err := genImports(table, g.service, withCache, in.ContainsTimeV2())
 	if err != nil {
 		return "", err
 	}
@@ -261,6 +295,11 @@ func (g *defaultGenerator) genModel(in parser.Table, withCache bool) (string, er
 	}
 
 	insertCode, insertCodeMethod, err := genInsert(table, withCache, g.isPostgreSql)
+	if err != nil {
+		return "", err
+	}
+
+	listsCode, listsCodeMethod, err := genLists(table, withCache, g.isPostgreSql)
 	if err != nil {
 		return "", err
 	}
@@ -282,6 +321,33 @@ func (g *defaultGenerator) genModel(in parser.Table, withCache bool) (string, er
 		return "", err
 	}
 
+	findOneByConditionCode, findOneByConditionInterface, err := genFindOneByCondition(table)
+	if err != nil {
+		return "", err
+	}
+
+	transCode, transInterface, err := genTrans(table)
+	if err != nil {
+		return "", err
+	}
+
+	findListByTransCode, findListByTransCodeInterface, err := genFindListByTrans(table)
+	if err != nil {
+		return "", err
+	}
+
+	findListBatchCode, findListBatchInterface, err := genFindListBatch(table)
+	if err != nil {
+		return "", err
+	}
+
+	insertBatchCode, insertBatchInterface, err := genInsertBatch(table)
+	if err != nil {
+		return "", err
+	}
+
+	findCode = append(findCode, findOneByConditionCode, transCode, findListByTransCode, findListBatchCode, insertBatchCode)
+
 	deleteCode, deleteCodeMethod, err := genDelete(table, withCache, g.isPostgreSql)
 	if err != nil {
 		return "", err
@@ -289,7 +355,8 @@ func (g *defaultGenerator) genModel(in parser.Table, withCache bool) (string, er
 
 	var list []string
 	list = append(list, insertCodeMethod, findOneCodeMethod, ret.findOneInterfaceMethod,
-		updateCodeMethod, deleteCodeMethod)
+		updateCodeMethod, deleteCodeMethod, listsCodeMethod, findOneByConditionInterface, transInterface,
+		findListByTransCodeInterface, findListBatchInterface, insertBatchInterface)
 	typesCode, err := genTypes(table, strings.Join(modelutil.TrimStringSlice(list), pathx.NL), withCache)
 	if err != nil {
 		return "", err
@@ -306,16 +373,17 @@ func (g *defaultGenerator) genModel(in parser.Table, withCache bool) (string, er
 	}
 
 	code := &code{
-		importsCode: importsCode,
-		varsCode:    varsCode,
-		typesCode:   typesCode,
-		newCode:     newCode,
-		insertCode:  insertCode,
-		findCode:    findCode,
-		updateCode:  updateCode,
-		deleteCode:  deleteCode,
-		cacheExtra:  ret.cacheExtra,
-		tableName:   tableName,
+		importsCode:  importsCode,
+		varsCode:     varsCode,
+		typesCode:    typesCode,
+		newCode:      newCode,
+		insertCode:   insertCode,
+		findListCode: listsCode,
+		findCode:     findCode,
+		updateCode:   updateCode,
+		deleteCode:   deleteCode,
+		cacheExtra:   ret.cacheExtra,
+		tableName:    tableName,
 	}
 
 	output, err := g.executeModel(table, code)
@@ -327,10 +395,21 @@ func (g *defaultGenerator) genModel(in parser.Table, withCache bool) (string, er
 }
 
 func (g *defaultGenerator) genModelCustom(in parser.Table, withCache bool) (string, error) {
-	text, err := pathx.LoadTemplate(category, modelCustomTemplateFile, template.ModelCustom)
+	var templateStr string
+	if in.FmtString != "" {
+		templateStr = template.ModelCustomSubTable
+	} else {
+		templateStr = template.ModelCustom
+	}
+	text, err := pathx.LoadTemplate(category, modelCustomTemplateFile, templateStr)
 	if err != nil {
 		return "", err
 	}
+
+	var table Table
+	table.Table = in
+
+	marshalFields, unmarshallFields, err := genFieldParser(table, table.Fields)
 
 	t := util.With("model-custom").
 		Parse(text).
@@ -340,6 +419,13 @@ func (g *defaultGenerator) genModelCustom(in parser.Table, withCache bool) (stri
 		"withCache":             withCache,
 		"upperStartCamelObject": in.Name.ToCamel(),
 		"lowerStartCamelObject": stringx.From(in.Name.ToCamel()).Untitle(),
+		"serviceName":           g.service,
+		"marshalFields":         marshalFields,
+		"unmarshallFields":      unmarshallFields,
+		"table":                 in.Name.Source(),
+		"fmtSubTableName":       in.FmtString,
+		"subTableNumber":        g.subTableNumber,
+		"upperSubTableKey":      stringx.From(g.subTableKey).ToCamel(),
 	})
 	if err != nil {
 		return "", err
@@ -364,6 +450,7 @@ func (g *defaultGenerator) executeModel(table Table, code *code) (*bytes.Buffer,
 		"new":         code.newCode,
 		"insert":      code.insertCode,
 		"find":        strings.Join(code.findCode, "\n"),
+		"findlist":    code.findListCode,
 		"update":      code.updateCode,
 		"delete":      code.deleteCode,
 		"extraMethod": code.cacheExtra,

@@ -10,4 +10,5 @@ type Proto struct {
 	Import    []Import
 	Message   []Message
 	Service   Services
+	Tables    []string
 }

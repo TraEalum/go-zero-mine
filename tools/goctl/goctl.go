@@ -7,6 +7,8 @@ import (
 )
 
 func main() {
+	//fmt.Println("fmt-goctl -v:", version.GetGoctlVersion())
+	//log.Println("log-goctl -v:", version.GetGoctlVersion())
 	logx.Disable()
 	load.Disable()
 	cmd.Execute()

@@ -1,5 +1,4 @@
-# Ignore all
-*
+!.vscode/*
 
 # Unignore all with extensions
 !*.*
@@ -26,3 +25,5 @@ go.work.sum
 # vim auto backup file
 *~
 !OWNERS
+/.history/
+.vscode/settings.json

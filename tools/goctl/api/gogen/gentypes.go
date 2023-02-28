@@ -38,7 +38,7 @@ func BuildTypes(types []spec.Type) (string, error) {
 	return builder.String(), nil
 }
 
-func genTypes(dir string, cfg *config.Config, api *spec.ApiSpec) error {
+func genTypes(dir string, cfg *config.Config, api *spec.ApiSpec, marshalFlag, apiFile string) error {
 	val, err := BuildTypes(api.Types)
 	if err != nil {
 		return err
@@ -52,6 +52,29 @@ func genTypes(dir string, cfg *config.Config, api *spec.ApiSpec) error {
 	typeFilename = typeFilename + ".go"
 	filename := path.Join(dir, typesDir, typeFilename)
 	os.Remove(filename)
+
+	go func() {
+		err = GenMarshal(api, dir, apiFile)
+		if err != nil {
+			fmt.Println(err.Error())
+			fmt.Println("generate marsha file error")
+			return
+		}
+	}()
+
+	go func() {
+		err = GenCustomizeMarshal(api, dir, apiFile)
+		if err != nil {
+			fmt.Println(err.Error())
+			fmt.Println("generate cusMarsha file error")
+			return
+		}
+	}()
+
+
+	if err != nil {
+		return err
+	}
 
 	return genFile(fileGenConfig{
 		dir:             dir,

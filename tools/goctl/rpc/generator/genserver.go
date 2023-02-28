@@ -109,10 +109,13 @@ func (g *Generator) genServerInCompatibility(ctx DirContext, proto parser.Proto,
 	dir := ctx.GetServer()
 	logicImport := fmt.Sprintf(`"%v"`, ctx.GetLogic().Package)
 	svcImport := fmt.Sprintf(`"%v"`, ctx.GetSvc().Package)
-	pbImport := fmt.Sprintf(`"%v"`, ctx.GetPb().Package)
+	//pbImport := fmt.Sprintf(`"%v"`, ctx.GetPb().Package)
+	pbImport := fmt.Sprintf("proto \"proto/%s\"", proto.Service[0].Name)
 
 	imports := collection.NewSet()
 	imports.AddStr(logicImport, svcImport, pbImport)
+
+	// fmt.Printf("GenServer:[%v]", imports.Keys())
 
 	head := util.GetHead(proto.Name)
 	service := proto.Service[0]
@@ -140,14 +143,21 @@ func (g *Generator) genServerInCompatibility(ctx DirContext, proto parser.Proto,
 		}
 	}
 
+	// return util.With("server").GoFmt(true).Parse(text).SaveTo(map[string]interface{}{
+	// 	"head": head,
+	// 	"unimplementedServer": fmt.Sprintf("%s.Unimplemented%sServer", proto.PbPackage,
+	// 		stringx.From(service.Name).ToCamel()),
+	// 	"server":    stringx.From(service.Name).ToCamel(),
+	// 	"imports":   strings.Join(imports.KeysStr(), pathx.NL),
+	// 	"funcs":     strings.Join(funcList, pathx.NL),
+	// 	"notStream": notStream,
 	return util.With("server").GoFmt(true).Parse(text).SaveTo(map[string]interface{}{
-		"head": head,
-		"unimplementedServer": fmt.Sprintf("%s.Unimplemented%sServer", proto.PbPackage,
-			stringx.From(service.Name).ToCamel()),
-		"server":    stringx.From(service.Name).ToCamel(),
-		"imports":   strings.Join(imports.KeysStr(), pathx.NL),
-		"funcs":     strings.Join(funcList, pathx.NL),
-		"notStream": notStream,
+		"head":                head,
+		"unimplementedServer": fmt.Sprintf("%s.Unimplemented%sServer", "proto", stringx.From(service.Name).ToCamel()),
+		"server":              stringx.From(service.Name).ToCamel(),
+		"imports":             strings.Join(imports.KeysStr(), pathx.NL),
+		"funcs":               strings.Join(funcList, pathx.NL),
+		"notStream":           notStream,
 	}, serverFile, true)
 }
 
@@ -179,8 +189,8 @@ func (g *Generator) genFunctions(goPackage string, service parser.Service, multi
 			"server":     stringx.From(service.Name).ToCamel(),
 			"logicName":  logicName,
 			"method":     parser.CamelCase(rpc.Name),
-			"request":    fmt.Sprintf("*%s.%s", goPackage, parser.CamelCase(rpc.RequestType)),
-			"response":   fmt.Sprintf("*%s.%s", goPackage, parser.CamelCase(rpc.ReturnsType)),
+			"request":    fmt.Sprintf("*%s.%s", "proto", parser.CamelCase(rpc.RequestType)),
+			"response":   fmt.Sprintf("*%s.%s", "proto", parser.CamelCase(rpc.ReturnsType)),
 			"hasComment": len(comment) > 0,
 			"comment":    comment,
 			"hasReq":     !rpc.StreamsRequest,

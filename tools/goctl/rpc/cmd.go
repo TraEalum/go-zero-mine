@@ -3,6 +3,7 @@ package rpc
 import (
 	"github.com/spf13/cobra"
 	"github.com/zeromicro/go-zero/tools/goctl/rpc/cli"
+	"github.com/zeromicro/go-zero/tools/goctl/rpc/generator"
 )
 
 var (
@@ -104,6 +105,8 @@ func init() {
 		"https://github.com/zeromicro/go-zero-template directory structure")
 	templateCmd.Flags().StringVar(&cli.VarStringBranch, "branch", "", "The branch"+
 		" of the remote repo, it does work with --remote")
+
+	protocCmd.Flags().StringVar(&generator.VarStringURL, "url", "", `The data source of database,like "root:password@tcp(127.0.0.1:3306)/database"`)
 
 	Cmd.AddCommand(newCmd)
 	Cmd.AddCommand(protocCmd)

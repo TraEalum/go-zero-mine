@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/zeromicro/go-zero/tools/goctl/apigen"
+
 	"github.com/zeromicro/go-zero/tools/goctl/api/parser/g4/gen/api"
 	"github.com/zeromicro/go-zero/tools/goctl/api/spec"
 	"github.com/zeromicro/go-zero/tools/goctl/config"
@@ -21,7 +23,7 @@ var logicTemplate string
 func genLogic(dir, rootPkg string, cfg *config.Config, api *spec.ApiSpec) error {
 	for _, g := range api.Service.Groups {
 		for _, r := range g.Routes {
-			err := genLogicByRoute(dir, rootPkg, cfg, g, r)
+			err := genLogicByRoute(dir, rootPkg, cfg, g, r, api)
 			if err != nil {
 				return err
 			}
@@ -30,7 +32,7 @@ func genLogic(dir, rootPkg string, cfg *config.Config, api *spec.ApiSpec) error 
 	return nil
 }
 
-func genLogicByRoute(dir, rootPkg string, cfg *config.Config, group spec.Group, route spec.Route) error {
+func genLogicByRoute(dir, rootPkg string, cfg *config.Config, group spec.Group, route spec.Route, api *spec.ApiSpec) error {
 	logic := getLogicName(route)
 	goFile, err := format.FileNamingFormat(cfg.NamingFormat, logic)
 	if err != nil {
@@ -53,6 +55,7 @@ func genLogicByRoute(dir, rootPkg string, cfg *config.Config, group spec.Group, 
 		requestString = "req *" + requestGoTypeName(route, typesPacket)
 	}
 
+	path := fmt.Sprintf("proto \"proto/%s\"", api.Service.Name)
 	subDir := getLogicFolderPath(group, route)
 	return genFile(fileGenConfig{
 		dir:             dir,
@@ -70,6 +73,8 @@ func genLogicByRoute(dir, rootPkg string, cfg *config.Config, group spec.Group, 
 			"responseType": responseString,
 			"returnString": returnString,
 			"request":      requestString,
+			"context":      genLogicContext(logic, api.Service.Name),
+			"rpcImport":    path,
 		},
 	})
 }
@@ -134,4 +139,61 @@ func shallImportTypesPackage(route spec.Route) bool {
 	}
 
 	return true
+}
+
+func genLogicContext(logic string, serviceName string) string {
+	var builder strings.Builder
+	title := strings.Title(strings.TrimSuffix(logic, "Logic"))
+	length := len(title)
+	if strings.Contains(title, "Create") {
+		tableName := title[6:]
+		paraName := strings.ToLower(tableName)
+		builder.WriteString(fmt.Sprintf("\tresp = &types.%sResp{}\n\n", title))
+		builder.WriteString(fmt.Sprintf("\tvar %s proto.%s\n", paraName, tableName))
+		builder.WriteString(fmt.Sprintf("\treq.Unmarshal(&%s)\n\n", paraName))
+		builder.WriteString(fmt.Sprintf("\trpcResp,err := l.svcCtx.%s.%s(l.ctx, &%s)\n", apigen.FirstUpper(serviceName), title, paraName))
+		builder.WriteString("\tif err != nil {\n")
+		builder.WriteString("\t\treturn nil,err\n")
+		builder.WriteString("\t}\n\n")
+		builder.WriteString("\tresp.Marshal(rpcResp)\n")
+	} else if strings.Contains(title, "List") && length > 9 { //length 大于9 是因为 QueryXXXList
+		tableName := title[5 : len(title)-4]
+		paraName := strings.ToLower(tableName)
+		// fix bug 2022-11-08
+		builder.WriteString(fmt.Sprintf("\tresp = &types.Query%sResp{}\n\n", tableName))
+		builder.WriteString(fmt.Sprintf("\tvar %s proto.%sFilter\n", paraName, tableName))
+		builder.WriteString(fmt.Sprintf("\treq.Unmarshal(&%s)\n\n", paraName))
+		builder.WriteString(fmt.Sprintf("\trpcResp, err := l.svcCtx.%s.Query%sList(l.ctx, &%s)\n", apigen.FirstUpper(serviceName), tableName, paraName))
+		builder.WriteString("\tif err != nil {\n")
+		builder.WriteString("\t\treturn nil,err\n")
+		builder.WriteString("\t}\n\n")
+		builder.WriteString("\tresp.Marshal(rpcResp)\n")
+	} else if strings.Contains(title, "Query") {
+		tableName := title[5:]
+		paraName := strings.ToLower(tableName)
+		// fix bug 2022-11-08
+		builder.WriteString(fmt.Sprintf("\tresp = &types.%s{}\n\n", tableName))
+		builder.WriteString(fmt.Sprintf("\tvar %s proto.%sFilter\n", paraName, tableName))
+		builder.WriteString(fmt.Sprintf("\treq.Unmarshal(&%s)\n\n", paraName))
+		builder.WriteString(fmt.Sprintf("\trpcResp, err := l.svcCtx.%s.Query%sDetail(l.ctx, &%s)\n", apigen.FirstUpper(serviceName), tableName, paraName))
+		builder.WriteString("\tif err != nil {\n")
+		builder.WriteString("\t\treturn nil,err\n")
+		builder.WriteString("\t}\n\n")
+		builder.WriteString("\tresp.Marshal(rpcResp)\n")
+
+	} else if strings.Contains(title, "Update") {
+		tableName := title[6:]
+		paraName := strings.ToLower(tableName)
+		builder.WriteString(fmt.Sprintf("\tresp = &types.%sResp{}\n\n", title))
+		builder.WriteString(fmt.Sprintf("\tvar %s proto.%s\n", paraName, tableName))
+		builder.WriteString(fmt.Sprintf("\treq.Unmarshal(&%s)\n\n", paraName))
+		builder.WriteString(fmt.Sprintf("\trpcResp, err := l.svcCtx.%s.Update%s(l.ctx, &%s)\n", apigen.FirstUpper(serviceName), tableName, paraName))
+		builder.WriteString("\tif err != nil {\n")
+		builder.WriteString("\t\treturn nil,err\n")
+		builder.WriteString("\t}\n\n")
+		builder.WriteString("\tresp.Marshal(rpcResp)\n")
+	} else {
+		return ""
+	}
+	return builder.String()
 }

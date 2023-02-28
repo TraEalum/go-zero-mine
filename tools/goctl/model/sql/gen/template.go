@@ -13,6 +13,8 @@ const (
 	deleteMethodTemplateFile              = "interface-delete.tpl"
 	fieldTemplateFile                     = "field.tpl"
 	findOneTemplateFile                   = "find-one.tpl"
+	listsTemplateFile                     = "lists.tpl"
+	listsTemplateMethodFile               = "interface-lists.tpl"
 	findOneMethodTemplateFile             = "interface-find-one.tpl"
 	findOneByFieldTemplateFile            = "find-one-by-field.tpl"
 	findOneByFieldMethodTemplateFile      = "interface-find-one-by-field.tpl"
@@ -31,6 +33,18 @@ const (
 	updateMethodTemplateFile              = "interface-update.tpl"
 	varTemplateFile                       = "var.tpl"
 	errTemplateFile                       = "err.tpl"
+	marshalFile                           = "marshal.tpl"
+	unmarshalFile                         = "unmarshal.tpl"
+	findOneByConditionFile                = "findOneByCondition.tpl"
+	findOneByConditionMethodTemplateFile  = "findOneByConditionMethod.tpl"
+	transFile                             = "trans.tpl"
+	transMethodTemplateFile               = "transMethod.tpl"
+	findListByTransFile                   = "findListByTrans.tpl"
+	findListByTransTemplateFile           = "findListByTransMethod.tpl"
+	findListBatchFile                     = "findListBatch.tpl"
+	findListBatchTemplateFile             = "findListBatchMethod.tpl"
+	insertBatchFile                       = "insertBatch.tpl"
+	insertBatchFileTemplate               = "insertBatchMethod.tpl"
 )
 
 var templates = map[string]string{
@@ -38,6 +52,8 @@ var templates = map[string]string{
 	deleteMethodTemplateFile:              template.DeleteMethod,
 	fieldTemplateFile:                     template.Field,
 	findOneTemplateFile:                   template.FindOne,
+	listsTemplateFile:                     template.Lists,
+	listsTemplateMethodFile:               template.ListsMethod,
 	findOneMethodTemplateFile:             template.FindOneMethod,
 	findOneByFieldTemplateFile:            template.FindOneByField,
 	findOneByFieldMethodTemplateFile:      template.FindOneByFieldMethod,
@@ -56,6 +72,16 @@ var templates = map[string]string{
 	updateMethodTemplateFile:              template.UpdateMethod,
 	varTemplateFile:                       template.Vars,
 	errTemplateFile:                       template.Error,
+	findOneByConditionFile:                template.FindOneByCondition,
+	findOneByConditionMethodTemplateFile:  template.FindOneByConditionMethod,
+	transFile:                             template.Trans,
+	transMethodTemplateFile:               template.TransMethod,
+	findListByTransFile:                   template.FindListByTrans,
+	findListByTransTemplateFile:           template.FindListByTransMethod,
+	findListBatchFile:                     template.FindListBatch,
+	findListBatchTemplateFile:             template.FindListBatchMethod,
+	insertBatchFile:                       template.InsertBatch,
+	insertBatchFileTemplate:               template.InsertBatchMethod,
 }
 
 // Category returns model const value

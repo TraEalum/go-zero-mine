@@ -3,22 +3,32 @@ package template
 const (
 	// Update defines a template for generating update codes
 	Update = `
-func (m *default{{.upperStartCamelObject}}Model) Update(ctx context.Context, {{if .containsIndexCache}}newData{{else}}data{{end}} *{{.upperStartCamelObject}}) error {
-	{{if .withCache}}{{if .containsIndexCache}}data, err:=m.FindOne(ctx, newData.{{.upperStartCamelPrimaryKey}})
-	if err!=nil{
+func (m *default{{.upperStartCamelObject}}Model) Update(ctx context.Context, session sqlx.Session, updateBuilder squirrel.UpdateBuilder) error {
+	var err error
+	query, values, err := updateBuilder.ToSql()
+	if err != nil {
 		return err
 	}
 
-{{end}}	{{.keys}}
-    _, {{if .containsIndexCache}}err{{else}}err:{{end}}= m.ExecCtx(ctx, func(ctx context.Context, conn sqlx.SqlConn) (result sql.Result, err error) {
-		query := fmt.Sprintf("update %s set %s where {{.originalPrimaryKey}} = {{if .postgreSql}}$1{{else}}?{{end}}", m.table, {{.lowerStartCamelObject}}RowsWithPlaceHolder)
-		return conn.ExecCtx(ctx, query, {{.expressionValues}})
-	}, {{.keyValues}}){{else}}query := fmt.Sprintf("update %s set %s where {{.originalPrimaryKey}} = {{if .postgreSql}}$1{{else}}?{{end}}", m.table, {{.lowerStartCamelObject}}RowsWithPlaceHolder)
-    _,err:=m.conn.ExecCtx(ctx, query, {{.expressionValues}}){{end}}
+	{{if .withCache}}{{.keys}}
+    _, err := m.ExecCtx(ctx, func(ctx context.Context, conn sqlx.SqlConn) (result sql.Result, err error) {
+		if session != nil {
+			_, err = session.ExecCtx(ctx, query, values...)
+			return err
+		}
+		return conn.ExecCtx(ctx, query, values...)
+	}, {{.keyValues}}){{else}}
+	if session != nil {
+		_, err = session.ExecCtx(ctx, query, values...)
+		return err
+	}
+	
+    _, err = m.conn.ExecCtx(ctx, query, values...){{end}}
+
 	return err
 }
 `
 
 	// UpdateMethod defines an interface method template for generating update codes
-	UpdateMethod = `Update(ctx context.Context, {{if .containsIndexCache}}newData{{else}}data{{end}} *{{.upperStartCamelObject}}) error`
+	UpdateMethod = `Update(ctx context.Context, session sqlx.Session, updateBuilder squirrel.UpdateBuilder) error`
 )

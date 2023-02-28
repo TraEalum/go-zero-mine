@@ -25,6 +25,7 @@ type (
 		PrimaryKey  Primary
 		UniqueIndex map[string][]*Field
 		Fields      []*Field
+		FmtString   string
 	}
 
 	// Primary describes a primary key
@@ -256,6 +257,19 @@ func convertColumns(columns []*parser.Column, primaryColumn string) (Primary, ma
 // ContainsTime returns true if contains golang type time.Time
 func (t *Table) ContainsTime() bool {
 	for _, item := range t.Fields {
+		if item.DataType == timeImport {
+			return true
+		}
+	}
+	return false
+}
+
+// ContainsTimeV2 base on ContainsTime
+func (t *Table) ContainsTimeV2() bool {
+	for _, item := range t.Fields {
+		if item.Name.Source() == "created_at" || item.Name.Source() == "updated_at" {
+			return true
+		}
 		if item.DataType == timeImport {
 			return true
 		}

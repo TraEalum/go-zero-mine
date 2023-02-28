@@ -3,6 +3,7 @@ package ctx
 import (
 	"errors"
 	"path/filepath"
+	"strings"
 
 	"github.com/zeromicro/go-zero/tools/goctl/rpc/execx"
 )
@@ -32,7 +33,16 @@ func Prepare(workDir string) (*ProjectContext, error) {
 		return ctx, nil
 	}
 
+	//获取此路径下面的最低的路径名称
 	name := filepath.Base(workDir)
+
+	s := strings.Split(workDir, "\\")
+	if len(s) > 2 {
+		//获取倒数第二个路径
+		name = s[len(s)-2] + "-service"
+		workDir = strings.Join(s[:len(s)-1], "\\")
+	}
+
 	_, err = execx.Run("go mod init "+name, workDir)
 	if err != nil {
 		return nil, err

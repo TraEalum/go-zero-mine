@@ -1,0 +1,9 @@
+message Coupon {
+  repeated CouponWhitelistFilter filter =1;
+}
+
+message CouponWhitelistFilter {
+  int64 pageNo = 1; //pageNo
+  int64 pageSize = 2; //pageSize
+  string search = 3; //id
+}

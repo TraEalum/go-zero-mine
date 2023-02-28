@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/zeromicro/go-zero/tools/goctl/apigen"
+
 	"github.com/zeromicro/go-zero/tools/goctl/api/spec"
 	"github.com/zeromicro/go-zero/tools/goctl/config"
 	"github.com/zeromicro/go-zero/tools/goctl/util/format"
@@ -12,7 +14,20 @@ import (
 )
 
 const (
-	configFile = "config"
+	configFile        = "config"
+	configTemplateOld = `package config
+
+import (
+	{{.authImport}}
+	"github.com/zeromicro/go-zero/zrpc"
+)
+type Config struct {
+	rest.RestConf
+	{{.auth}}
+	{{.jwtTrans}}
+	{{.rpc}}
+}
+`
 
 	jwtTemplate = ` struct {
 		AccessSecret string
@@ -41,6 +56,9 @@ func genConfig(dir string, cfg *config.Config, api *spec.ApiSpec) error {
 		auths = append(auths, fmt.Sprintf("%s %s", item, jwtTemplate))
 	}
 
+	var builder strings.Builder
+	builder.WriteString(fmt.Sprintf("%s zrpc.RpcClientConf\n", apigen.FirstUpper(api.Service.Name)))
+
 	jwtTransNames := getJwtTrans(api)
 	var jwtTransList []string
 	for _, item := range jwtTransNames {
@@ -60,6 +78,7 @@ func genConfig(dir string, cfg *config.Config, api *spec.ApiSpec) error {
 			"authImport": authImportStr,
 			"auth":       strings.Join(auths, "\n"),
 			"jwtTrans":   strings.Join(jwtTransList, "\n"),
+			"rpc":        builder.String(),
 		},
 	})
 }

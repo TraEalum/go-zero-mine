@@ -8,6 +8,9 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/zeromicro/go-zero/tools/goctl/apigen"
+	"github.com/zeromicro/go-zero/tools/goctl/proto"
+
 	"github.com/logrusorgru/aurora"
 	"github.com/spf13/cobra"
 	"github.com/withfig/autocomplete-tools/integrations/cobra"
@@ -47,6 +50,7 @@ var (
 
 // Execute executes the given command
 func Execute() {
+	//	fmt.Printf("%#v", os.Args) // type  args
 	os.Args = supportGoStdFlag(os.Args)
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(aurora.Red(err.Error()))
@@ -129,4 +133,6 @@ func init() {
 	rootCmd.AddCommand(tpl.Cmd)
 	rootCmd.AddCommand(upgrade.Cmd)
 	rootCmd.AddCommand(cobracompletefig.CreateCompletionSpecCommand())
+	rootCmd.AddCommand(proto.Cmd)
+	rootCmd.AddCommand(apigen.Cmd)
 }

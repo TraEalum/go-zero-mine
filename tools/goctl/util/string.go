@@ -111,3 +111,19 @@ func isGolangKeyword(s string) bool {
 	_, ok := goKeyword[s]
 	return ok
 }
+
+func GetSplitNum(param int) int {
+	if param == 0 {
+		return 0
+	}
+
+	splitNum := 0
+	denominator := 10
+	tmpNum := param / denominator
+	if tmpNum > 0 {
+		splitNum = GetSplitNum(tmpNum)
+	}
+	splitNum++
+
+	return splitNum
+}

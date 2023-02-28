@@ -69,6 +69,9 @@ func init() {
 	datasourceCmd.Flags().StringVar(&command.VarStringHome, "home", "", "The goctl home path of the template, --home and --remote cannot be set at the same time, if they are, --remote has higher priority")
 	datasourceCmd.Flags().StringVar(&command.VarStringRemote, "remote", "", "The remote git repo of the template, --home and --remote cannot be set at the same time, if they are, --remote has higher priority\nThe git repo directory must be consistent with the https://github.com/zeromicro/go-zero-template directory structure")
 	datasourceCmd.Flags().StringVar(&command.VarStringBranch, "branch", "", "The branch of the remote repo, it does work with --remote")
+	datasourceCmd.Flags().StringVar(&command.VarService, "service", "", "The service name")
+	datasourceCmd.Flags().IntVarP(&command.VarSubTableNumber, "subTableNumber", "s", 0, "Sub table number")
+	datasourceCmd.Flags().StringVarP(&command.VarSubTableKey, "subTableKey", "k", "", "Sub table key")
 
 	pgDatasourceCmd.Flags().StringVar(&command.VarStringURL, "url", "", `The data source of database,like "postgres://root:password@127.0.0.1:5432/database?sslmode=disable"`)
 	pgDatasourceCmd.Flags().StringVarP(&command.VarStringTable, "table", "t", "", "The table or table globbing patterns in the database")

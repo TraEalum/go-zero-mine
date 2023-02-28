@@ -146,13 +146,14 @@ func (g *Generator) genCallInCompatibility(ctx DirContext, proto parser.Proto,
 	if !isCallPkgSameToPbPkg {
 		for _, item := range proto.Message {
 			msgName := getMessageName(*item.Message)
-			alias.AddStr(fmt.Sprintf("%s = %s", parser.CamelCase(msgName),
-				fmt.Sprintf("%s.%s", proto.PbPackage, parser.CamelCase(msgName))))
+			alias.AddStr(fmt.Sprintf("%s = %s", parser.CamelCase(msgName), fmt.Sprintf("%s.%s", "proto", parser.CamelCase(msgName))))
 		}
 	}
 
-	pbPackage := fmt.Sprintf(`"%s"`, ctx.GetPb().Package)
-	protoGoPackage := fmt.Sprintf(`"%s"`, ctx.GetProtoGo().Package)
+	pbPackage := fmt.Sprintf(`proto "proto/%s"`, service.Name)
+	// protoGoPackage := fmt.Sprintf(`"%s"`, ctx.GetProtoGo().Package)
+	protoGoPackage := ""
+	// fmt.Printf("head[%s] dir.Base[%s] protoGoPackage[%s] pbPackage[%s]", head, dir.Base, protoGoPackage, pbPackage)
 	if isCallPkgSameToGrpcPkg {
 		pbPackage = ""
 		protoGoPackage = ""
@@ -215,7 +216,7 @@ func (g *Generator) genFunction(goPackage string, service parser.Service,
 			"serviceName":            stringx.From(service.Name).ToCamel(),
 			"rpcServiceName":         parser.CamelCase(service.Name),
 			"method":                 parser.CamelCase(rpc.Name),
-			"package":                goPackage,
+			"package":                "proto",
 			"pbRequest":              parser.CamelCase(rpc.RequestType),
 			"pbResponse":             parser.CamelCase(rpc.ReturnsType),
 			"hasComment":             len(comment) > 0,

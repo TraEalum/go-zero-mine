@@ -35,7 +35,7 @@ var commonMysqlDataTypeMapInt = map[int]string{
 	parser.Float4:    "float64",
 	parser.Float8:    "float64",
 	parser.Double:    "float64",
-	parser.Decimal:   "float64",
+	parser.Decimal:   "string", // before float64
 	parser.Dec:       "float64",
 	parser.Fixed:     "float64",
 	parser.Numeric:   "float64",
@@ -94,7 +94,7 @@ var commonMysqlDataTypeMapString = map[string]string{
 	"float4":    "float64",
 	"float8":    "float64",
 	"double":    "float64",
-	"decimal":   "float64",
+	"decimal":   "string", // before float64
 	"dec":       "float64",
 	"fixed":     "float64",
 	"real":      "float64",

@@ -6,9 +6,14 @@ const (
 	"context"
 	"database/sql"
 	"fmt"
+	"strconv"
 	"strings"
 	{{if .time}}"time"{{end}}
+	"comm/util"
 
+	"proto/{{.serviceName}}"
+	"github.com/Masterminds/squirrel"
+	sqlBuilder "github.com/lann/builder"
 	"github.com/zeromicro/go-zero/core/stores/builder"
 	"github.com/zeromicro/go-zero/core/stores/cache"
 	"github.com/zeromicro/go-zero/core/stores/sqlc"
@@ -21,9 +26,13 @@ const (
 	"context"
 	"database/sql"
 	"fmt"
+	"strconv"
 	"strings"
 	{{if .time}}"time"{{end}}
-
+	"comm/util"
+	
+	"github.com/Masterminds/squirrel"
+	sqlBuilder "github.com/lann/builder"
 	"github.com/zeromicro/go-zero/core/stores/builder"
 	"github.com/zeromicro/go-zero/core/stores/sqlc"
 	"github.com/zeromicro/go-zero/core/stores/sqlx"
