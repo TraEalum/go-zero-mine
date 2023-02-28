@@ -10,11 +10,11 @@ func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 	var err error
 
 	// check whether it already exists
-	if in.{{.pK}} != {{.pV}} {
-		if _, err = l.svcCtx.{{.modelName}}Model.FindOne(l.ctx, in.{{.pK}}); err != sqlc.ErrNotFound {
+	if in.Get{{.pK}}() != {{.pV}} {
+		if _, err = l.svcCtx.{{.modelName}}Model.FindOne(l.ctx, in.Get{{.pK}}()); err != sqlc.ErrNotFound {
 			logx.WithContext(l.ctx).Infof("%v is already exists")
 
-			return &{{.responseType}}{ {{.pK}}: in.{{.pK}}}, nil
+			return &{{.responseType}}{ {{.pK}}: in.Get{{.pK}}()}, nil
 		}
 	}
 
@@ -41,7 +41,7 @@ func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 	var err error
 
 	// delete
-	if err = l.svcCtx.{{.modelName}}Model.Delete(l.ctx, nil, &model.{{.modelName}}{ {{.pK}}: &in.{{.pK}}}); err != nil {
+	if err = l.svcCtx.{{.modelName}}Model.Delete(l.ctx, nil, &model.{{.modelName}}{ {{.pK}}: &in.Get{{.pK}}()}); err != nil {
 		return nil, errorm.New(errorm.RecordDeleteFailed, "delete data fail.%v", err)
 	}
 
@@ -54,17 +54,19 @@ func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 	var err error
 
 	// check whether it already exists
-	if _, err = l.svcCtx.{{.modelName}}Model.FindOne(l.ctx, in.{{.pK}}); err != nil && err != sqlc.ErrNotFound {
+	if _, err = l.svcCtx.{{.modelName}}Model.FindOne(l.ctx, in.Get{{.pK}}()); err != nil && err != sqlc.ErrNotFound {
 		logx.WithContext(l.ctx).Infof("find data fail. %v", err)
+
 		return nil, err
 	}else if err == sqlc.ErrNotFound{
-		err = errorm.New(errorm.RecordNotFound, "{{.pK}} %v dose not exists.", in.{{.pK}})
+		err = errorm.New(errorm.RecordNotFound, "{{.pK}} %v dose not exists.", in.Get{{.pK}}())
 		logx.WithContext(l.ctx).Infof("find data fail. %v", err)
+
 		return nil, err
 	}
 
 	where := model.{{.modelName}}{
-		 {{.pK}}: &in.{{.pK}},
+		 {{.pK}}: &in.Get{{.pK}}(),
 	}
 	{{.modelNameFirstLower}} := model.{{.modelName}}{}
 	{{.modelNameFirstLower}}.Marshal(in)
@@ -73,10 +75,11 @@ func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 	// update
 	if err = l.svcCtx.{{.modelName}}Model.Update(l.ctx, nil, builder.UpdateBuilder); err != nil {
 		logx.WithContext(l.ctx).Infof("update fail. %v", err)
+
 		return nil, errorm.New(errorm.RecordCreateFailed, "create data fail.%v", err)
 	}
 
-	return &{{.responseType}}{ {{.pK}}: in.{{.pK}} }, nil
+	return &{{.responseType}}{ {{.pK}}: in.Get{{.pK}}() }, nil
 }
 `
 
@@ -84,20 +87,20 @@ const QueryLogic = commonHead + `
 func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 	var err error
 	var totalCount int64
+	var {{.modelNameFirstLower}}List *[]model.{{.modelName}}
 	resp := proto.{{.modelName}}List{
 		{{.modelName}}: []*proto.{{.modelName}}{},
 	}
 
 	// build where
 	where := model.{{.modelName}}{
-		 {{.pK}}: &in.{{.pK}},
+		 {{.pK}}: &in.Get{{.pK}}(),
 	}
 	builder := util.NewSelectBuilder(util.WithTable(where.TableName())).
 		Where(&where).
 		Limit(in)
 
 	// query
-	var {{.modelNameFirstLower}}List *[]model.{{.modelName}}
 	if {{.modelNameFirstLower}}List, err = l.svcCtx.{{.modelName}}Model.FindList(l.ctx, builder.SelectBuilder, &totalCount); err != nil {
 		logx.WithContext(l.ctx).Infof("FindList fail. %v", err)
 		return nil, errorm.New(errorm.RecordFindFailed, "FindList fail.%v", err)
@@ -109,6 +112,7 @@ func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 	resp.TotalCount = totalCount
 	resp.CurPage = in.GetPageNo()
 	resp.TotalPage = totalCount / in.GetPageSize()
+
 	if totalCount%in.GetPageSize() != 0 {
 		resp.TotalPage += 1
 	}
@@ -119,11 +123,11 @@ func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 const QueryDetailLogic = commonHead + `
 func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 	var err error
+	var {{.modelNameFirstLower}} *model.{{.modelName}}
 	resp := {{.responseType}}{}
 
 	// query
-	var {{.modelNameFirstLower}} *model.{{.modelName}}
-	if {{.modelNameFirstLower}}, err = l.svcCtx.{{.modelName}}Model.FindOne(l.ctx, in.{{.pK}}); err != nil {
+	if {{.modelNameFirstLower}}, err = l.svcCtx.{{.modelName}}Model.FindOne(l.ctx, in.Get{{.pK}}()); err != nil {
 		return nil, errorm.New(errorm.RecordFindFailed, "FindOne fail.%v", err)
 	}
 
