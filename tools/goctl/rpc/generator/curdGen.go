@@ -13,6 +13,7 @@ func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 	if in.{{.pK}} != {{.pV}} {
 		if _, err = l.svcCtx.{{.modelName}}Model.FindOne(l.ctx, in.{{.pK}}); err != sqlc.ErrNotFound {
 			logx.WithContext(l.ctx).Infof("%v is already exists")
+
 			return &{{.responseType}}{ {{.pK}}: in.{{.pK}}}, nil
 		}
 	}
@@ -20,10 +21,12 @@ func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 	// create
 	{{.modelNameFirstLower}} := model.{{.modelName}}{}
 	{{.modelNameFirstLower}}.Marshal(in)
+
 	res,err:=l.svcCtx.{{.modelName}}Model.Insert(l.ctx, nil, &{{.modelNameFirstLower}})
 	if  err != nil {
 		return nil, errorm.New(errorm.RecordCreateFailed, "create data fail.%v", err)
 	}
+
 	id, err := res.LastInsertId()
 	if err != nil {
 		logx.Error(err)
@@ -94,7 +97,7 @@ func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 		Limit(in)
 
 	// query
-	{{.modelNameFirstLower}}List := &[]model.{{.modelName}}{}
+	var {{.modelNameFirstLower}}List *[]model.{{.modelName}}
 	if {{.modelNameFirstLower}}List, err = l.svcCtx.{{.modelName}}Model.FindList(l.ctx, builder.SelectBuilder, &totalCount); err != nil {
 		logx.WithContext(l.ctx).Infof("FindList fail. %v", err)
 		return nil, errorm.New(errorm.RecordFindFailed, "FindList fail.%v", err)
@@ -119,7 +122,7 @@ func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 	resp := {{.responseType}}{}
 
 	// query
-	{{.modelNameFirstLower}} := &model.{{.modelName}}{}
+	var {{.modelNameFirstLower}} *model.{{.modelName}}
 	if {{.modelNameFirstLower}}, err = l.svcCtx.{{.modelName}}Model.FindOne(l.ctx, in.{{.pK}}); err != nil {
 		return nil, errorm.New(errorm.RecordFindFailed, "FindOne fail.%v", err)
 	}

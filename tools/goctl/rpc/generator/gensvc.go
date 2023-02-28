@@ -142,7 +142,11 @@ func dealExistsModelInit(modelInit string, fileName string, tables []string) (st
 	}
 
 	for _, v := range tmpModelDefineNoMatch {
-		newTagInfo = append(newTagInfo, v+",")
+		newTagInfo = append(newTagInfo, v)
+	}
+
+	if len(newTagInfo) > 0 {
+		newTagInfo[len(newTagInfo)-1] += ","
 	}
 
 	newTagStr := strings.Join(newTagInfo, ",\r\n")
