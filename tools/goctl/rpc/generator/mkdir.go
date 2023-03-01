@@ -66,8 +66,6 @@ func mkdir(ctx *ctx.ProjectContext, proto parser.Proto, _ *conf.Config, c *ZRpcC
 	logicDir := filepath.Join(internalDir, "logic")
 	serverDir := filepath.Join(internalDir, "server")
 	svcDir := filepath.Join(internalDir, "svc")
-	// pbDir := filepath.Join(ctx.WorkDir, proto.GoPackage)
-	// protoGoDir := pbDir
 	pbDir := ctx.WorkDir
 	protoGoDir := pbDir
 	if c != nil {

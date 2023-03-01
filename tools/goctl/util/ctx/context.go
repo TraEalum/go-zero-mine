@@ -2,7 +2,7 @@ package ctx
 
 import (
 	"errors"
-	"path/filepath"
+	"fmt"
 	"strings"
 
 	"github.com/zeromicro/go-zero/tools/goctl/rpc/execx"
@@ -33,20 +33,18 @@ func Prepare(workDir string) (*ProjectContext, error) {
 		return ctx, nil
 	}
 
-	//获取此路径下面的最低的路径名称
-	name := filepath.Base(workDir)
-
 	s := strings.Split(workDir, "\\")
-	if len(s) > 2 {
-		//获取倒数第二个路径
-		name = s[len(s)-2] + "-service"
-		workDir = strings.Join(s[:len(s)-1], "\\")
+	var dir string
+	// 先移除 go.work go.work.sum 这两个文件会导致 go list 命令检测不了 go.mod
+	// 执行 rm  go.work go.work.sum
+	if len(s) > 3 {
+		dir = strings.Join(s[:len(s)-3], "\\")
+		fmt.Println(fmt.Printf("s:[%+v],dir:%s", s, dir))
+		execx.Run("rm go.work", dir)
+		execx.Run("rm go.work.sum", dir)
+
 	}
 
-	_, err = execx.Run("go mod init "+name, workDir)
-	if err != nil {
-		return nil, err
-	}
 	return background(workDir)
 }
 

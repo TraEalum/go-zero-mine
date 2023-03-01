@@ -4,6 +4,7 @@ const (
 	//FindOneByCondition defines find a row method.
 	FindOneByCondition = `
 func (m *default{{.upperStartCamelObject}}Model) FindOneByCondition(ctx context.Context, builder squirrel.SelectBuilder) (*{{.upperStartCamelObject}},error) {
+	builder = builder.Limit(1)
 	query, values, err := builder.ToSql()
 	if err != nil {
 		return nil, err
