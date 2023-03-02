@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/zeromicro/go-zero/tools/goctl/rpc/execx"
@@ -38,7 +39,6 @@ func (m *Module) validate() error {
 // the workDir flag specifies which folder we need to detect based on
 // only valid for go mod project
 func projectFromGoMod(workDir string) (*ProjectContext, error) {
-	fmt.Println("projectFrom workDir", workDir)
 	if len(workDir) == 0 {
 		return nil, errors.New("the work directory is not found")
 	}
@@ -74,13 +74,17 @@ func projectFromGoMod(workDir string) (*ProjectContext, error) {
 
 func getRealModule(workDir string, execRun execx.RunFunc) (*Module, error) {
 	var execDir string = workDir
+	var s []string
 	// 返回上一级再执行 go list
-	s := strings.Split(workDir, "\\")
-
-	if len(s) >= 2 {
+	if runtime.GOOS == "windows" {
+		s = strings.Split(workDir, "\\")
 		execDir = strings.Join(s[:len(s)-1], "\\")
-
+	} else {
+		s = strings.Split(workDir, "/")
+		execDir = strings.Join(s[:len(s)-1], "/")
 	}
+
+	fmt.Println("getRealModule", execDir)
 
 	data, err := execRun("go list -json -m", execDir)
 	if err != nil {
