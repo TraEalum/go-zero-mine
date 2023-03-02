@@ -34,7 +34,7 @@ func Prepare(workDir string) (*ProjectContext, error) {
 	// 执行 rm  go.work go.work.sum
 	if len(s) > 3 {
 		dir = strings.Join(s[:len(s)-3], "\\")
-		fmt.Println(fmt.Printf("s:[%+v],dir:%s", s, dir))
+		fmt.Println(fmt.Printf("s:[%+v],dir:%s", s, dir)) // 回退到 app这个路径执行命令
 		execx.Run("rm go.work", dir)
 		execx.Run("rm go.work.sum", dir)
 
@@ -44,10 +44,24 @@ func Prepare(workDir string) (*ProjectContext, error) {
 }
 
 func background(workDir string) (*ProjectContext, error) {
-	_, err := IsGoMod(workDir)
+	isGoMod, err := IsGoMod(workDir)
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("isGodMode", isGoMod)
+	//如果没有go.mod 文件
+	if !isGoMod {
+		s := strings.Split(workDir, "\\")
+		if len(s) >= 2 {
+			serviceName := "go mod init " + s[len(s)-2] + "-service"
+			dir := strings.Join(s[:len(s)-1], "\\")
+			execx.Run(serviceName, dir)
+		}
 
+	}
+
+	if isGoMod {
+		return projectFromGoMod(workDir)
+	}
 	return projectFromGoPath(workDir)
 }
