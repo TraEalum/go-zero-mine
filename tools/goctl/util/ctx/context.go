@@ -32,11 +32,16 @@ func Prepare(workDir string) (*ProjectContext, error) {
 	var dir string
 	// 先移除 go.work go.work.sum 这两个文件会导致 go list 命令检测不了 go.mod
 	// 执行 rm  go.work go.work.sum
-	if len(s) > 3 {
-		dir = strings.Join(s[:len(s)-3], "\\")
-		fmt.Println(fmt.Printf("s:[%+v],dir:%s", s, dir)) // 回退到 app这个路径执行命令
+	if len(s) > 2 {
+		dir = strings.Join(s[:len(s)-3], "\\") // 回退到 app这个路径执行命令
 		execx.Run("rm go.work", dir)
 		execx.Run("rm go.work.sum", dir)
+
+		serviceName := "go mod init " + s[len(s)-2] + "-service"
+		goModDir := strings.Join(s[:len(s)-1], "\\")
+		execx.Run(serviceName, goModDir)
+
+		fmt.Println(dir, serviceName, goModDir)
 
 	}
 
@@ -47,17 +52,6 @@ func background(workDir string) (*ProjectContext, error) {
 	isGoMod, err := IsGoMod(workDir)
 	if err != nil {
 		return nil, err
-	}
-	fmt.Println("isGodMode", isGoMod)
-	//如果没有go.mod 文件
-	if !isGoMod {
-		s := strings.Split(workDir, "\\")
-		if len(s) >= 2 {
-			serviceName := "go mod init " + s[len(s)-2] + "-service"
-			dir := strings.Join(s[:len(s)-1], "\\")
-			execx.Run(serviceName, dir)
-		}
-
 	}
 
 	if isGoMod {
