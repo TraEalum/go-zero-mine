@@ -89,6 +89,8 @@ func getRealModule(workDir string, execRun execx.RunFunc) (*Module, error) {
 		}
 	} else {
 		execDir = strings.Join(s[:len(s)-2], "\\")
+		name := s[len(s)-2] + "-service"
+		command = "go mod init " + name
 	}
 	fmt.Println("getRealModule", command, execDir)
 	execRun(command, execDir)
