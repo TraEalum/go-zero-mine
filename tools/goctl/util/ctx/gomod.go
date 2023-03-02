@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/zeromicro/go-zero/tools/goctl/rpc/execx"
@@ -78,13 +79,19 @@ func getRealModule(workDir string, execRun execx.RunFunc) (*Module, error) {
 	var execDir string = workDir
 	// 返回上一级再执行 go list
 	s := strings.Split(workDir, "\\")
-	if len(s) >= 2 {
-		execDir = strings.Join(s[:len(s)-1], "\\")
+	var command string
+	if runtime.GOOS == "windows" {
+		if len(s) >= 2 {
+			execDir = strings.Join(s[:len(s)-1], "\\")
+			name := s[len(s)-2] + "-service"
+			command = "go mod init " + name
 
-		name := s[len(s)-2] + "-service"
-		command := "go mod init " + name
-		execRun(command, execDir)
+		}
+	} else {
+		execDir = strings.Join(s[:len(s)-2], "\\")
 	}
+	fmt.Println("getRealModule", command, execDir)
+	execRun(command, execDir)
 
 	data, err := execRun("go list -json -m", execDir)
 	if err != nil {
