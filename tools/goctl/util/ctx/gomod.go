@@ -38,6 +38,7 @@ func (m *Module) validate() error {
 // the workDir flag specifies which folder we need to detect based on
 // only valid for go mod project
 func projectFromGoMod(workDir string) (*ProjectContext, error) {
+	fmt.Println("projectFrom workDir", workDir)
 	if len(workDir) == 0 {
 		return nil, errors.New("the work directory is not found")
 	}
