@@ -51,8 +51,6 @@ func projectFromGoMod(workDir string) (*ProjectContext, error) {
 		return nil, err
 	}
 
-	fmt.Println("workDir", workDir)
-
 	m, err := getRealModule(workDir, execx.Run)
 	if err != nil {
 		return nil, err

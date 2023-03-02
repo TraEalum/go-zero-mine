@@ -28,12 +28,6 @@ type ProjectContext struct {
 // workDir parameter is the directory of the source of generating code,
 // where can be found the project path and the project module,
 func Prepare(workDir string) (*ProjectContext, error) {
-	fmt.Println("Prepare,Prepare", workDir)
-	ctx, err := background(workDir)
-	if err == nil {
-		return ctx, nil
-	}
-
 	s := strings.Split(workDir, "\\")
 	var dir string
 	// 先移除 go.work go.work.sum 这两个文件会导致 go list 命令检测不了 go.mod
@@ -50,13 +44,10 @@ func Prepare(workDir string) (*ProjectContext, error) {
 }
 
 func background(workDir string) (*ProjectContext, error) {
-	isGoMod, err := IsGoMod(workDir)
+	_, err := IsGoMod(workDir)
 	if err != nil {
 		return nil, err
 	}
 
-	if isGoMod {
-		return projectFromGoMod(workDir)
-	}
 	return projectFromGoPath(workDir)
 }
