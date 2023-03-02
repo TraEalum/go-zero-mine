@@ -83,12 +83,15 @@ func (g *Generator) genCallGroup(ctx DirContext, proto parser.Proto, cfg *conf.C
 			for _, item := range proto.Message {
 				msgName := getMessageName(*item.Message)
 				alias.AddStr(fmt.Sprintf("%s = %s", parser.CamelCase(msgName),
-					fmt.Sprintf("%s.%s", proto.PbPackage, parser.CamelCase(msgName))))
+					fmt.Sprintf("%s.%s", "proto", parser.CamelCase(msgName))))
 			}
 		}
 
-		pbPackage := fmt.Sprintf(`"%s"`, ctx.GetPb().Package)
-		protoGoPackage := fmt.Sprintf(`"%s"`, ctx.GetProtoGo().Package)
+		//pbPackage := fmt.Sprintf(`"%s"`, ctx.GetPb().Package)
+		pbPackage := fmt.Sprintf(`%s "proto/%s"`, "proto", proto.Service[0].Name)
+		//protoGoPackage := fmt.Sprintf(`"%s"`, ctx.GetProtoGo().Package)
+		//protoGoPackage := fmt.Sprintf(`%s "proto/%s"`, proto.Service[0].Name, proto.Service[0].Name)
+		protoGoPackage := ""
 		if isCallPkgSameToGrpcPkg {
 			pbPackage = ""
 			protoGoPackage = ""

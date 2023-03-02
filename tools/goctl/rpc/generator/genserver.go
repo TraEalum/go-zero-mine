@@ -64,7 +64,8 @@ func (g *Generator) genServerGroup(ctx DirContext, proto parser.Proto, cfg *conf
 		serverFile = filepath.Join(dir.Filename, serverDir, serverFilename+".go")
 
 		svcImport := fmt.Sprintf(`"%v"`, ctx.GetSvc().Package)
-		pbImport := fmt.Sprintf(`"%v"`, ctx.GetPb().Package)
+		//pbImport := fmt.Sprintf(`"%v"`, ctx.GetPb().Package)
+		pbImport := fmt.Sprintf(`proto "proto/%v"`, proto.Service[0].Name)
 
 		imports := collection.NewSet()
 		imports.AddStr(logicImport, svcImport, pbImport)
@@ -91,7 +92,7 @@ func (g *Generator) genServerGroup(ctx DirContext, proto parser.Proto, cfg *conf
 
 		if err = util.With("server").GoFmt(true).Parse(text).SaveTo(map[string]interface{}{
 			"head": head,
-			"unimplementedServer": fmt.Sprintf("%s.Unimplemented%sServer", proto.PbPackage,
+			"unimplementedServer": fmt.Sprintf("%s.Unimplemented%sServer", "proto",
 				stringx.From(service.Name).ToCamel()),
 			"server":    stringx.From(service.Name).ToCamel(),
 			"imports":   strings.Join(imports.KeysStr(), pathx.NL),
@@ -143,14 +144,6 @@ func (g *Generator) genServerInCompatibility(ctx DirContext, proto parser.Proto,
 		}
 	}
 
-	// return util.With("server").GoFmt(true).Parse(text).SaveTo(map[string]interface{}{
-	// 	"head": head,
-	// 	"unimplementedServer": fmt.Sprintf("%s.Unimplemented%sServer", proto.PbPackage,
-	// 		stringx.From(service.Name).ToCamel()),
-	// 	"server":    stringx.From(service.Name).ToCamel(),
-	// 	"imports":   strings.Join(imports.KeysStr(), pathx.NL),
-	// 	"funcs":     strings.Join(funcList, pathx.NL),
-	// 	"notStream": notStream,
 	return util.With("server").GoFmt(true).Parse(text).SaveTo(map[string]interface{}{
 		"head":                head,
 		"unimplementedServer": fmt.Sprintf("%s.Unimplemented%sServer", "proto", stringx.From(service.Name).ToCamel()),

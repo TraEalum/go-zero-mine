@@ -63,7 +63,6 @@ func (g *Generator) genLogicInCompatibility(ctx DirContext, proto parser.Proto,
 
 		imports := collection.NewSet()
 		imports.AddStr(fmt.Sprintf(`"%v"`, ctx.GetSvc().Package))
-		//imports.AddStr(fmt.Sprintf(`"%v"`, ctx.GetPb().Package))
 		imports.AddStr(fmt.Sprintf(`proto "proto/%s"`, service))
 
 		imports.AddStr("\"comm/errorm\"")
@@ -95,7 +94,7 @@ func (g *Generator) genLogicInCompatibility(ctx DirContext, proto parser.Proto,
 
 func (g *Generator) genLogicGroup(ctx DirContext, proto parser.Proto, cfg *conf.Config) error {
 	dir := ctx.GetLogic()
-
+	service := proto.Service[0].Service.Name
 	for _, item := range proto.Service {
 		serviceName := item.Name
 		for _, rpc := range item.RPC {
@@ -136,7 +135,18 @@ func (g *Generator) genLogicGroup(ctx DirContext, proto parser.Proto, cfg *conf.
 
 			imports := collection.NewSet()
 			imports.AddStr(fmt.Sprintf(`"%v"`, ctx.GetSvc().Package))
-			imports.AddStr(fmt.Sprintf(`"%v"`, ctx.GetPb().Package))
+			imports.AddStr(fmt.Sprintf(`proto "proto/%s"`, proto.Service[0].Name))
+			imports.AddStr("\"comm/errorm\"")
+			if functions.HasSqlc {
+				imports.AddStr("\"github.com/zeromicro/go-zero/core/stores/sqlc\"")
+			}
+			if functions.HasUtil {
+				imports.AddStr("\"comm/util\"")
+			}
+			if functions.HasModel {
+				imports.AddStr(fmt.Sprintf(`"%s-service/model"`, service))
+			}
+
 			text, err := pathx.LoadTemplate(category, logicTemplateFileFile, logicTemplate)
 			if err != nil {
 				return err
@@ -156,8 +166,9 @@ func (g *Generator) genLogicGroup(ctx DirContext, proto parser.Proto, cfg *conf.
 }
 
 // func (g *Generator) genLogicFunction(serviceName, goPackage, logicName string,
-// 	rpc *parser.RPC) (string,
-// 	error) {
+//
+//	rpc *parser.RPC) (string,
+//	error) {
 type genLogic struct {
 	HasSqlc  bool
 	HasUtil  bool
