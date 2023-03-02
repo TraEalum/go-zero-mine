@@ -75,40 +75,27 @@ func projectFromGoMod(workDir string) (*ProjectContext, error) {
 }
 
 func getRealModule(workDir string, execRun execx.RunFunc) (*Module, error) {
-	// var execDir string = workDir
-	// // 返回上一级再执行 go list
-	// s := strings.Split(workDir, "\\")
-	// var command string
-	// if runtime.GOOS == "windows" {
-	// 	if len(s) >= 2 {
-	// 		execDir = strings.Join(s[:len(s)-1], "\\")
-	// 		name := s[len(s)-2] + "-service"
-	// 		command = "go mod init " + name
+	var execDir string = workDir
+	// 返回上一级再执行 go list
+	s := strings.Split(workDir, "\\")
+	var command string
 
-	// 	}
-	// } else {
-	// 	execDir = strings.Join(s[:len(s)-2], "\\")
-	// 	name := s[len(s)-2] + "-service"
-	// 	command = "go mod init " + name
-	// }
-	// fmt.Println("getRealModule", command, execDir)
-	// execRun(command, execDir)
+	if len(s) >= 2 {
+		execDir = strings.Join(s[:len(s)-1], "\\")
+		name := s[len(s)-2] + "-service"
+		command = "go mod init " + name
 
-	// data, err := execRun("go list -json -m", execDir)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// modules, err := decodePackages(strings.NewReader(data))
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// for _, m := range modules {
-	// 	if strings.HasPrefix(workDir, m.Dir) {
-	// 		return &m, nil
-	// 	}
-	// }
-	// return nil, errors.New("no matched module")
-	data, err := execRun("go list -json -m", workDir)
+	}
+
+	execDir = strings.Join(s[:len(s)-2], "\\")
+	name := s[len(s)-2] + "-service"
+	command = "go mod init " + name
+	fmt.Println("execDir", execDir, name)
+	fmt.Println("getRealModule", command, execDir)
+
+	execRun(command, execDir)
+
+	data, err := execRun("go list -json -m", execDir)
 	if err != nil {
 		return nil, err
 	}
@@ -122,6 +109,20 @@ func getRealModule(workDir string, execRun execx.RunFunc) (*Module, error) {
 		}
 	}
 	return nil, errors.New("no matched module")
+	// data, err := execRun("go list -json -m", workDir)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// modules, err := decodePackages(strings.NewReader(data))
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// for _, m := range modules {
+	// 	if strings.HasPrefix(workDir, m.Dir) {
+	// 		return &m, nil
+	// 	}
+	// }
+	// return nil, errors.New("no matched module")
 }
 
 func decodePackages(rc io.Reader) ([]Module, error) {
