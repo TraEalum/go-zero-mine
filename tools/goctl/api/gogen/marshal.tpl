@@ -2,7 +2,7 @@ package types
 
 {{.importProto}}
 
-// start
+// Generated Start. Don't edit in this field.
 // ----------------create----------------
 func (r *Create{{.upperStartCamelObject}}Resp) Marshal(p *proto.{{.upperStartCamelObject}}) error {
     r.Id = p.Id
@@ -70,4 +70,4 @@ func Marshal{{.upperStartCamelObject}}Lst(r *[]{{.upperStartCamelObject}},p []*p
 	}
 }
 
-// TheEndLine   please do not delete this line
+// Generated End. Please do not delete this line.
