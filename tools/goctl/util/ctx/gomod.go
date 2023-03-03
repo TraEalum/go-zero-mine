@@ -84,8 +84,6 @@ func getRealModule(workDir string, execRun execx.RunFunc) (*Module, error) {
 		execDir = strings.Join(s[:len(s)-1], "/")
 	}
 
-	fmt.Println("getRealModule", execDir)
-
 	data, err := execRun("go list -json -m", execDir)
 	if err != nil {
 		return nil, err

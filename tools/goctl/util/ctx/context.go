@@ -2,7 +2,6 @@ package ctx
 
 import (
 	"errors"
-	"fmt"
 	"runtime"
 	"strings"
 
@@ -52,8 +51,6 @@ func Prepare(workDir string) (*ProjectContext, error) {
 		execx.Run("rm go.work", dir)
 		execx.Run("rm go.work.sum", dir)
 	}
-
-	fmt.Println(serviceName, goModDir)
 
 	execx.Run(serviceName, goModDir)
 
