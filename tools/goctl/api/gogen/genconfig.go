@@ -1,9 +1,11 @@
 package gogen
 
 import (
+	_ "embed"
 	"fmt"
-	"github.com/zeromicro/go-zero/tools/goctl/apigen"
 	"strings"
+
+	"github.com/zeromicro/go-zero/tools/goctl/apigen"
 
 	"github.com/zeromicro/go-zero/tools/goctl/api/spec"
 	"github.com/zeromicro/go-zero/tools/goctl/config"
@@ -12,8 +14,8 @@ import (
 )
 
 const (
-	configFile     = "config"
-	configTemplate = `package config
+	configFile        = "config"
+	configTemplateOld = `package config
 
 import (
 	{{.authImport}}
@@ -38,6 +40,9 @@ type Config struct {
 	}
 `
 )
+
+//go:embed config.tpl
+var configTemplate string
 
 func genConfig(dir string, cfg *config.Config, api *spec.ApiSpec) error {
 	filename, err := format.FileNamingFormat(cfg.NamingFormat, configFile)

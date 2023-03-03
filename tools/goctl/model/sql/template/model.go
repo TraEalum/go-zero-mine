@@ -157,8 +157,8 @@ package {{.pkg}}
 {{.vars}}
 {{.types}}
 {{.new}}
-{{.insert}}
 {{.find}}
+{{.insert}}
 {{.update}}
 {{.delete}}
 {{.findlist}}

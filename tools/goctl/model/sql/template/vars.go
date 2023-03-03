@@ -3,7 +3,8 @@ package template
 import "fmt"
 
 // Vars defines a template for var block in model
-var Vars = fmt.Sprintf(`
+var Vars = fmt.Sprintf(
+	`
 var (
 	{{.lowerStartCamelObject}}FieldNames          = builder.RawFieldNames(&{{.upperStartCamelObject}}{}{{if .postgreSql}},true{{end}})
 	{{.lowerStartCamelObject}}Rows                = strings.Join({{.lowerStartCamelObject}}FieldNames, ",")

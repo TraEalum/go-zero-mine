@@ -55,7 +55,7 @@ func (g *Generator) GenSvc(ctx DirContext, proto parser.Proto, cfg *conf.Config)
 		"imports":     fmt.Sprintf(`"%v"`, ctx.GetConfig().Package),
 		"modelDefine": modelDefine,
 		"modelInit":   modelInit,
-		"serviceName": proto.Service.Name,
+		"serviceName": proto.Service[0].Name,
 	}, fileName, true)
 }
 

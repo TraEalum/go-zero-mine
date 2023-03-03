@@ -1,16 +1,19 @@
 package cmd
 
 import (
+	_ "embed"
 	"fmt"
 	"os"
 	"runtime"
 	"strings"
+	"text/template"
 
 	"github.com/zeromicro/go-zero/tools/goctl/apigen"
 	"github.com/zeromicro/go-zero/tools/goctl/proto"
 
 	"github.com/logrusorgru/aurora"
 	"github.com/spf13/cobra"
+	"github.com/withfig/autocomplete-tools/integrations/cobra"
 	"github.com/zeromicro/go-zero/tools/goctl/api"
 	"github.com/zeromicro/go-zero/tools/goctl/bug"
 	"github.com/zeromicro/go-zero/tools/goctl/docker"
@@ -32,11 +35,18 @@ const (
 	assign      = "="
 )
 
-var rootCmd = &cobra.Command{
-	Use:   "goctl",
-	Short: "A cli tool to generate go-zero code",
-	Long:  "A cli tool to generate api, zrpc, model code",
-}
+var (
+	//go:embed usage.tpl
+	usageTpl string
+
+	rootCmd = &cobra.Command{
+		Use:   "goctl",
+		Short: "A cli tool to generate go-zero code",
+		Long: "A cli tool to generate api, zrpc, model code\n\n" +
+			"GitHub: https://github.com/zeromicro/go-zero\n" +
+			"Site:   https://go-zero.dev",
+	}
+)
 
 // Execute executes the given command
 func Execute() {
@@ -73,15 +83,18 @@ func supportGoStdFlag(args []string) []string {
 			flagValue = flagExpr[assignIndex:]
 		}
 
-		f := parentCmd.Flag(flagName)
-		if f == nil {
-			continue
-		}
-		if f.Shorthand == flagName {
-			continue
+		if !isBuiltin(flagName) {
+			// The method Flag can only match the user custom flags.
+			f := parentCmd.Flag(flagName)
+			if f == nil {
+				continue
+			}
+			if f.Shorthand == flagName {
+				continue
+			}
 		}
 
-		goStyleFlag := doubleDash + f.Name
+		goStyleFlag := doubleDash + flagName
 		if assignIndex > 0 {
 			goStyleFlag += flagValue
 		}
@@ -91,9 +104,23 @@ func supportGoStdFlag(args []string) []string {
 	return copyArgs
 }
 
+func isBuiltin(name string) bool {
+	return name == "version" || name == "help"
+}
+
 func init() {
-	rootCmd.Version = fmt.Sprintf("%s %s/%s", version.BuildVersion,
+	cobra.AddTemplateFuncs(template.FuncMap{
+		"blue":    blue,
+		"green":   green,
+		"rpadx":   rpadx,
+		"rainbow": rainbow,
+	})
+
+	rootCmd.Version = fmt.Sprintf(
+		"%s %s/%s", version.BuildVersion,
 		runtime.GOOS, runtime.GOARCH)
+
+	rootCmd.SetUsageTemplate(usageTpl)
 	rootCmd.AddCommand(api.Cmd)
 	rootCmd.AddCommand(bug.Cmd)
 	rootCmd.AddCommand(docker.Cmd)
@@ -105,6 +132,7 @@ func init() {
 	rootCmd.AddCommand(rpc.Cmd)
 	rootCmd.AddCommand(tpl.Cmd)
 	rootCmd.AddCommand(upgrade.Cmd)
+	rootCmd.AddCommand(cobracompletefig.CreateCompletionSpecCommand())
 	rootCmd.AddCommand(proto.Cmd)
 	rootCmd.AddCommand(apigen.Cmd)
 }

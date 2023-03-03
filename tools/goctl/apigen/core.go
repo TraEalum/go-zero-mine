@@ -14,7 +14,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/chuckpreslar/inflect"
 	"github.com/serenize/snaker"
 	"github.com/zeromicro/go-zero/tools/goctl/util/stringx"
 )
@@ -1080,7 +1079,8 @@ func parseColumn(s *Schema, msg *Message, col Column) error {
 			return "," == cs || "'" == cs
 		})
 
-		enumName := inflect.Singularize(snaker.SnakeToCamel(col.TableName)) + snaker.SnakeToCamel(col.ColumnName)
+		// enumName := inflect.Singularize(snaker.SnakeToCamel(col.TableName)) + snaker.SnakeToCamel(col.ColumnName)
+		enumName := ""
 		enum, err := newEnumFromStrings(enumName, col.ColumnComment, enums)
 		if nil != err {
 			return err

@@ -16,10 +16,17 @@ import (
 
 	"github.com/zeromicro/go-zero/tools/goctl/util"
 
-	"github.com/chuckpreslar/inflect"
 	"github.com/serenize/snaker"
 	"github.com/zeromicro/go-zero/tools/goctl/util/stringx"
 )
+
+var unsignedTypeMap = map[string]string{
+	"int":   "uint",
+	"int8":  "uint8",
+	"int16": "uint16",
+	"int32": "uint32",
+	"int64": "uint64",
+}
 
 const (
 	// proto3 is a describing the proto3 syntax type.
@@ -989,6 +996,7 @@ type Table struct {
 func parseColumn(s *Schema, msg *Message, col Column) error {
 	typ := strings.ToLower(col.DataType)
 	var fieldType string
+	isUnsigned := strings.Contains(col.ColumnType, "unsigned")
 
 	switch typ {
 	case "char", "varchar", "text", "longtext", "mediumtext", "tinytext":
@@ -1001,7 +1009,8 @@ func parseColumn(s *Schema, msg *Message, col Column) error {
 			return "," == cs || "'" == cs
 		})
 
-		enumName := inflect.Singularize(snaker.SnakeToCamel(col.TableName)) + snaker.SnakeToCamel(col.ColumnName)
+		// enumName := inflect.Singularize(snaker.SnakeToCamel(col.TableName)) + snaker.SnakeToCamel(col.ColumnName)
+		enumName := ""
 		enum, err := newEnumFromStrings(enumName, col.ColumnComment, enums)
 		if nil != err {
 			return err
@@ -1023,6 +1032,10 @@ func parseColumn(s *Schema, msg *Message, col Column) error {
 		fieldType = "double"
 	case "decimal":
 		fieldType = "string"
+	}
+
+	if isUnsigned {
+		fieldType = unsignedTypeMap[fieldType]
 	}
 
 	if "" == fieldType {

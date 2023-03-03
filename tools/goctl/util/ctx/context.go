@@ -2,7 +2,7 @@ package ctx
 
 import (
 	"errors"
-	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/zeromicro/go-zero/tools/goctl/rpc/execx"
@@ -28,25 +28,32 @@ type ProjectContext struct {
 // workDir parameter is the directory of the source of generating code,
 // where can be found the project path and the project module,
 func Prepare(workDir string) (*ProjectContext, error) {
-	ctx, err := background(workDir)
-	if err == nil {
-		return ctx, nil
+	var s []string
+	var dir string
+	var goModDir, serviceName string
+
+	if runtime.GOOS == "windows" {
+		s = strings.Split(workDir, "\\")
+		goModDir = strings.Join(s[:len(s)-1], "\\")
+	} else {
+		s = strings.Split(workDir, "/") // 兼容linux
+		goModDir = strings.Join(s[:len(s)-1], "/")
 	}
 
-	//获取此路径下面的最低的路径名称
-	name := filepath.Base(workDir)
-
-	s := strings.Split(workDir, "\\")
-	if len(s) > 2 {
-		//获取倒数第二个路径
-		name = s[len(s)-2] + "-service"
-		workDir = strings.Join(s[:len(s)-1], "\\")
+	if len(s) >= 2 {
+		serviceName = "go mod init " + s[len(s)-2] + "-service"
 	}
 
-	_, err = execx.Run("go mod init "+name, workDir)
-	if err != nil {
-		return nil, err
+	// 先移除 go.work go.work.sum 这两个文件会导致 go list 命令检测不了 go.mod
+	// 执行 rm  go.work go.work.sum
+	if len(s) > 2 { // 这个问题主要是在windows存在
+		dir = strings.Join(s[:len(s)-2], "\\") // 回退到 app这个路径执行命令
+		execx.Run("rm go.work", dir)
+		execx.Run("rm go.work.sum", dir)
 	}
+
+	execx.Run(serviceName, goModDir)
+
 	return background(workDir)
 }
 

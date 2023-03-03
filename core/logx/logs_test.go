@@ -603,8 +603,9 @@ func TestSetWriter(t *testing.T) {
 	SetWriter(nopWriter{})
 	assert.NotNil(t, writer.Load())
 	assert.True(t, writer.Load() == nopWriter{})
-	SetWriter(new(mockWriter))
-	assert.True(t, writer.Load() == nopWriter{})
+	mocked := new(mockWriter)
+	SetWriter(mocked)
+	assert.Equal(t, mocked, writer.Load())
 }
 
 func TestWithGzip(t *testing.T) {
@@ -709,7 +710,6 @@ func put(b []byte) {
 func doTestStructedLog(t *testing.T, level string, w *mockWriter, write func(...interface{})) {
 	const message = "hello there"
 	write(message)
-	fmt.Println(w.String())
 	var entry logEntry
 	if err := json.Unmarshal([]byte(w.String()), &entry); err != nil {
 		t.Error(err)

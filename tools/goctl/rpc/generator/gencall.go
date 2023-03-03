@@ -35,9 +35,91 @@ var callTemplateText string
 
 // GenCall generates the rpc client code, which is the entry point for the rpc service call.
 // It is a layer of encapsulation for the rpc client and shields the details in the pb.
-func (g *Generator) GenCall(ctx DirContext, proto parser.Proto, cfg *conf.Config) error {
+func (g *Generator) GenCall(ctx DirContext, proto parser.Proto, cfg *conf.Config,
+	c *ZRpcContext) error {
+	if !c.Multiple {
+		return g.genCallInCompatibility(ctx, proto, cfg)
+	}
+
+	return g.genCallGroup(ctx, proto, cfg)
+}
+
+func (g *Generator) genCallGroup(ctx DirContext, proto parser.Proto, cfg *conf.Config) error {
 	dir := ctx.GetCall()
-	service := proto.Service
+	head := util.GetHead(proto.Name)
+	for _, service := range proto.Service {
+		childPkg, err := dir.GetChildPackage(service.Name)
+		if err != nil {
+			return err
+		}
+
+		callFilename, err := format.FileNamingFormat(cfg.NamingFormat, service.Name)
+		if err != nil {
+			return err
+		}
+
+		childDir := filepath.Base(childPkg)
+		filename := filepath.Join(dir.Filename, childDir, fmt.Sprintf("%s.go", callFilename))
+		isCallPkgSameToPbPkg := childDir == ctx.GetProtoGo().Filename
+		isCallPkgSameToGrpcPkg := childDir == ctx.GetProtoGo().Filename
+
+		functions, err := g.genFunction(proto.PbPackage, service, isCallPkgSameToGrpcPkg)
+		if err != nil {
+			return err
+		}
+
+		iFunctions, err := g.getInterfaceFuncs(proto.PbPackage, service, isCallPkgSameToGrpcPkg)
+		if err != nil {
+			return err
+		}
+
+		text, err := pathx.LoadTemplate(category, callTemplateFile, callTemplateText)
+		if err != nil {
+			return err
+		}
+
+		alias := collection.NewSet()
+		if !isCallPkgSameToPbPkg {
+			for _, item := range proto.Message {
+				msgName := getMessageName(*item.Message)
+				alias.AddStr(fmt.Sprintf("%s = %s", parser.CamelCase(msgName),
+					fmt.Sprintf("%s.%s", "proto", parser.CamelCase(msgName))))
+			}
+		}
+
+		//pbPackage := fmt.Sprintf(`"%s"`, ctx.GetPb().Package)
+		pbPackage := fmt.Sprintf(`%s "proto/%s"`, "proto", proto.Service[0].Name)
+		//protoGoPackage := fmt.Sprintf(`"%s"`, ctx.GetProtoGo().Package)
+		//protoGoPackage := fmt.Sprintf(`%s "proto/%s"`, proto.Service[0].Name, proto.Service[0].Name)
+		protoGoPackage := ""
+		if isCallPkgSameToGrpcPkg {
+			pbPackage = ""
+			protoGoPackage = ""
+		}
+
+		aliasKeys := alias.KeysStr()
+		sort.Strings(aliasKeys)
+		if err = util.With("shared").GoFmt(true).Parse(text).SaveTo(map[string]interface{}{
+			"name":           callFilename,
+			"alias":          strings.Join(aliasKeys, pathx.NL),
+			"head":           head,
+			"filePackage":    dir.Base,
+			"pbPackage":      pbPackage,
+			"protoGoPackage": protoGoPackage,
+			"serviceName":    stringx.From(service.Name).ToCamel(),
+			"functions":      strings.Join(functions, pathx.NL),
+			"interface":      strings.Join(iFunctions, pathx.NL),
+		}, filename, true); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (g *Generator) genCallInCompatibility(ctx DirContext, proto parser.Proto,
+	cfg *conf.Config) error {
+	dir := ctx.GetCall()
+	service := proto.Service[0]
 	head := util.GetHead(proto.Name)
 	isCallPkgSameToPbPkg := ctx.GetCall().Filename == ctx.GetPb().Filename
 	isCallPkgSameToGrpcPkg := ctx.GetCall().Filename == ctx.GetProtoGo().Filename
@@ -71,7 +153,7 @@ func (g *Generator) GenCall(ctx DirContext, proto parser.Proto, cfg *conf.Config
 		}
 	}
 
-	pbPackage := fmt.Sprintf(`proto "proto/%s"`, proto.Service.Name)
+	pbPackage := fmt.Sprintf(`proto "proto/%s"`, service.Name)
 	// protoGoPackage := fmt.Sprintf(`"%s"`, ctx.GetProtoGo().Package)
 	protoGoPackage := ""
 	// fmt.Printf("head[%s] dir.Base[%s] protoGoPackage[%s] pbPackage[%s]", head, dir.Base, protoGoPackage, pbPackage)
@@ -81,7 +163,7 @@ func (g *Generator) GenCall(ctx DirContext, proto parser.Proto, cfg *conf.Config
 	}
 	aliasKeys := alias.KeysStr()
 	sort.Strings(aliasKeys)
-	err = util.With("shared").GoFmt(true).Parse(text).SaveTo(map[string]interface{}{
+	return util.With("shared").GoFmt(true).Parse(text).SaveTo(map[string]interface{}{
 		"name":           callFilename,
 		"alias":          strings.Join(aliasKeys, pathx.NL),
 		"head":           head,
@@ -92,7 +174,6 @@ func (g *Generator) GenCall(ctx DirContext, proto parser.Proto, cfg *conf.Config
 		"functions":      strings.Join(functions, pathx.NL),
 		"interface":      strings.Join(iFunctions, pathx.NL),
 	}, filename, true)
-	return err
 }
 
 func getMessageName(msg proto.Message) string {
@@ -117,7 +198,8 @@ func getMessageName(msg proto.Message) string {
 	return strings.Join(list, "_")
 }
 
-func (g *Generator) genFunction(goPackage string, service parser.Service, isCallPkgSameToGrpcPkg bool) ([]string, error) {
+func (g *Generator) genFunction(goPackage string, service parser.Service,
+	isCallPkgSameToGrpcPkg bool) ([]string, error) {
 	functions := make([]string, 0)
 
 	for _, rpc := range service.RPC {
@@ -127,9 +209,11 @@ func (g *Generator) genFunction(goPackage string, service parser.Service, isCall
 		}
 
 		comment := parser.GetComment(rpc.Doc())
-		streamServer := fmt.Sprintf("%s.%s_%s%s", goPackage, parser.CamelCase(service.Name), parser.CamelCase(rpc.Name), "Client")
+		streamServer := fmt.Sprintf("%s.%s_%s%s", goPackage, parser.CamelCase(service.Name),
+			parser.CamelCase(rpc.Name), "Client")
 		if isCallPkgSameToGrpcPkg {
-			streamServer = fmt.Sprintf("%s_%s%s", parser.CamelCase(service.Name), parser.CamelCase(rpc.Name), "Client")
+			streamServer = fmt.Sprintf("%s_%s%s", parser.CamelCase(service.Name),
+				parser.CamelCase(rpc.Name), "Client")
 		}
 		buffer, err := util.With("sharedFn").Parse(text).Execute(map[string]interface{}{
 			"serviceName":            stringx.From(service.Name).ToCamel(),
@@ -155,19 +239,23 @@ func (g *Generator) genFunction(goPackage string, service parser.Service, isCall
 	return functions, nil
 }
 
-func (g *Generator) getInterfaceFuncs(goPackage string, service parser.Service, isCallPkgSameToGrpcPkg bool) ([]string, error) {
+func (g *Generator) getInterfaceFuncs(goPackage string, service parser.Service,
+	isCallPkgSameToGrpcPkg bool) ([]string, error) {
 	functions := make([]string, 0)
 
 	for _, rpc := range service.RPC {
-		text, err := pathx.LoadTemplate(category, callInterfaceFunctionTemplateFile, callInterfaceFunctionTemplate)
+		text, err := pathx.LoadTemplate(category, callInterfaceFunctionTemplateFile,
+			callInterfaceFunctionTemplate)
 		if err != nil {
 			return nil, err
 		}
 
 		comment := parser.GetComment(rpc.Doc())
-		streamServer := fmt.Sprintf("%s.%s_%s%s", goPackage, parser.CamelCase(service.Name), parser.CamelCase(rpc.Name), "Client")
+		streamServer := fmt.Sprintf("%s.%s_%s%s", goPackage, parser.CamelCase(service.Name),
+			parser.CamelCase(rpc.Name), "Client")
 		if isCallPkgSameToGrpcPkg {
-			streamServer = fmt.Sprintf("%s_%s%s", parser.CamelCase(service.Name), parser.CamelCase(rpc.Name), "Client")
+			streamServer = fmt.Sprintf("%s_%s%s", parser.CamelCase(service.Name),
+				parser.CamelCase(rpc.Name), "Client")
 		}
 		buffer, err := util.With("interfaceFn").Parse(text).Execute(
 			map[string]interface{}{

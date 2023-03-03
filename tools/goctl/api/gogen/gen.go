@@ -19,6 +19,7 @@ import (
 	"github.com/zeromicro/go-zero/tools/goctl/api/parser"
 	apiutil "github.com/zeromicro/go-zero/tools/goctl/api/util"
 	"github.com/zeromicro/go-zero/tools/goctl/config"
+	"github.com/zeromicro/go-zero/tools/goctl/pkg/golang"
 	"github.com/zeromicro/go-zero/tools/goctl/util"
 	"github.com/zeromicro/go-zero/tools/goctl/util/pathx"
 )
@@ -89,7 +90,7 @@ func DoGenProject(apiFile, dir, style, marshal string) error {
 	}
 
 	logx.Must(pathx.MkdirIfNotExist(dir))
-	rootPkg, err := getParentPackage(dir)
+	rootPkg, err := golang.GetParentPackage(dir)
 	if err != nil {
 		return err
 	}

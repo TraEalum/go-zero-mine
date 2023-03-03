@@ -54,6 +54,7 @@ func genLogicByRoute(dir, rootPkg string, cfg *config.Config, group spec.Group, 
 	if len(route.RequestTypeName()) > 0 {
 		requestString = "req *" + requestGoTypeName(route, typesPacket)
 	}
+
 	path := fmt.Sprintf("proto \"proto/%s\"", api.Service.Name)
 	subDir := getLogicFolderPath(group, route)
 	return genFile(fileGenConfig{
