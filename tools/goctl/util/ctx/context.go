@@ -1,7 +1,11 @@
 package ctx
 
 import (
+	"bufio"
 	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 
@@ -53,6 +57,31 @@ func Prepare(workDir string) (*ProjectContext, error) {
 	}
 
 	execx.Run(serviceName, goModDir)
+
+	// replace操作
+	path := filepath.Join(goModDir, "go.mod")
+	file, err := os.OpenFile(path, os.O_RDWR, 0666)
+	if err != nil {
+		fmt.Println("go.mod replace failed")
+	} else {
+		defer file.Close()
+		reader := bufio.NewReader(file)
+		var w strings.Builder
+		replace := "\nreplace (\n\tcomm => ../../comm\n\tproto => ../../proto\n)"
+		for {
+			line, err := reader.ReadString('\n')
+			if err != nil {
+				break
+			}
+			w.WriteString(line)
+		}
+
+		file.Truncate(0)
+		file.Seek(0, 0)
+
+		w.WriteString(replace)
+		file.WriteString(w.String())
+	}
 
 	return background(workDir)
 }
