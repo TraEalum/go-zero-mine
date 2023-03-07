@@ -35,7 +35,10 @@ func Prepare(workDir string) (*ProjectContext, error) {
 	var s []string
 	var dir string
 	var goModDir, serviceName string
+	var hadInputReplace bool // 检测是否已经replace过comm
 
+	fmt.Println("Prepare", workDir)
+	// 这里需要再判断一下是否是api 还是 rpc 调用生成
 	if runtime.GOOS == "windows" {
 		s = strings.Split(workDir, "\\")
 		goModDir = strings.Join(s[:len(s)-1], "\\")
@@ -73,13 +76,20 @@ func Prepare(workDir string) (*ProjectContext, error) {
 			if err != nil {
 				break
 			}
+
+			if strings.Contains(line, "comm") || strings.Contains(line, "proto") {
+				hadInputReplace = true
+			}
 			w.WriteString(line)
 		}
 
 		file.Truncate(0)
 		file.Seek(0, 0)
 
-		w.WriteString(replace)
+		if !hadInputReplace {
+			w.WriteString(replace)
+		}
+
 		file.WriteString(w.String())
 	}
 
