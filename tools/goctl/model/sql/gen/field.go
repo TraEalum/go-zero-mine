@@ -163,31 +163,31 @@ func getUnmarshalModelDataType(field *parser.Field) string {
 	switch field.DataType {
 	case "sql.NullString":
 		{
-			return fmt.Sprintf("*m.%s.String", fileName)
+			return fmt.Sprintf("m.%s.String", fileName)
 		}
 	case "sql.NullInt16":
 		{
-			return fmt.Sprintf("*m.%s.Int16}", fileName)
+			return fmt.Sprintf("m.%s.Int16}", fileName)
 		}
 	case "sql.NullInt32":
 		{
-			return fmt.Sprintf("*m.%s.Int32", fileName)
+			return fmt.Sprintf("m.%s.Int32", fileName)
 		}
 	case "sql.NullInt64":
 		{
-			return fmt.Sprintf("*m.%s.Int64", fileName)
+			return fmt.Sprintf("m.%s.Int64", fileName)
 		}
 	case "sql.NullBool":
 		{
-			return fmt.Sprintf("*m.%s.Bool", fileName)
+			return fmt.Sprintf("m.%s.Bool", fileName)
 		}
 	case "sql.NullByte":
 		{
-			return fmt.Sprintf("*m.%s.Byte", fileName)
+			return fmt.Sprintf("m.%s.Byte", fileName)
 		}
 	case "sql.NullFloat64":
 		{
-			return fmt.Sprintf("*m.%s.Float64", fileName)
+			return fmt.Sprintf("m.%s.Float64", fileName)
 		}
 	default:
 		{

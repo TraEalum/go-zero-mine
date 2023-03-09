@@ -36,6 +36,7 @@ func genImports(table Table, serviceName string, withCache, timeImport bool) (st
 		"time":         timeImport,
 		"data":         table,
 		"upperTblName": upperTblName,
+		"serviceName":  serviceName,
 	})
 	if err != nil {
 		return "", err

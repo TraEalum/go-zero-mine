@@ -11,7 +11,7 @@ const (
 	{{if .time}}"time"{{end}}
 	"comm/util"
 
-	"proto/{{.serviceName}}"
+	proto "proto/{{.serviceName}}"
 	"github.com/Masterminds/squirrel"
 	sqlBuilder "github.com/lann/builder"
 	"github.com/zeromicro/go-zero/core/stores/builder"
@@ -31,6 +31,7 @@ const (
 	{{if .time}}"time"{{end}}
 	"comm/util"
 	
+	proto "proto/{{.serviceName}}"
 	"github.com/Masterminds/squirrel"
 	sqlBuilder "github.com/lann/builder"
 	"github.com/zeromicro/go-zero/core/stores/builder"

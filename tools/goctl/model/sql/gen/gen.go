@@ -405,36 +405,18 @@ func (g *defaultGenerator) genModelCustom(in parser.Table, withCache bool) (stri
 		return "", err
 	}
 
-	// 检查是否有sql Type
-	var hadSqlType bool
-	importDateBaseSqlPackage := ""
-
-	hadSqlType = checkSqlType(in.Fields)
-	if hadSqlType {
-		importDateBaseSqlPackage = "\"database/sql\""
-	}
-
-	var table Table
-	table.Table = in
-
-	marshalFields, unmarshallFields, err := genFieldParser(table, table.Fields)
-
 	t := util.With("model-custom").
 		Parse(text).
 		GoFmt(true)
 	output, err := t.Execute(map[string]interface{}{
-		"pkg":                      g.pkg,
-		"withCache":                withCache,
-		"upperStartCamelObject":    in.Name.ToCamel(),
-		"lowerStartCamelObject":    stringx.From(in.Name.ToCamel()).Untitle(),
-		"serviceName":              g.service,
-		"marshalFields":            marshalFields,
-		"unmarshallFields":         unmarshallFields,
-		"table":                    in.Name.Source(),
-		"fmtSubTableName":          in.FmtString,
-		"subTableNumber":           g.subTableNumber,
-		"upperSubTableKey":         stringx.From(g.subTableKey).ToCamel(),
-		"importDateBaseSqlPackage": importDateBaseSqlPackage,
+		"pkg":                   g.pkg,
+		"withCache":             withCache,
+		"upperStartCamelObject": in.Name.ToCamel(),
+		"lowerStartCamelObject": stringx.From(in.Name.ToCamel()).Untitle(),
+		"serviceName":           g.service,
+		"fmtSubTableName":       in.FmtString,
+		"subTableNumber":        g.subTableNumber,
+		"upperSubTableKey":      stringx.From(g.subTableKey).ToCamel(),
 	})
 	if err != nil {
 		return "", err
@@ -443,28 +425,39 @@ func (g *defaultGenerator) genModelCustom(in parser.Table, withCache bool) (stri
 	return output.String(), nil
 }
 
-func (g *defaultGenerator) executeModel(table Table, code *code) (*bytes.Buffer, error) {
+func (g *defaultGenerator) executeModel(in Table, code *code) (*bytes.Buffer, error) {
 	text, err := pathx.LoadTemplate(category, modelGenTemplateFile, template.ModelGen)
 	if err != nil {
 		return nil, err
 	}
+
+	var table Table
+	table.Table = in.Table
+
+	marshalFields, unmarshallFields, err := genFieldParser(table, table.Fields)
+
 	t := util.With("model").
 		Parse(text).
 		GoFmt(true)
 	output, err := t.Execute(map[string]interface{}{
-		"pkg":         g.pkg,
-		"imports":     code.importsCode,
-		"vars":        code.varsCode,
-		"types":       code.typesCode,
-		"new":         code.newCode,
-		"insert":      code.insertCode,
-		"find":        strings.Join(code.findCode, "\n"),
-		"findlist":    code.findListCode,
-		"update":      code.updateCode,
-		"delete":      code.deleteCode,
-		"extraMethod": code.cacheExtra,
-		"tableName":   code.tableName,
-		"data":        table,
+		"pkg":                   g.pkg,
+		"imports":               code.importsCode,
+		"vars":                  code.varsCode,
+		"types":                 code.typesCode,
+		"new":                   code.newCode,
+		"insert":                code.insertCode,
+		"find":                  strings.Join(code.findCode, "\n"),
+		"findlist":              code.findListCode,
+		"update":                code.updateCode,
+		"delete":                code.deleteCode,
+		"extraMethod":           code.cacheExtra,
+		"tableName":             code.tableName,
+		"data":                  table,
+		"marshalFields":         marshalFields,
+		"unmarshallFields":      unmarshallFields,
+		"table":                 in.Name.Source(),
+		"upperStartCamelObject": in.Name.ToCamel(),
+		"lowerStartCamelObject": stringx.From(in.Name.ToCamel()).Untitle(),
 	})
 	if err != nil {
 		return nil, err
@@ -492,41 +485,4 @@ func wrapWithRawString(v string, postgreSql bool) string {
 	}
 
 	return v
-}
-
-func checkSqlType(fields []*parser.Field) bool {
-	for _, field := range fields {
-		switch field.DataType {
-		case "sql.NullString":
-			{
-				return true
-			}
-		case "sql.NullInt16":
-			{
-				return true
-			}
-		case "sql.NullInt32":
-			{
-				return true
-			}
-		case "sql.NullInt64":
-			{
-				return true
-			}
-		case "sql.NullBool":
-			{
-				return true
-			}
-		case "sql.NullByte":
-			{
-				return true
-			}
-		case "sql.NullFloat64":
-			{
-				return true
-			}
-		}
-	}
-
-	return true
 }
