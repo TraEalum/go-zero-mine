@@ -53,7 +53,7 @@ func (m *default{{.upperStartCamelObject}}Model) findListSortById(ctx context.Co
 		
 		query, values, _ = selectBuilder.Where("id between ? and ?",minId, end).ToSql()
 
-		err = m.conn.QueryRowsCtx(ctx, &temp, query, values...)
+		err = m.conn.QueryRowPartialCtx(ctx, &temp, query, values...)
 		if err != nil && err != ErrNotFound {
 			return nil,err
 		}
@@ -117,7 +117,7 @@ func (m *default{{.upperStartCamelObject}}Model) findListBatch(ctx context.Conte
 		
 		query, values, _ = selectBuilder.Offset(uint64(startIndex)).Limit(uint64(batchSize)).ToSql()
 
-		err = m.conn.QueryRowsCtx(ctx, &temp, query, values...)
+		err = m.conn.QueryRowPartialCtx(ctx, &temp, query, values...)
 		if err != nil && err != ErrNotFound{
 			return nil,err
 		}

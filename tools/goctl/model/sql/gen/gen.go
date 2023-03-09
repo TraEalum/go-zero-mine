@@ -406,11 +406,6 @@ func (g *defaultGenerator) genModelCustom(in parser.Table, withCache bool) (stri
 		return "", err
 	}
 
-	var table Table
-	table.Table = in
-
-	marshalFields, unmarshallFields, err := genFieldParser(table, table.Fields)
-
 	t := util.With("model-custom").
 		Parse(text).
 		GoFmt(true)
@@ -420,9 +415,6 @@ func (g *defaultGenerator) genModelCustom(in parser.Table, withCache bool) (stri
 		"upperStartCamelObject": in.Name.ToCamel(),
 		"lowerStartCamelObject": stringx.From(in.Name.ToCamel()).Untitle(),
 		"serviceName":           g.service,
-		"marshalFields":         marshalFields,
-		"unmarshallFields":      unmarshallFields,
-		"table":                 in.Name.Source(),
 		"fmtSubTableName":       in.FmtString,
 		"subTableNumber":        g.subTableNumber,
 		"upperSubTableKey":      stringx.From(g.subTableKey).ToCamel(),
@@ -434,28 +426,39 @@ func (g *defaultGenerator) genModelCustom(in parser.Table, withCache bool) (stri
 	return output.String(), nil
 }
 
-func (g *defaultGenerator) executeModel(table Table, code *code) (*bytes.Buffer, error) {
+func (g *defaultGenerator) executeModel(in Table, code *code) (*bytes.Buffer, error) {
 	text, err := pathx.LoadTemplate(category, modelGenTemplateFile, template.ModelGen)
 	if err != nil {
 		return nil, err
 	}
+
+	var table Table
+	table.Table = in.Table
+
+	marshalFields, unmarshallFields, err := genFieldParser(table, table.Fields)
+
 	t := util.With("model").
 		Parse(text).
 		GoFmt(true)
 	output, err := t.Execute(map[string]interface{}{
-		"pkg":         g.pkg,
-		"imports":     code.importsCode,
-		"vars":        code.varsCode,
-		"types":       code.typesCode,
-		"new":         code.newCode,
-		"insert":      code.insertCode,
-		"find":        strings.Join(code.findCode, "\n"),
-		"findlist":    code.findListCode,
-		"update":      code.updateCode,
-		"delete":      code.deleteCode,
-		"extraMethod": code.cacheExtra,
-		"tableName":   code.tableName,
-		"data":        table,
+		"pkg":                   g.pkg,
+		"imports":               code.importsCode,
+		"vars":                  code.varsCode,
+		"types":                 code.typesCode,
+		"new":                   code.newCode,
+		"insert":                code.insertCode,
+		"find":                  strings.Join(code.findCode, "\n"),
+		"findlist":              code.findListCode,
+		"update":                code.updateCode,
+		"delete":                code.deleteCode,
+		"extraMethod":           code.cacheExtra,
+		"tableName":             code.tableName,
+		"data":                  table,
+		"marshalFields":         marshalFields,
+		"unmarshallFields":      unmarshallFields,
+		"table":                 in.Name.Source(),
+		"upperStartCamelObject": in.Name.ToCamel(),
+		"lowerStartCamelObject": stringx.From(in.Name.ToCamel()).Untitle(),
 	})
 	if err != nil {
 		return nil, err

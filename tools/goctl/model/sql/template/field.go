@@ -3,6 +3,6 @@ package template
 // Field defines a filed template for types
 const Field = `{{.name}} *{{.type}} {{.tag}} {{if .hasComment}}//  {{.comment}} {{end}}`
 
-const MarshalFields = `m.{{.name}} = &p.{{.name}} `
+const MarshalFields = `m.{{.name}} = {{.protoName}} `
 
-const UnmarshalFields = `p.{{.name}} = *m.{{.name}} `
+const UnmarshalFields = `p.{{.name}} = {{.modelName}} `

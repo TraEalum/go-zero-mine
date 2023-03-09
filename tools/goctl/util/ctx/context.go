@@ -37,7 +37,6 @@ func Prepare(workDir string) (*ProjectContext, error) {
 	var goModDir, serviceName string
 	var hadInputReplace bool // 检测是否已经replace过comm
 
-	fmt.Println("Prepare", workDir)
 	// 这里需要再判断一下是否是api 还是 rpc 调用生成
 	if runtime.GOOS == "windows" {
 		s = strings.Split(workDir, "\\")
@@ -49,15 +48,33 @@ func Prepare(workDir string) (*ProjectContext, error) {
 
 	if len(s) >= 2 {
 		serviceName = "go mod init " + s[len(s)-2] + "-service"
+
 	}
 
 	// 先移除 go.work go.work.sum 这两个文件会导致 go list 命令检测不了 go.mod
 	// 执行 rm  go.work go.work.sum
-	if len(s) > 2 { // 这个问题主要是在windows存在
+	if len(s) >= 2 && runtime.GOOS == "windows" { // 这个问题主要是在windows存在
 		dir = strings.Join(s[:len(s)-2], "\\") // 回退到 app这个路径执行命令
 		execx.Run("rm go.work", dir)
 		execx.Run("rm go.work.sum", dir)
 	}
+
+	// 重新执行 go  work init
+	defer func(s []string) {
+		if len(s) < 2 {
+			return
+		}
+
+		var execPath string
+		if runtime.GOOS == "windows" {
+			execPath = strings.Join(s[:len(s)-2], "\\")
+		} else {
+			goModDir = strings.Join(s[:len(s)-2], "/")
+		}
+
+		execx.Run("go work init", execPath)
+		execx.Run("go work use -r app/*", execPath)
+	}(s)
 
 	execx.Run(serviceName, goModDir)
 

@@ -1,6 +1,7 @@
 package gen
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/zeromicro/go-zero/tools/goctl/model/sql/parser"
@@ -80,10 +81,14 @@ func genMarshalFields(table Table, field *parser.Field) (string, error) {
 		return "", err
 	}
 
+	name := field.Name.ToCamel() // 左侧model的名称
+	protoConvertType := getMarshalProtoDataType(field)
+
 	output, err := util.With("types").
 		Parse(text).
 		Execute(map[string]interface{}{
-			"name": util.SafeString(field.Name.ToCamel()),
+			"name":      util.SafeString(name),
+			"protoName": protoConvertType,
 		})
 	if err != nil {
 		return "", err
@@ -98,14 +103,95 @@ func genUnmarshalFields(table Table, field *parser.Field) (string, error) {
 		return "", err
 	}
 
+	modelName := getUnmarshalModelDataType(field)
+
 	output, err := util.With("types").
 		Parse(text).
 		Execute(map[string]interface{}{
-			"name": util.SafeString(field.Name.ToCamel()),
+			"name":      util.SafeString(field.Name.ToCamel()),
+			"modelName": modelName,
 		})
 	if err != nil {
 		return "", err
 	}
 
 	return output.String(), nil
+}
+
+func getMarshalProtoDataType(field *parser.Field) string {
+	fileName := field.Name.ToCamel()
+
+	switch field.DataType {
+	case "sql.NullString":
+		{
+			return fmt.Sprintf("&sql.NullString{String:p.%s}", fileName)
+		}
+	case "sql.NullInt16":
+		{
+			return fmt.Sprintf("&sql.NullInt16{Int16:p.%s}", fileName)
+		}
+	case "sql.NullInt32":
+		{
+			return fmt.Sprintf("&sql.NullInt32{Int32:p.%s}", fileName)
+		}
+	case "sql.NullInt64":
+		{
+			return fmt.Sprintf("&sql.NullInt64{Int64:p.%s}", fileName)
+		}
+	case "sql.NullBool":
+		{
+			return fmt.Sprintf("&sql.NullBool{Bool:p.%s}", fileName)
+		}
+	case "sql.NullByte":
+		{
+			return fmt.Sprintf("&sql.NullByte{Byte:p.%s}", fileName)
+		}
+	case "sql.NullFloat64":
+		{
+			return fmt.Sprintf("&sql.NullFloat64{Float64:p.%s}", fileName)
+		}
+	default:
+		{
+			return fmt.Sprintf("&p.%s", fileName)
+		}
+	}
+}
+
+func getUnmarshalModelDataType(field *parser.Field) string {
+	fileName := field.Name.ToCamel()
+
+	switch field.DataType {
+	case "sql.NullString":
+		{
+			return fmt.Sprintf("m.%s.String", fileName)
+		}
+	case "sql.NullInt16":
+		{
+			return fmt.Sprintf("m.%s.Int16}", fileName)
+		}
+	case "sql.NullInt32":
+		{
+			return fmt.Sprintf("m.%s.Int32", fileName)
+		}
+	case "sql.NullInt64":
+		{
+			return fmt.Sprintf("m.%s.Int64", fileName)
+		}
+	case "sql.NullBool":
+		{
+			return fmt.Sprintf("m.%s.Bool", fileName)
+		}
+	case "sql.NullByte":
+		{
+			return fmt.Sprintf("m.%s.Byte", fileName)
+		}
+	case "sql.NullFloat64":
+		{
+			return fmt.Sprintf("m.%s.Float64", fileName)
+		}
+	default:
+		{
+			return fmt.Sprintf("*m.%s", fileName)
+		}
+	}
 }
