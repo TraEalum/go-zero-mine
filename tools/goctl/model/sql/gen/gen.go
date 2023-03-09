@@ -405,6 +405,15 @@ func (g *defaultGenerator) genModelCustom(in parser.Table, withCache bool) (stri
 		return "", err
 	}
 
+	// 检查是否有sql Type
+	var hadSqlType bool
+	importDateBaseSqlPackage := ""
+
+	hadSqlType = checkSqlType(in.Fields)
+	if hadSqlType {
+		importDateBaseSqlPackage = "\"database/sql\""
+	}
+
 	var table Table
 	table.Table = in
 
@@ -414,17 +423,18 @@ func (g *defaultGenerator) genModelCustom(in parser.Table, withCache bool) (stri
 		Parse(text).
 		GoFmt(true)
 	output, err := t.Execute(map[string]interface{}{
-		"pkg":                   g.pkg,
-		"withCache":             withCache,
-		"upperStartCamelObject": in.Name.ToCamel(),
-		"lowerStartCamelObject": stringx.From(in.Name.ToCamel()).Untitle(),
-		"serviceName":           g.service,
-		"marshalFields":         marshalFields,
-		"unmarshallFields":      unmarshallFields,
-		"table":                 in.Name.Source(),
-		"fmtSubTableName":       in.FmtString,
-		"subTableNumber":        g.subTableNumber,
-		"upperSubTableKey":      stringx.From(g.subTableKey).ToCamel(),
+		"pkg":                      g.pkg,
+		"withCache":                withCache,
+		"upperStartCamelObject":    in.Name.ToCamel(),
+		"lowerStartCamelObject":    stringx.From(in.Name.ToCamel()).Untitle(),
+		"serviceName":              g.service,
+		"marshalFields":            marshalFields,
+		"unmarshallFields":         unmarshallFields,
+		"table":                    in.Name.Source(),
+		"fmtSubTableName":          in.FmtString,
+		"subTableNumber":           g.subTableNumber,
+		"upperSubTableKey":         stringx.From(g.subTableKey).ToCamel(),
+		"importDateBaseSqlPackage": importDateBaseSqlPackage,
 	})
 	if err != nil {
 		return "", err
@@ -482,4 +492,41 @@ func wrapWithRawString(v string, postgreSql bool) string {
 	}
 
 	return v
+}
+
+func checkSqlType(fields []*parser.Field) bool {
+	for _, field := range fields {
+		switch field.DataType {
+		case "sql.NullString":
+			{
+				return true
+			}
+		case "sql.NullInt16":
+			{
+				return true
+			}
+		case "sql.NullInt32":
+			{
+				return true
+			}
+		case "sql.NullInt64":
+			{
+				return true
+			}
+		case "sql.NullBool":
+			{
+				return true
+			}
+		case "sql.NullByte":
+			{
+				return true
+			}
+		case "sql.NullFloat64":
+			{
+				return true
+			}
+		}
+	}
+
+	return true
 }

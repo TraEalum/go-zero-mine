@@ -11,6 +11,7 @@ const ModelCustom = `package {{.pkg}}
 {{if .withCache}}
 import (
 	proto "proto/{{.serviceName}}"
+	{{.importDateBaseSqlPackage}}
 
 	"github.com/zeromicro/go-zero/core/stores/cache"
 	"github.com/zeromicro/go-zero/core/stores/sqlx"
@@ -18,6 +19,7 @@ import (
 {{else}}
 import (
 	proto "proto/{{.serviceName}}"
+	{{.importDateBaseSqlPackage}}
 
 	"github.com/zeromicro/go-zero/core/stores/sqlx"
 )
@@ -83,13 +85,14 @@ const ModelCustomSubTable = `package {{.pkg}}
 import (
     "fmt"
 	proto "proto/{{.serviceName}}"
-
+	{{.importDateBaseSqlPackage}}
 	"github.com/zeromicro/go-zero/core/stores/cache"
 	"github.com/zeromicro/go-zero/core/stores/sqlx"
 )
 {{else}}
 import (
 	proto "proto/{{.serviceName}}"
+	{{.importDateBaseSqlPackage}}
 
 	"github.com/zeromicro/go-zero/core/stores/sqlx"
 )
