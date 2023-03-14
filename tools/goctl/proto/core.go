@@ -492,7 +492,6 @@ func (s *Schema) UpdateString() string {
 	}
 
 	//  独立一个服务
-
 	funcTpl := ""
 	for _, m := range s.Messages {
 		if !isInSlice(existTableName, m.Name) {

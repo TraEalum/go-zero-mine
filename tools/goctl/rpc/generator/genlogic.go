@@ -94,7 +94,7 @@ func (g *Generator) genLogicInCompatibility(ctx DirContext, proto parser.Proto,
 
 func (g *Generator) genLogicGroup(ctx DirContext, proto parser.Proto, cfg *conf.Config) error {
 	dir := ctx.GetLogic()
-	service := proto.Service[0].Service.Name
+	service := proto.PbPackage
 	for _, item := range proto.Service {
 		serviceName := item.Name
 		for _, rpc := range item.RPC {
@@ -135,7 +135,7 @@ func (g *Generator) genLogicGroup(ctx DirContext, proto parser.Proto, cfg *conf.
 
 			imports := collection.NewSet()
 			imports.AddStr(fmt.Sprintf(`"%v"`, ctx.GetSvc().Package))
-			imports.AddStr(fmt.Sprintf(`proto "proto/%s"`, proto.Service[0].Name))
+			imports.AddStr(fmt.Sprintf(`proto "proto/%s"`, service))
 			imports.AddStr("\"comm/errorm\"")
 			if functions.HasSqlc {
 				imports.AddStr("\"github.com/zeromicro/go-zero/core/stores/sqlc\"")
@@ -165,10 +165,6 @@ func (g *Generator) genLogicGroup(ctx DirContext, proto parser.Proto, cfg *conf.
 	return nil
 }
 
-// func (g *Generator) genLogicFunction(serviceName, goPackage, logicName string,
-//
-//	rpc *parser.RPC) (string,
-//	error) {
 type genLogic struct {
 	HasSqlc  bool
 	HasUtil  bool

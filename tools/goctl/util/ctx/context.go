@@ -36,7 +36,6 @@ func Prepare(workDir string) (*ProjectContext, error) {
 	var dir string
 	var goModDir, serviceName string
 	var hadInputReplace bool // 检测是否已经replace过comm
-	fmt.Println("Prepare", workDir)
 
 	if runtime.GOOS == "windows" {
 		s = strings.Split(workDir, "\\")
@@ -50,7 +49,6 @@ func Prepare(workDir string) (*ProjectContext, error) {
 	// 执行 rm  go.work go.work.sum
 	if len(s) > 2 && runtime.GOOS == "windows" { // 这个问题主要是在windows存在
 		dir = strings.Join(s[:len(s)-3], "\\") // 回退到 app这个路径执行命令
-		fmt.Println("rm go.work", dir)
 		execx.Run("rm go.work", dir)
 		execx.Run("rm go.work.sum", dir)
 	}
@@ -72,12 +70,10 @@ func Prepare(workDir string) (*ProjectContext, error) {
 		} else {
 			execPath = strings.Join(s[:len(s)-3], "/")
 		}
-		fmt.Println("go work init", execPath)
 		execx.Run("go work init", execPath)
 		execx.Run("go work use -r app/*", execPath)
 	}(s)
 
-	fmt.Println("go mod init", goModDir)
 	execx.Run(serviceName, goModDir)
 
 	// replace操作
@@ -93,7 +89,7 @@ func Prepare(workDir string) (*ProjectContext, error) {
 		for {
 			line, err := reader.ReadString('\n')
 			if err != nil {
-				w.WriteString(")")
+				w.WriteString(line)
 				break
 			}
 
