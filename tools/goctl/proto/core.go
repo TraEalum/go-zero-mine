@@ -477,8 +477,6 @@ func (s *Schema) UpdateString() string {
 	for {
 		line, err := buf.ReadString('\n')
 		if strings.Contains(line, "Service Record End") {
-			bufNew.WriteString("\t // Service Record End\n")
-			bufNew.WriteString("}\n\n")
 			break
 		}
 		bufNew.WriteString(line)
@@ -492,35 +490,42 @@ func (s *Schema) UpdateString() string {
 	}
 
 	//  独立一个服务
-	funcTpl := ""
+	newSeviceTpl := ""
 	for _, m := range s.Messages {
 		if !isInSlice(existTableName, m.Name) {
-			funcTpl = "service " + s.TableName + "{\n"
-			funcTpl += "\t //-----------------------" + m.Comment + "----------------------- \n"
+			newSeviceTpl = "\nservice " + s.TableName + "{\n"
+			newSeviceTpl += "\t //-----------------------" + m.Comment + "----------------------- \n"
 			if len(s.GenerateMethod) == 1 && strings.TrimSpace(s.GenerateMethod[0]) == "" {
-				funcTpl += "\t rpc Query" + m.Name + "Detail(" + m.Name + "Filter) returns (" + m.Name + "); \n"
-				funcTpl += "\t rpc Query" + m.Name + "List(" + m.Name + "Filter) returns (" + m.Name + "List); \n"
+				newSeviceTpl += "\t rpc Query" + m.Name + "Detail(" + m.Name + "Filter) returns (" + m.Name + "); \n"
+				newSeviceTpl += "\t rpc Query" + m.Name + "List(" + m.Name + "Filter) returns (" + m.Name + "List); \n"
 			} else {
 				if isInSlice(s.GenerateMethod, INSERT) {
-					funcTpl += "\t rpc Create" + m.Name + "(" + m.Name + ") returns (" + m.Name + "); \n"
+					newSeviceTpl += "\t rpc Create" + m.Name + "(" + m.Name + ") returns (" + m.Name + "); \n"
 				}
 				if isInSlice(s.GenerateMethod, DELETE) {
-					funcTpl += "\t rpc Delete" + m.Name + "(" + m.Name + ") returns (" + m.Name + "); \n"
+					newSeviceTpl += "\t rpc Delete" + m.Name + "(" + m.Name + ") returns (" + m.Name + "); \n"
 				}
 				if isInSlice(s.GenerateMethod, UPDATE) {
-					funcTpl += "\t rpc Update" + m.Name + "(" + m.Name + ") returns (" + m.Name + "); \n"
+					newSeviceTpl += "\t rpc Update" + m.Name + "(" + m.Name + ") returns (" + m.Name + "); \n"
 				}
 				if isInSlice(s.GenerateMethod, QUERY) {
-					funcTpl += "\t rpc Query" + m.Name + "Detail(" + m.Name + "Filter) returns (" + m.Name + "); \n"
-					funcTpl += "\t rpc Query" + m.Name + "List(" + m.Name + "Filter) returns (" + m.Name + "List); \n"
+					newSeviceTpl += "\t rpc Query" + m.Name + "Detail(" + m.Name + "Filter) returns (" + m.Name + "); \n"
+					newSeviceTpl += "\t rpc Query" + m.Name + "List(" + m.Name + "Filter) returns (" + m.Name + "List); \n"
 				}
 			}
-			funcTpl = funcTpl + "\t // Service Record End\n"
-			funcTpl = funcTpl + "}"
+			newSeviceTpl = newSeviceTpl + "\t // Service Record End\n"
+			newSeviceTpl = newSeviceTpl + "}"
 		}
 	}
 
-	bufNew.WriteString(funcTpl)
+	if newSeviceTpl == "" {
+		bufNew.WriteString("\t // Service Record End\n")
+		bufNew.WriteString("}\n")
+	} else {
+		bufNew.WriteString("}\n")
+	}
+
+	bufNew.WriteString(newSeviceTpl)
 	err = ioutil.WriteFile(s.Dir, []byte(bufNew.String()), 0666) //写入文件(字节数组)
 	return "Done"
 }
