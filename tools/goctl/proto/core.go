@@ -75,6 +75,7 @@ func GenerateSchema(db *sql.DB, table string, ignoreTables []string, serviceName
 	}
 
 	s.HumpTbName = humpTableName
+	s.TableName = table
 
 	if s.HumpTbName != "" {
 		cols, err := dbColumns(db, dbs, table, subTableNumber, subTableKey)
@@ -199,6 +200,7 @@ type Schema struct {
 	Enums          EnumCollection
 	HumpTbName     string
 	GenerateMethod []string
+	TableName      string
 }
 
 // MessageCollection represents a sortable collection of messages.
@@ -300,7 +302,7 @@ func (s *Schema) CreateString() string {
 	buf.WriteString("// Rpc Func\n")
 	buf.WriteString("// ------------------------------------ \n\n")
 
-	funcTpl := "service " + s.ServiceName + "{\n"
+	funcTpl := "service " + s.TableName + "{\n"
 	for _, m := range s.Messages {
 		funcTpl += "\t //-----------------------" + m.Comment + "----------------------- \n"
 		if len(s.GenerateMethod) == 1 && strings.TrimSpace(s.GenerateMethod[0]) == "" {
@@ -475,6 +477,8 @@ func (s *Schema) UpdateString() string {
 	for {
 		line, err := buf.ReadString('\n')
 		if strings.Contains(line, "Service Record End") {
+			bufNew.WriteString("\t // Service Record End\n")
+			bufNew.WriteString("}\n\n")
 			break
 		}
 		bufNew.WriteString(line)
@@ -487,9 +491,12 @@ func (s *Schema) UpdateString() string {
 		}
 	}
 
+	//  独立一个服务
+
 	funcTpl := ""
 	for _, m := range s.Messages {
 		if !isInSlice(existTableName, m.Name) {
+			funcTpl = "service " + s.TableName + "{\n"
 			funcTpl += "\t //-----------------------" + m.Comment + "----------------------- \n"
 			if len(s.GenerateMethod) == 1 && strings.TrimSpace(s.GenerateMethod[0]) == "" {
 				funcTpl += "\t rpc Query" + m.Name + "Detail(" + m.Name + "Filter) returns (" + m.Name + "); \n"
@@ -509,10 +516,10 @@ func (s *Schema) UpdateString() string {
 					funcTpl += "\t rpc Query" + m.Name + "List(" + m.Name + "Filter) returns (" + m.Name + "List); \n"
 				}
 			}
+			funcTpl = funcTpl + "\t // Service Record End\n"
+			funcTpl = funcTpl + "}"
 		}
 	}
-	funcTpl = funcTpl + "\t // Service Record End\n"
-	funcTpl = funcTpl + "}"
 
 	bufNew.WriteString(funcTpl)
 	err = ioutil.WriteFile(s.Dir, []byte(bufNew.String()), 0666) //写入文件(字节数组)
