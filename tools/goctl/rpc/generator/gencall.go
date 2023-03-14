@@ -88,7 +88,7 @@ func (g *Generator) genCallGroup(ctx DirContext, proto parser.Proto, cfg *conf.C
 		}
 
 		//pbPackage := fmt.Sprintf(`"%s"`, ctx.GetPb().Package)
-		pbPackage := fmt.Sprintf(`%s "proto/%s"`, "proto", proto.Service[0].Name)
+		pbPackage := fmt.Sprintf(`%s "proto/%s"`, "proto", proto.PbPackage)
 		//protoGoPackage := fmt.Sprintf(`"%s"`, ctx.GetProtoGo().Package)
 		//protoGoPackage := fmt.Sprintf(`%s "proto/%s"`, proto.Service[0].Name, proto.Service[0].Name)
 		protoGoPackage := ""
@@ -153,7 +153,7 @@ func (g *Generator) genCallInCompatibility(ctx DirContext, proto parser.Proto,
 		}
 	}
 
-	pbPackage := fmt.Sprintf(`proto "proto/%s"`, service.Name)
+	pbPackage := fmt.Sprintf(`proto "proto/%s"`, proto.PbPackage)
 	// protoGoPackage := fmt.Sprintf(`"%s"`, ctx.GetProtoGo().Package)
 	protoGoPackage := ""
 	// fmt.Printf("head[%s] dir.Base[%s] protoGoPackage[%s] pbPackage[%s]", head, dir.Base, protoGoPackage, pbPackage)

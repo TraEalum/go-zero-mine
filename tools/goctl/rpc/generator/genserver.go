@@ -65,7 +65,7 @@ func (g *Generator) genServerGroup(ctx DirContext, proto parser.Proto, cfg *conf
 
 		svcImport := fmt.Sprintf(`"%v"`, ctx.GetSvc().Package)
 		//pbImport := fmt.Sprintf(`"%v"`, ctx.GetPb().Package)
-		pbImport := fmt.Sprintf(`proto "proto/%v"`, proto.Service[0].Name)
+		pbImport := fmt.Sprintf(`proto "proto/%v"`, proto.PbPackage)
 
 		imports := collection.NewSet()
 		imports.AddStr(logicImport, svcImport, pbImport)
@@ -111,7 +111,7 @@ func (g *Generator) genServerInCompatibility(ctx DirContext, proto parser.Proto,
 	logicImport := fmt.Sprintf(`"%v"`, ctx.GetLogic().Package)
 	svcImport := fmt.Sprintf(`"%v"`, ctx.GetSvc().Package)
 	//pbImport := fmt.Sprintf(`"%v"`, ctx.GetPb().Package)
-	pbImport := fmt.Sprintf("proto \"proto/%s\"", proto.Service[0].Name)
+	pbImport := fmt.Sprintf("proto \"proto/%s\"", proto.PbPackage)
 
 	imports := collection.NewSet()
 	imports.AddStr(logicImport, svcImport, pbImport)

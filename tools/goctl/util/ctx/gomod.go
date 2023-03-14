@@ -84,7 +84,6 @@ func getRealModule(workDir string, execRun execx.RunFunc) (*Module, error) {
 
 	for _, m := range modules {
 		dir := filepath.Join(m.Dir, "rpc")
-		fmt.Println("getRealModule", workDir, dir)
 		if strings.HasPrefix(workDir, dir) {
 			return &m, nil
 		}
