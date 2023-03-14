@@ -117,7 +117,7 @@ func (m *default{{.upperStartCamelObject}}Model) findListBatch(ctx context.Conte
 		
 		query, values, _ = selectBuilder.Offset(uint64(startIndex)).Limit(uint64(batchSize)).ToSql()
 
-		err = m.conn.QueryRowPartialCtx(ctx, &temp, query, values...)
+		err = m.conn.QueryRowsPartialCtx(ctx, &temp, query, values...)
 		if err != nil && err != ErrNotFound{
 			return nil,err
 		}

@@ -13,7 +13,7 @@ func (m *default{{.upperStartCamelObject}}Model) FindListByTrans(ctx context.Con
 		return nil, err
 	}
 
-	if err = session.QueryRowPartialCtx(ctx, &resp, query, values...); err != nil {
+	if err = session.QueryRowsPartialCtx(ctx, &resp, query, values...); err != nil {
 		return nil, err
 	}
 

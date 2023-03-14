@@ -65,7 +65,6 @@ func (g *Generator) genLogicInCompatibility(ctx DirContext, proto parser.Proto,
 		imports.AddStr(fmt.Sprintf(`"%v"`, ctx.GetSvc().Package))
 		imports.AddStr(fmt.Sprintf(`proto "proto/%s"`, service))
 
-		imports.AddStr("\"comm/errorm\"")
 		if functions.HasSqlc {
 			imports.AddStr("\"github.com/zeromicro/go-zero/core/stores/sqlc\"")
 		}
@@ -74,6 +73,7 @@ func (g *Generator) genLogicInCompatibility(ctx DirContext, proto parser.Proto,
 		}
 		if functions.HasModel {
 			imports.AddStr(fmt.Sprintf(`"%s-service/model"`, service))
+			imports.AddStr("\"comm/errorm\"")
 		}
 		text, err := pathx.LoadTemplate(category, logicTemplateFileFile, logicTemplate)
 		if err != nil {
@@ -136,7 +136,7 @@ func (g *Generator) genLogicGroup(ctx DirContext, proto parser.Proto, cfg *conf.
 			imports := collection.NewSet()
 			imports.AddStr(fmt.Sprintf(`"%v"`, ctx.GetSvc().Package))
 			imports.AddStr(fmt.Sprintf(`proto "proto/%s"`, service))
-			imports.AddStr("\"comm/errorm\"")
+
 			if functions.HasSqlc {
 				imports.AddStr("\"github.com/zeromicro/go-zero/core/stores/sqlc\"")
 			}
@@ -145,6 +145,7 @@ func (g *Generator) genLogicGroup(ctx DirContext, proto parser.Proto, cfg *conf.
 			}
 			if functions.HasModel {
 				imports.AddStr(fmt.Sprintf(`"%s-service/model"`, service))
+				imports.AddStr("\"comm/errorm\"")
 			}
 
 			text, err := pathx.LoadTemplate(category, logicTemplateFileFile, logicTemplate)
