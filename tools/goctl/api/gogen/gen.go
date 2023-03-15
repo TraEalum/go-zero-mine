@@ -104,12 +104,9 @@ func DoGenProject(apiFile, dir, style, marshal string) error {
 
 	importFile := ""
 
-	for i := 0; i < len(split) -1 ; i++ {
+	for i := 0; i < len(split)-1; i++ {
 		importFile = path.Join(importFile, split[i])
 	}
-
-
-
 
 	logx.Must(genEtc(dir, cfg, api))
 	logx.Must(genConfig(dir, cfg, api))

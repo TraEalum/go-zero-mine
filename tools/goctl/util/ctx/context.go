@@ -108,7 +108,6 @@ func Prepare(workDir string) (*ProjectContext, error) {
 
 		file.WriteString(w.String())
 	}
-
 	return background(workDir)
 }
 

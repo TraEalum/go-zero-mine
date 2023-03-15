@@ -15,15 +15,15 @@ const (
 var (
 	intPort            int
 	stringPassword     string
-	stringDir          string
+	stringDir          string // 生成文件的存放路径
 	stringHost         string
 	stringUser         string
-	stringSchema       string
-	stringTable        string
-	stringServiceName  string
+	stringSchema       string // 库名
+	stringTable        string // 表名
+	stringServiceName  string // 服务名
 	stringIgnoreTables string
-	stringProtoFile    string
-	stringCurdMethod   string
+	stringApiFile      string //
+	stringCurdMethod   string // 要生成的方法
 
 	// Cmd describes a model command.
 	Cmd = &cobra.Command{
@@ -43,9 +43,7 @@ func init() {
 	Cmd.Flags().StringVar(&stringTable, "table", "", "the table schema，multiple tables ',' split. ")
 	Cmd.Flags().StringVar(&stringServiceName, "serviceName", "", "the protobuf service name , defaults to the database schema.")
 	Cmd.Flags().StringVar(&stringIgnoreTables, "ignore_tables", "", "a comma spaced list of tables to ignore")
-	Cmd.Flags().StringVar(&stringProtoFile, "proto", "", "the proto file path")
+	Cmd.Flags().StringVar(&stringApiFile, "api", "", "the api file path")
 	Cmd.Flags().StringVar(&stringCurdMethod, "i", "", "生成update、insert、query、delete方法，不传默认只生成查询方法,多个方法之间用逗号(,)分割")
 
-	//Cmd.AddCommand(mysqlCmd)
-	//Cmd.AddCommand(mongoCmd)
 }

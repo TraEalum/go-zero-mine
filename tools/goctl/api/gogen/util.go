@@ -65,7 +65,7 @@ func getParentPackage(dir string) (string, error) {
 		return "", err
 	}
 
-	//这里检查生成go.mod
+	//  这里检查生成go.mod
 	projectCtx, err := ctx.Prepare(abs)
 	if err != nil {
 		return "", err
