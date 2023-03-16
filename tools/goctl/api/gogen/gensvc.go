@@ -83,11 +83,10 @@ func genRpcImport(api *spec.ApiSpec, types []spec.Type) string {
 	var build strings.Builder
 	serviceName := strings.ToLower(api.Service.Name)
 	build.WriteString("\"github.com/zeromicro/go-zero/zrpc\"\n")
-	//build.WriteString(fmt.Sprintf("\"%s-service/rpc/client/%s\"", serviceName, serviceName))
 	for _, v := range types {
 		call := FirstLower(v.Name())
 		childPath := stringx.From(v.Name()).ToSnake()
-		build.WriteString(fmt.Sprintf("%s \"%s-service/rpc/client/%s/%s\"\n", call, serviceName, childPath, call))
+		build.WriteString(fmt.Sprintf("%s \"%s-service/rpc/client/%s\"\n", call, serviceName, childPath))
 	}
 
 	return build.String()
@@ -95,9 +94,6 @@ func genRpcImport(api *spec.ApiSpec, types []spec.Type) string {
 
 func genRpc(api *spec.ApiSpec, types []spec.Type) string {
 	var build strings.Builder
-	// serviceName := api.Service.Name
-	// build.WriteString(fmt.Sprintf("%s  %s.%s", apigen.FirstUpper(serviceName), serviceName, apigen.FirstUpper(serviceName)))
-	// build.WriteString("")
 	for _, v := range types {
 		call := FirstLower(v.Name())
 		build.WriteString(fmt.Sprintf("%s  %s.%sCli\n", apigen.FirstUpper(v.Name()), call, apigen.FirstUpper(v.Name())))
