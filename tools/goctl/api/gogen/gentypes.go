@@ -52,7 +52,10 @@ func genTypes(dir string, cfg *config.Config, api *spec.ApiSpec, marshalFlag, ap
 	typeFilename = typeFilename + ".go"
 	filename := path.Join(dir, typesDir, typeFilename)
 	os.Remove(filename)
-
+	fmt.Println("typeFilename", typeFilename)
+	fmt.Println("filename", filename)
+	fmt.Println("dir", dir)
+	fmt.Println("apiFile", apiFile)
 	go func() {
 		err = GenMarshal(api, dir, apiFile)
 		if err != nil {
@@ -70,7 +73,6 @@ func genTypes(dir string, cfg *config.Config, api *spec.ApiSpec, marshalFlag, ap
 			return
 		}
 	}()
-
 
 	if err != nil {
 		return err

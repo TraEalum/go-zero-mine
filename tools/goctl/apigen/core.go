@@ -24,6 +24,14 @@ const (
 	indent = "  "
 )
 
+var unsignedTypeMap = map[string]string{
+	"int":   "uint",
+	"int8":  "uint8",
+	"int16": "uint16",
+	"int32": "uint32",
+	"int64": "uint64",
+}
+
 func GenerateSchema(db *sql.DB, table string, ignoreTables []string, serviceName string, dir string) (*Schema, error) {
 
 	var err error
@@ -272,7 +280,8 @@ func dbColumns(db *sql.DB, schema, table string) ([]Column, error) {
 		if cs.TableComment == "" {
 			cs.TableComment = stringx.From(cs.TableName).ToCamelWithStartLower()
 		}
-		//这里过滤掉不需要生成的字段
+
+		// 这里过滤掉不需要生成的字段
 		if !isInSlice([]string{"create_time", "update_time"}, cs.ColumnName) {
 			cols = append(cols, cs)
 		}
@@ -966,7 +975,7 @@ func (m Message) GenApiDefault(buf *bytes.Buffer) {
 func (m Message) GenApiDefaultResp(buf *bytes.Buffer) {
 	mOrginName := FirstUpper(m.Name)
 	buf.WriteString(fmt.Sprintf("%sCreate%sResp {\n", indent, mOrginName))
-	buf.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`   \n", indent, indent, "Id", "int64", "id"))
+	// buf.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`   \n", indent, indent, "Id", "int64", "id"))
 	buf.WriteString(fmt.Sprintf("%s}\n", indent))
 }
 
@@ -982,7 +991,7 @@ func (m Message) GenApiUpdateReq(buf *bytes.Buffer) {
 func (m Message) GenApiUpdateResp(buf *bytes.Buffer) {
 	mOrginName := FirstUpper(m.Name)
 	buf.WriteString(fmt.Sprintf("%sUpdate%sResp {\n", indent, mOrginName))
-	buf.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`   \n", indent, indent, "Id", "int64", "id"))
+	// buf.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`   \n", indent, indent, "Id", "int64", "id"))
 	buf.WriteString(fmt.Sprintf("%s}\n", indent))
 }
 
@@ -990,7 +999,7 @@ func (m Message) GenApiUpdateResp(buf *bytes.Buffer) {
 func (m Message) GenApiQueryListReq(buf *bytes.Buffer) {
 	mOrginName := FirstUpper(m.Name)
 	buf.WriteString(fmt.Sprintf("%sQuery%sReq {\n", indent, mOrginName))
-	buf.WriteString(fmt.Sprintf("%s%s%s   %s  `form:\"%s,optional\"`   \n", indent, indent, "Id", "int64", "id"))
+	// buf.WriteString(fmt.Sprintf("%s%s%s   %s  `form:\"%s,optional\"`   \n", indent, indent, "Id", "int64", "id"))
 	buf.WriteString(fmt.Sprintf("%s%s%s   %s  `form:\"%s,optional\"`   \n", indent, indent, "PageNo", "int64", "page_no"))
 	buf.WriteString(fmt.Sprintf("%s%s%s   %s  `form:\"%s,optional\"`   \n", indent, indent, "PageSize", "int64", "page_size"))
 	buf.WriteString(fmt.Sprintf("%s}\n", indent))
@@ -1067,6 +1076,7 @@ type Table struct {
 func parseColumn(s *Schema, msg *Message, col Column) error {
 	typ := strings.ToLower(col.DataType)
 	var fieldType string
+	isUnsigned := strings.Contains(col.ColumnType, "unsigned")
 
 	switch typ {
 	case "char", "varchar", "text", "longtext", "mediumtext", "tinytext":
@@ -1098,19 +1108,22 @@ func parseColumn(s *Schema, msg *Message, col Column) error {
 		fieldType = "bool"
 	case "tinyint", "smallint", "int", "mediumint", "bigint":
 		fieldType = "int64"
+	case "float", "double":
+		fieldType = "double"
 	case "decimal":
-		fieldType = "string" // decimal diff float64  fix bug 2022-11-8
-	case "double":
-		fieldType = "float64" // fix bug 2022-11-8
-	case "float":
-		fieldType = "float64" // fix bug 2022-11-8
+		fieldType = "string"
+	}
+
+	if isUnsigned {
+		fieldType = unsignedTypeMap[fieldType]
 	}
 
 	if "" == fieldType {
-		return fmt.Errorf("no compatible go type found for `%s`. column: `%s`.`%s`", col.DataType, col.TableName, col.ColumnName)
+		return fmt.Errorf("no compatible protobuf type found for `%s`. column: `%s`.`%s`", col.DataType, col.TableName, col.ColumnName)
 	}
 
 	field := NewMessageField(fieldType, col.ColumnName, col.ColumnComment, col.ColumnName)
+
 	err := msg.AppendField(field)
 	if nil != err {
 		return err

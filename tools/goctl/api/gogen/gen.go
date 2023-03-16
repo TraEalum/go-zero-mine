@@ -6,7 +6,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -95,10 +94,10 @@ func DoGenProject(apiFile, dir, style, marshal string) error {
 		return err
 	}
 
-	var sep = `\`
-	if runtime.GOOS == "linux" {
-		sep = "/"
-	}
+	var sep = `/`
+	// if runtime.GOOS == "linux" {
+	// 	sep = "\\"
+	// }
 
 	split := strings.Split(apiFile, sep)
 
@@ -107,6 +106,9 @@ func DoGenProject(apiFile, dir, style, marshal string) error {
 	for i := 0; i < len(split)-1; i++ {
 		importFile = path.Join(importFile, split[i])
 	}
+
+	fmt.Println("importFile", importFile)
+	fmt.Println("apiFile", apiFile)
 
 	logx.Must(genEtc(dir, cfg, api))
 	logx.Must(genConfig(dir, cfg, api))
