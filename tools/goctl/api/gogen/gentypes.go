@@ -52,10 +52,7 @@ func genTypes(dir string, cfg *config.Config, api *spec.ApiSpec, marshalFlag, ap
 	typeFilename = typeFilename + ".go"
 	filename := path.Join(dir, typesDir, typeFilename)
 	os.Remove(filename)
-	fmt.Println("typeFilename", typeFilename)
-	fmt.Println("filename", filename)
-	fmt.Println("dir", dir)
-	fmt.Println("apiFile", apiFile)
+
 	go func() {
 		err = GenMarshal(api, dir, apiFile)
 		if err != nil {
@@ -65,14 +62,14 @@ func genTypes(dir string, cfg *config.Config, api *spec.ApiSpec, marshalFlag, ap
 		}
 	}()
 
-	go func() {
-		err = GenCustomizeMarshal(api, dir, apiFile)
-		if err != nil {
-			fmt.Println(err.Error())
-			fmt.Println("generate cusMarsha file error")
-			return
-		}
-	}()
+	// go func() {
+	// 	err = GenCustomizeMarshal(api, dir, apiFile)
+	// 	if err != nil {
+	// 		fmt.Println(err.Error())
+	// 		fmt.Println("generate cusMarsha file error")
+	// 		return
+	// 	}
+	// }()
 
 	if err != nil {
 		return err
