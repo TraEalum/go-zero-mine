@@ -107,9 +107,6 @@ func DoGenProject(apiFile, dir, style, marshal string) error {
 		importFile = path.Join(importFile, split[i])
 	}
 
-	fmt.Println("importFile", importFile)
-	fmt.Println("apiFile", apiFile)
-
 	logx.Must(genEtc(dir, cfg, api))
 	logx.Must(genConfig(dir, cfg, api))
 	logx.Must(genMain(dir, rootPkg, cfg, api))

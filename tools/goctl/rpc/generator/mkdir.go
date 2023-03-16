@@ -109,6 +109,7 @@ func mkdir(ctx *ctx.ProjectContext, proto parser.Proto, _ *conf.Config, c *ZRpcC
 				strings.TrimPrefix(clientDir, ctx.Dir))),
 			Base: filepath.Base(clientDir),
 			GetChildPackage: func(childPath string) (string, error) {
+				//childPath = stringx.From(childPath).ToSnake()
 				return getChildPackage(clientDir, childPath)
 			},
 		}

@@ -1,12 +1,14 @@
 package gogen
 
 import (
+	"fmt"
 	"io/ioutil"
 	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/zeromicro/go-zero/tools/goctl/util/pathx"
+	"github.com/zeromicro/go-zero/tools/goctl/util/stringx"
 )
 
 func TestGenTemplates(t *testing.T) {
@@ -89,4 +91,15 @@ func TestUpdate(t *testing.T) {
 	data, err = ioutil.ReadFile(file)
 	assert.Nil(t, err)
 	assert.Equal(t, mainTemplate, string(data))
+}
+
+func TestStrings(t *testing.T) {
+	name := "couponCode"
+
+	toSnake := stringx.From(name).ToSnake()
+	fmt.Println(toSnake)
+	b := stringx.From(name).ToCamelWithStartLower()
+	fmt.Println(b)
+	c := stringx.From(name).ToCamel()
+	fmt.Println(c)
 }

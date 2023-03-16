@@ -90,7 +90,6 @@ func (g *Generator) genCallGroup(ctx DirContext, proto parser.Proto, cfg *conf.C
 		//pbPackage := fmt.Sprintf(`"%s"`, ctx.GetPb().Package)
 		pbPackage := fmt.Sprintf(`%s "proto/%s"`, "proto", proto.PbPackage)
 		//protoGoPackage := fmt.Sprintf(`"%s"`, ctx.GetProtoGo().Package)
-		//protoGoPackage := fmt.Sprintf(`%s "proto/%s"`, proto.Service[0].Name, proto.Service[0].Name)
 		protoGoPackage := ""
 		if isCallPkgSameToGrpcPkg {
 			pbPackage = ""
@@ -99,11 +98,13 @@ func (g *Generator) genCallGroup(ctx DirContext, proto parser.Proto, cfg *conf.C
 
 		aliasKeys := alias.KeysStr()
 		sort.Strings(aliasKeys)
+		filePackageName := fmt.Sprintf("%s_client", FirstLower(stringx.From(service.Name).ToCamel()))
 		if err = util.With("shared").GoFmt(true).Parse(text).SaveTo(map[string]interface{}{
-			"name":           callFilename,
-			"alias":          strings.Join(aliasKeys, pathx.NL),
-			"head":           head,
-			"filePackage":    dir.Base,
+			"name":  callFilename,
+			"alias": strings.Join(aliasKeys, pathx.NL),
+			"head":  head,
+			// "filePackage":    dir.Base,
+			"filePackage":    filePackageName,
 			"pbPackage":      pbPackage,
 			"protoGoPackage": protoGoPackage,
 			"serviceName":    stringx.From(service.Name).ToCamel(),

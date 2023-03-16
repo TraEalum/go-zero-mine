@@ -11,6 +11,7 @@ import (
 	"github.com/zeromicro/go-zero/tools/goctl/config"
 	"github.com/zeromicro/go-zero/tools/goctl/util/format"
 	"github.com/zeromicro/go-zero/tools/goctl/util/pathx"
+	"github.com/zeromicro/go-zero/tools/goctl/util/stringx"
 	"github.com/zeromicro/go-zero/tools/goctl/vars"
 )
 
@@ -82,24 +83,45 @@ func genRpcImport(api *spec.ApiSpec, types []spec.Type) string {
 	var build strings.Builder
 	serviceName := strings.ToLower(api.Service.Name)
 	build.WriteString("\"github.com/zeromicro/go-zero/zrpc\"\n")
-	build.WriteString(fmt.Sprintf("\"%s-service/rpc/%s\"", serviceName, serviceName))
+	//build.WriteString(fmt.Sprintf("\"%s-service/rpc/client/%s\"", serviceName, serviceName))
+	for _, v := range types {
+		call := FirstLower(v.Name())
+		childPath := stringx.From(v.Name()).ToSnake()
+		build.WriteString(fmt.Sprintf("%s \"%s-service/rpc/client/%s/%s\"\n", call, serviceName, childPath, call))
+	}
 
 	return build.String()
 }
 
 func genRpc(api *spec.ApiSpec, types []spec.Type) string {
 	var build strings.Builder
-	serviceName := api.Service.Name
-	build.WriteString(fmt.Sprintf("%s  %s.%s", apigen.FirstUpper(serviceName), serviceName, apigen.FirstUpper(serviceName)))
-	build.WriteString("")
+	// serviceName := api.Service.Name
+	// build.WriteString(fmt.Sprintf("%s  %s.%s", apigen.FirstUpper(serviceName), serviceName, apigen.FirstUpper(serviceName)))
+	// build.WriteString("")
+	for _, v := range types {
+		call := FirstLower(v.Name())
+		build.WriteString(fmt.Sprintf("%s  %s.%sCli\n", apigen.FirstUpper(v.Name()), call, apigen.FirstUpper(v.Name())))
+
+	}
 	return build.String()
 }
 
 func genRpcInit(api *spec.ApiSpec, types []spec.Type) string {
 	var build strings.Builder
-	serviceName := api.Service.Name
-	firstUpper := apigen.FirstUpper(serviceName)
-	build.WriteString(fmt.Sprintf("%s: %s.New%s(zrpc.MustNewClient(c.%s)),\n", firstUpper, serviceName, firstUpper, firstUpper))
+	service := api.Service.Name
+	firstUpper := apigen.FirstUpper(service)
+	for _, v := range types {
+		serviceName := apigen.FirstUpper(v.Name())
+		call := FirstLower(v.Name())
+		build.WriteString(fmt.Sprintf("%s: %s.New%s(zrpc.MustNewClient(c.%s)),\n", serviceName, call, serviceName, firstUpper))
+	}
 
 	return build.String()
+}
+
+func FirstLower(s string) string {
+	if s == "" {
+		return ""
+	}
+	return strings.ToLower(s[:1]) + s[1:]
 }
