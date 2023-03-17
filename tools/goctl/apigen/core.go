@@ -76,8 +76,8 @@ func GenerateSchema(db *sql.DB, table string, ignoreTables []string, serviceName
 	return s, nil
 }
 
-// 指定api文件生成xxxParam.api中type
-func GenerateApiType(s *Schema, serviceName string, apiFile, dir string) (*Schema, error) {
+// 指定proto文件生成xxxParam.api中type
+func GenerateProtoType(s *Schema, serviceName string, protoFile, dir string) (*Schema, error) {
 	var err error
 
 	_, err = os.Stat(dir)
@@ -98,7 +98,7 @@ func GenerateApiType(s *Schema, serviceName string, apiFile, dir string) (*Schem
 	s.Syntax = synatx
 	s.ServiceName = serviceName
 
-	if err = typesFromProto(s, apiFile, serviceName); err != nil {
+	if err = typesFromProto(s, protoFile, serviceName); err != nil {
 		fmt.Println(err)
 	}
 
@@ -109,10 +109,11 @@ func GenerateApiType(s *Schema, serviceName string, apiFile, dir string) (*Schem
 	return s, nil
 }
 
+// 读取proto文件，在apiParam生成对应的类型
 func typesFromProto(s *Schema, file, serviceName string) error {
-	// if file == "" {
-	// 	file = "./rpc/proto/" + serviceName + ".proto"
-	// }
+	if file == "" {
+		file = fmt.Sprintf("proto/%s/%s.proto", serviceName, serviceName)
+	}
 
 	f, err := os.Open(file)
 	if err != nil {

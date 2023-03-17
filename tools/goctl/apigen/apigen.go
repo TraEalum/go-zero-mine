@@ -21,7 +21,7 @@ func apigen(_ *cobra.Command, _ []string) error {
 	table := stringTable
 	serviceName := stringServiceName
 	ignoreTableStr := stringIgnoreTables
-	apiFile := stringApiFile
+	protoFile := stringProtoFile
 	generateCurdMethod := stringCurdMethod
 
 	generateCurdMethod = strings.TrimSpace(generateCurdMethod)
@@ -31,7 +31,7 @@ func apigen(_ *cobra.Command, _ []string) error {
 
 	dir = path.Join(dir, "/") + "/"
 
-	if password != "" && schema != "" && table != "" && apiFile != "" {
+	if password != "" && schema != "" && table != "" && protoFile != "" {
 
 		connStr := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", user, password, host, port, schema)
 		db, err := sql.Open("mysql", connStr)
@@ -49,7 +49,7 @@ func apigen(_ *cobra.Command, _ []string) error {
 		}
 		s.GenerateCurdMethod = generateMethod
 
-		s, err = GenerateApiType(s, serviceName, apiFile, dir)
+		s, err = GenerateProtoType(s, serviceName, protoFile, dir)
 		if nil != err {
 			log.Fatal(err)
 		}
@@ -58,8 +58,8 @@ func apigen(_ *cobra.Command, _ []string) error {
 			fmt.Println(s)
 		}
 
-	} else if apiFile != "" && serviceName != "" {
-		s, err := GenerateApiType(nil, serviceName, apiFile, dir)
+	} else if protoFile != "" && serviceName != "" {
+		s, err := GenerateProtoType(nil, serviceName, protoFile, dir)
 
 		if nil != err {
 			log.Fatal(err)
