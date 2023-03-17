@@ -171,8 +171,7 @@ func (g *Generator) genFunctions(goPackage string, service parser.Service, multi
 			logicName = fmt.Sprintf("%sLogic", stringx.From(rpc.Name).ToCamel())
 		} else {
 			nameJoin := fmt.Sprintf("%s_logic", service.Name)
-			//logicPkg = strings.ToLower(stringx.From(nameJoin).ToCamel())
-			logicPkg = nameJoin
+			logicPkg = FirstLower(stringx.From(nameJoin).ToCamel())
 			logicName = fmt.Sprintf("%sLogic", stringx.From(rpc.Name).ToCamel())
 		}
 

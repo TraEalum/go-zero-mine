@@ -122,7 +122,7 @@ func (g *Generator) genLogicGroup(ctx DirContext, proto parser.Proto, cfg *conf.
 			serviceDir := filepath.Base(childPkg)
 			nameJoin := fmt.Sprintf("%s_logic", serviceName)
 			// packageName = strings.ToLower(stringx.From(nameJoin).ToCamel())
-			packageName = nameJoin
+			packageName = FirstLower(stringx.From(nameJoin).ToCamel())
 			logicFilename, err = format.FileNamingFormat(cfg.NamingFormat, rpc.Name+"_logic")
 			if err != nil {
 				return err
