@@ -89,15 +89,17 @@ func (g *Generator) genServerGroup(ctx DirContext, proto parser.Proto, cfg *conf
 				break
 			}
 		}
+		serviceName := stringx.From(service.Name).ToCamel()
 
 		if err = util.With("server").GoFmt(true).Parse(text).SaveTo(map[string]interface{}{
 			"head": head,
 			"unimplementedServer": fmt.Sprintf("%s.Unimplemented%sServer", "proto",
-				stringx.From(service.Name).ToCamel()),
-			"server":    stringx.From(service.Name).ToCamel(),
-			"imports":   strings.Join(imports.KeysStr(), pathx.NL),
-			"funcs":     strings.Join(funcList, pathx.NL),
-			"notStream": notStream,
+				serviceName),
+			"server":      serviceName,
+			"imports":     strings.Join(imports.KeysStr(), pathx.NL),
+			"funcs":       strings.Join(funcList, pathx.NL),
+			"notStream":   notStream,
+			"packageName": FirstLower(serviceName),
 		}, serverFile, true); err != nil {
 			return err
 		}
@@ -151,6 +153,7 @@ func (g *Generator) genServerInCompatibility(ctx DirContext, proto parser.Proto,
 		"imports":             strings.Join(imports.KeysStr(), pathx.NL),
 		"funcs":               strings.Join(funcList, pathx.NL),
 		"notStream":           notStream,
+		"packageName":         "server",
 	}, serverFile, true)
 }
 
@@ -171,8 +174,7 @@ func (g *Generator) genFunctions(goPackage string, service parser.Service, multi
 			logicName = fmt.Sprintf("%sLogic", stringx.From(rpc.Name).ToCamel())
 		} else {
 			nameJoin := fmt.Sprintf("%sLogic", service.Name)
-			//logicPkg = FirstLower(stringx.From(nameJoin).ToCamel())
-			logicPkg = nameJoin
+			logicPkg = FirstLower(stringx.From(nameJoin).ToCamel())
 			logicName = fmt.Sprintf("%sLogic", stringx.From(rpc.Name).ToCamel())
 		}
 
