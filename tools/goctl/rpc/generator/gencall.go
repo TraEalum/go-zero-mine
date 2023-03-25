@@ -33,6 +33,9 @@ func (m *default{{.serviceName}}) {{.method}}(ctx context.Context{{if .hasReq}},
 //go:embed call.tpl
 var callTemplateText string
 
+//go:embed client.tpl
+var clientTemplateText string
+
 // GenCall generates the rpc client code, which is the entry point for the rpc service call.
 // It is a layer of encapsulation for the rpc client and shields the details in the pb.
 func (g *Generator) GenCall(ctx DirContext, proto parser.Proto, cfg *conf.Config,
@@ -47,7 +50,14 @@ func (g *Generator) GenCall(ctx DirContext, proto parser.Proto, cfg *conf.Config
 func (g *Generator) genCallGroup(ctx DirContext, proto parser.Proto, cfg *conf.Config) error {
 	dir := ctx.GetCall()
 	head := util.GetHead(proto.Name)
+
+	cli := ""
+	imports := ""
+	newCli := ""
+	serviceName := strings.Replace(proto.Name, ".proto", "", -1)
 	for _, service := range proto.Service {
+		// get xxxCli
+		// get xxxImports
 		childPkg, err := dir.GetChildPackage(service.Name)
 		if err != nil {
 			return err
@@ -113,9 +123,36 @@ func (g *Generator) genCallGroup(ctx DirContext, proto parser.Proto, cfg *conf.C
 		}, filename, true); err != nil {
 			return err
 		}
+
+		cli += fmt.Sprintf("%s%s  %s.%s%s\n", stringx.From(service.Name).ToCamel(), "Cli", filePackageName, stringx.From(service.Name).ToCamel(), "Cli")
+		newCli += fmt.Sprintf("%s%s:%s.New%s(cli),\n", stringx.From(service.Name).ToCamel(), "Cli", filePackageName, stringx.From(service.Name).ToCamel())
+		imports += fmt.Sprintf("%s \"%s-service/rpc/client/%s\"\n", filePackageName, serviceName, stringx.From(service.Name).ToSnake())
 	}
+
+	text, err := pathx.LoadTemplate(category, clientTemplateFile, clientTemplateText)
+	if err != nil {
+		return err
+	}
+
+	filename := filepath.Join(dir.Filename, "client.go")
+
+	if err = util.With("shared").GoFmt(true).Parse(text).SaveTo(map[string]interface{}{
+		"head":    head,
+		"imports": imports,
+		"cli":     cli,
+		"newCli":  newCli,
+		"service": serviceName,
+	}, filename, true); err != nil {
+		return err
+	}
+
 	return nil
 }
+
+//func genClientFile() error {
+//	return nil
+//
+//}
 
 func (g *Generator) genCallInCompatibility(ctx DirContext, proto parser.Proto,
 	cfg *conf.Config) error {

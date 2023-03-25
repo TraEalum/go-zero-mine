@@ -20,10 +20,12 @@ const (
 	serverFuncTemplateFile            = "server-func.tpl"
 	svcTemplateFile                   = "svc.tpl"
 	rpcTemplateFile                   = "template.tpl"
+	clientTemplateFile                = "client.tpl"
 )
 
 var templates = map[string]string{
 	callTemplateFile:          callTemplateText,
+	clientTemplateFile:        clientTemplateText,
 	configTemplateFileFile:    configTemplate,
 	etcTemplateFileFile:       etcTemplate,
 	logicTemplateFileFile:     logicTemplate,
