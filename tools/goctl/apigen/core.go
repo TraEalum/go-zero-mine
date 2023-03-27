@@ -418,7 +418,10 @@ func (s *Schema) CreateParamString(fileName string) string {
 
 	}
 
-	buf.WriteString(")")
+	if len(s.Messages) > 0 {
+		buf.WriteString(")")
+	}
+
 	buf.WriteString("\n\n")
 
 	for _, m := range s.CusMessages {

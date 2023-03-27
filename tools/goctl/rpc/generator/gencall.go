@@ -129,6 +129,7 @@ func (g *Generator) genCallGroup(ctx DirContext, proto parser.Proto, cfg *conf.C
 		imports += fmt.Sprintf("%s \"%s-service/rpc/client/%s\"\n", filePackageName, serviceName, stringx.From(service.Name).ToSnake())
 	}
 
+	// 生成client
 	text, err := pathx.LoadTemplate(category, clientTemplateFile, clientTemplateText)
 	if err != nil {
 		return err
@@ -148,11 +149,6 @@ func (g *Generator) genCallGroup(ctx DirContext, proto parser.Proto, cfg *conf.C
 
 	return nil
 }
-
-//func genClientFile() error {
-//	return nil
-//
-//}
 
 func (g *Generator) genCallInCompatibility(ctx DirContext, proto parser.Proto,
 	cfg *conf.Config) error {

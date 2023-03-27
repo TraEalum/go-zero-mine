@@ -1,8 +1,14 @@
 package generator
 
 import (
+	"bufio"
+	"bytes"
 	_ "embed"
+	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -40,7 +46,9 @@ func (g *Generator) GenMain(ctx DirContext, proto parser.Proto, cfg *conf.Config
 	imports = append(imports, configImport, pbImport, svcImport)
 
 	var serviceNames []MainServiceTemplateData
+	var registerServer string
 	for _, e := range proto.Service {
+
 		var (
 			remoteImport string
 			serverPkg    string
@@ -55,14 +63,22 @@ func (g *Generator) GenMain(ctx DirContext, proto parser.Proto, cfg *conf.Config
 			}
 
 			serverPkg = filepath.Base(childPkg + "Server")
-			remoteImport = fmt.Sprintf(`%s "%v"`, serverPkg, childPkg)
+			remoteImport = fmt.Sprintf(`%s "%v"`, stringx.From(serverPkg).ToCamelWithStartLower(), childPkg)
 		}
+
 		imports = append(imports, remoteImport)
 		serviceNames = append(serviceNames, MainServiceTemplateData{
 			Service:   parser.CamelCase(e.Name),
 			ServerPkg: serverPkg,
 			Pkg:       "proto",
 		})
+
+		registerServer += fmt.Sprintf("\t\tproto.Register%sServer(grpcServer, %s.New%sServer(ctx))\n", parser.CamelCase(e.Name), stringx.From(e.Name).ToCamelWithStartLower()+"Server", parser.CamelCase(e.Name))
+	}
+
+	// len大于二 只修改注册服务行代码
+	if c.Multiple && len(proto.Service) > 1 {
+		return upDateNewServer(fileName, registerServer, imports)
 	}
 
 	text, err := pathx.LoadTemplate(category, mainTemplateFile, mainTemplate)
@@ -84,4 +100,73 @@ func (g *Generator) GenMain(ctx DirContext, proto parser.Proto, cfg *conf.Config
 		"service":      parser.CamelCase(proto.Service[0].Name),
 		"serviceKey":   proto.Service[0].Name,
 	}, fileName, false)
+}
+
+func upDateNewServer(fileName, registerServer string, imports []string) error {
+	f, err := os.Open(fileName)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	buf := bufio.NewReader(f)
+	newBuf := new(bytes.Buffer)
+Loop:
+	for {
+		line, err := buf.ReadString('\n')
+		if err != nil {
+			if err == io.EOF {
+				break
+			} else {
+				return errors.New("Read file error!")
+			}
+		}
+
+		if strings.Contains(line, "\"fmt\"") {
+			newBuf.WriteString(line)
+			newBuf.WriteString("\n")
+
+			for {
+				line, _ := buf.ReadString('\n')
+				if strings.Contains(line, "comm/configm") {
+					// 写入新imports
+					for _, v := range imports {
+						newBuf.WriteString("\t" + v + "\n")
+					}
+
+					newBuf.WriteString("\n")
+					newBuf.WriteString(line)
+
+					continue Loop
+				}
+			}
+		}
+
+		if strings.Contains(line, "zrpc.MustNewServer") {
+			newBuf.WriteString(line)
+
+			for {
+				line, _ := buf.ReadString('\n')
+				if strings.Contains(line, "service.DevMode") {
+					// 写入新注册服务
+					newBuf.WriteString(registerServer)
+
+					newBuf.WriteString("\n")
+					newBuf.WriteString(line)
+
+					continue Loop
+				}
+			}
+		}
+
+		newBuf.WriteString(line)
+	}
+
+	err = ioutil.WriteFile(fileName, newBuf.Bytes(), 0666)
+	if err != nil {
+		fmt.Printf("生成paramFile文件失败:%v", err.Error())
+		return err
+	}
+
+	return nil
 }
