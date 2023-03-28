@@ -95,6 +95,7 @@ func Prepare(workDir string) (*ProjectContext, error) {
 
 			if strings.Contains(line, "comm") || strings.Contains(line, "proto") {
 				hadInputReplace = true
+				break
 			}
 			w.WriteString(line)
 		}
@@ -108,6 +109,7 @@ func Prepare(workDir string) (*ProjectContext, error) {
 
 		file.WriteString(w.String())
 	}
+
 	return background(workDir)
 }
 
