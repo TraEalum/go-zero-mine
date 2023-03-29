@@ -33,25 +33,27 @@ type ProjectContext struct {
 // where can be found the project path and the project module,
 func Prepare(workDir string) (*ProjectContext, error) {
 	var s []string
-	var dir string
+	//	var dir string
 	var goModDir, serviceName string
 	var hadInputReplace bool // 检测是否已经replace过comm
 
-	if runtime.GOOS == "windows" {
-		s = strings.Split(workDir, "\\")
-		goModDir = strings.Join(s[:len(s)-1], "\\")
-	} else {
-		s = strings.Split(workDir, "/") // 兼容linux
-		goModDir = strings.Join(s[:len(s)-1], "/")
-	}
+	// if runtime.GOOS == "windows" {
+	// 	s = strings.Split(workDir, "\\")
+	// 	goModDir = strings.Join(s[:len(s)-1], "\\")
+	// } else {
+	// 	s = strings.Split(workDir, "/") // 兼容linux
+	// 	goModDir = strings.Join(s[:len(s)-1], "/")
+	// }
 
-	// 先移除 go.work go.work.sum 这两个文件会导致 go list 命令检测不了 go.mod
-	// 执行 rm  go.work go.work.sum
-	if len(s) > 2 && runtime.GOOS == "windows" { // 这个问题主要是在windows存在
-		dir = strings.Join(s[:len(s)-3], "\\") // 回退到 app这个路径执行命令
-		execx.Run("rm go.work", dir)
-		execx.Run("rm go.work.sum", dir)
-	}
+	// // 先移除 go.work go.work.sum 这两个文件会导致 go list 命令检测不了 go.mod
+	// // 执行 rm  go.work go.work.sum
+	// if len(s) > 2 && runtime.GOOS == "windows" { // 这个问题主要是在windows存在
+	// 	dir = strings.Join(s[:len(s)-3], "\\") // 回退到 app这个路径执行命令
+	// 	execx.Run("rm go.work", dir)
+	// 	execx.Run("rm go.work.sum", dir)
+	// }
+
+	b, _ := IsGoMod(workDir)
 
 	if len(s) >= 2 {
 		serviceName = "go mod init " + s[len(s)-2] + "-service"
@@ -74,7 +76,9 @@ func Prepare(workDir string) (*ProjectContext, error) {
 		execx.Run("go work use -r app/*", execPath)
 	}(s)
 
-	execx.Run(serviceName, goModDir)
+	if b { // 还没有go mod 就新建一个
+		execx.Run(serviceName, goModDir)
+	}
 
 	// replace操作
 	path := filepath.Join(goModDir, "go.mod")
@@ -83,9 +87,11 @@ func Prepare(workDir string) (*ProjectContext, error) {
 		fmt.Println("go.mod replace failed")
 	} else {
 		defer file.Close()
+
 		reader := bufio.NewReader(file)
 		var w strings.Builder
 		replace := "\nreplace (\n\tcomm => ../../comm\n\tproto => ../../proto\n)"
+
 		for {
 			line, err := reader.ReadString('\n')
 			if err != nil {
@@ -95,7 +101,6 @@ func Prepare(workDir string) (*ProjectContext, error) {
 
 			if strings.Contains(line, "comm") || strings.Contains(line, "proto") {
 				hadInputReplace = true
-				break
 			}
 			w.WriteString(line)
 		}
