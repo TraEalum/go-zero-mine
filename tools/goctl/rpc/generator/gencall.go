@@ -124,9 +124,13 @@ func (g *Generator) genCallGroup(ctx DirContext, proto parser.Proto, cfg *conf.C
 			return err
 		}
 
-		cli += fmt.Sprintf("%s%s  %s.%s%s\n", stringx.From(service.Name).ToCamel(), "Cli", filePackageName, stringx.From(service.Name).ToCamel(), "Cli")
-		newCli += fmt.Sprintf("%s%s:%s.New%s(cli),\n", stringx.From(service.Name).ToCamel(), "Cli", filePackageName, stringx.From(service.Name).ToCamel())
-		imports += fmt.Sprintf("%s \"%s-service/rpc/client/%s\"\n", filePackageName, serviceName, stringx.From(service.Name).ToSnake())
+		name := stringx.From(service.Name).ToCamel()
+		importName := strings.ReplaceAll(service.Name, "_", "")
+		importName = strings.ToLower(importName)
+
+		cli += fmt.Sprintf("%s%s  %s.%s%s\n", name, "Cli", filePackageName, name, "Cli")
+		newCli += fmt.Sprintf("%s%s:%s.New%s(cli),\n", name, "Cli", filePackageName, name)
+		imports += fmt.Sprintf("%s \"%s-service/rpc/client/%s\"\n", filePackageName, serviceName, importName)
 	}
 
 	// 生成client
