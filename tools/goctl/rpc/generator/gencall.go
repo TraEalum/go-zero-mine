@@ -140,6 +140,7 @@ func (g *Generator) genCallGroup(ctx DirContext, proto parser.Proto, cfg *conf.C
 	}
 
 	filename := filepath.Join(dir.Filename, "client.go")
+	serviceName = stringx.From(serviceName).FirstUpper()
 
 	if err = util.With("shared").GoFmt(true).Parse(text).SaveTo(map[string]interface{}{
 		"head":    head,
