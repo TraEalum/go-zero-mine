@@ -62,8 +62,9 @@ func (g *Generator) GenMain(ctx DirContext, proto parser.Proto, cfg *conf.Config
 				return err
 			}
 
-			serverPkg = filepath.Base(childPkg + "Server")
-			remoteImport = fmt.Sprintf(`%s "%v"`, stringx.From(serverPkg).ToCamelWithStartLower(), childPkg)
+			// serverPkg = filepath.Base(childPkg + "Server")
+			serverPkg = stringx.From(e.Name).ToCamelWithStartLower() + "Server"
+			remoteImport = fmt.Sprintf(`%s "%v"`, serverPkg, childPkg)
 		}
 
 		imports = append(imports, remoteImport)
@@ -73,7 +74,7 @@ func (g *Generator) GenMain(ctx DirContext, proto parser.Proto, cfg *conf.Config
 			Pkg:       "proto",
 		})
 
-		registerServer += fmt.Sprintf("\t\tproto.Register%sServer(grpcServer, %s.New%sServer(ctx))\n", parser.CamelCase(e.Name), stringx.From(e.Name).ToCamelWithStartLower()+"Server", parser.CamelCase(e.Name))
+		registerServer += fmt.Sprintf("\t\tproto.Register%sServer(grpcServer, %s.New%sServer(ctx))\n", parser.CamelCase(e.Name), serverPkg, parser.CamelCase(e.Name))
 	}
 
 	// len大于二 只修改注册服务行代码
