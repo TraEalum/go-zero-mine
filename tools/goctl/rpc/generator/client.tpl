@@ -12,8 +12,8 @@ type Client struct {
     {{.cli}}
 }
 
-func New{{.service}}(cli zrpc.Client) *Client {
-    return &Client{
+func New{{.service}}(cli zrpc.Client) Client {
+    return Client{
         {{.newCli}}
     }
 }

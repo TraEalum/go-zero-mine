@@ -302,8 +302,7 @@ func (s *Schema) CreateString() string {
 	buf.WriteString("// Rpc Func\n")
 	buf.WriteString("// ------------------------------------ \n\n")
 
-	serviceName := stringx.From(s.TableName).ToCamel()
-	serviceName = stringx.From(serviceName).Lower()
+	serviceName := stringx.From(s.TableName).ToCamelWithStartLower()
 
 	funcTpl := "service " + serviceName + " {\n"
 	for _, m := range s.Messages {
@@ -496,8 +495,7 @@ func (s *Schema) UpdateString() string {
 	newSeviceTpl := ""
 	for _, m := range s.Messages {
 		if !isInSlice(existTableName, m.Name) {
-			serviceName := stringx.From(s.TableName).ToCamel()
-			serviceName = stringx.From(serviceName).Lower()
+			serviceName := stringx.From(s.TableName).ToCamelWithStartLower()
 			newSeviceTpl = "\nservice " + serviceName + " {\n"
 			newSeviceTpl += "\t //-----------------------" + m.Comment + "----------------------- \n"
 			if len(s.GenerateMethod) == 1 && strings.TrimSpace(s.GenerateMethod[0]) == "" {

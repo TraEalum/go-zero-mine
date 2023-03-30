@@ -128,8 +128,8 @@ func (g *Generator) genCallGroup(ctx DirContext, proto parser.Proto, cfg *conf.C
 		importName := strings.ReplaceAll(service.Name, "_", "")
 		importName = strings.ToLower(importName)
 
-		cli += fmt.Sprintf("%s%s  %s.%s%s\n", name, "Cli", filePackageName, name, "Cli")
-		newCli += fmt.Sprintf("%s%s:%s.New%s(cli),\n", name, "Cli", filePackageName, name)
+		cli += fmt.Sprintf("%s  %s.%s%s\n", name, filePackageName, name, "Cli")
+		newCli += fmt.Sprintf("%s:%s.New%s(cli),\n", name, filePackageName, name)
 		imports += fmt.Sprintf("%s \"%s-service/rpc/client/%s\"\n", filePackageName, serviceName, importName)
 	}
 
