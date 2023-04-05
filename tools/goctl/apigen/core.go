@@ -178,50 +178,41 @@ Loop:
 			ret.Message = append(ret.Message, parser.Message{Message: m})
 		}),
 	)
-	fmt.Println("====================")
 	for _, v := range ret.Message {
-		fmt.Printf("name:[%s]", v.Name)
+		// 判断是否在生成的api gen struct里面
+		if !isInSlice(strs, v.Message.Name) {
+			continue
+		}
+		message := &Message{
+			Name:   v.Message.Name,
+			Fields: make([]MessageField, 0, len(v.Message.Elements)),
+		}
+		for _, ele := range v.Message.Elements {
+			field := (ele).(*proto.NormalField)
+
+			//  注释
+			var comment string
+			if field.InlineComment != nil {
+				comment = strings.Join(field.InlineComment.Lines, comment)
+			}
+
+			//数组判断
+			var typ = field.Type
+			if field.Repeated {
+				typ = fmt.Sprintf("[]*%s", field.Type)
+			}
+
+			// 首字母大写
+			paraName := stringx.From(field.Name).FirstUpper()
+
+			apiField := NewMessageField(typ, paraName, comment,
+				snaker.CamelToSnake(field.Name))
+
+			message.AppendField(apiField)
+		}
+
+		s.CusMessages = append(s.CusMessages, message)
 	}
-
-	// tmpStr := bufNew.String()
-
-	// for _, v := range strs {
-
-	// 	reg := fmt.Sprintf("message %s%s", v, `[\s]*{[^}]+}`)
-	// 	re := regexp.MustCompile(reg)
-	// 	oldSubStrings := re.FindStringSubmatch(tmpStr)
-
-	// 	if oldSubStrings[0] == "" {
-	// 		continue
-	// 	}
-
-	// 	split := strings.Split(oldSubStrings[0], "\n")
-
-	// 	message := &Message{
-	// 		Name:   snaker.SnakeToCamel(v),
-	// 		Fields: make([]MessageField, 0, len(split)-1),
-	// 	}
-
-	// 	for i := 1; i < len(split)-1; i++ {
-	// 		var n = 2
-
-	// 		i2 := strings.Split(split[i], " ")
-	// 		if len(i2) == 8 && i2[n] == "repeated" {
-	// 			n += 1
-	// 			i2[n] = "[]*" + i2[n]
-	// 		}
-
-	// 		if len(i2) < 7 || strings.Contains(i2[n], "//") {
-	// 			continue
-	// 		}
-
-	// 		field := NewMessageField(i2[n], i2[n+1], strings.Replace(i2[n+4], "//", "", -1), snaker.CamelToSnake(i2[n+1]))
-
-	// 		message.AppendField(field)
-	// 	}
-
-	// 	s.CusMessages = append(s.CusMessages, message)
-	// }
 
 	return nil
 }
