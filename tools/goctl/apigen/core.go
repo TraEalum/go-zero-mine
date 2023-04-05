@@ -14,7 +14,9 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/emicklei/proto"
 	"github.com/serenize/snaker"
+	"github.com/zeromicro/go-zero/tools/goctl/rpc/parser"
 	"github.com/zeromicro/go-zero/tools/goctl/util/stringx"
 )
 
@@ -155,46 +157,71 @@ Loop:
 	if _, err = buf.WriteTo(bufNew); err != nil {
 		return err
 	}
-
-	tmpStr := bufNew.String()
-
-	for _, v := range strs {
-
-		reg := fmt.Sprintf("message %s%s", v, `[\s]*{[^}]+}`)
-		re := regexp.MustCompile(reg)
-		oldSubStrings := re.FindStringSubmatch(tmpStr)
-
-		if oldSubStrings[0] == "" {
-			continue
-		}
-
-		split := strings.Split(oldSubStrings[0], "\n")
-
-		message := &Message{
-			Name:   snaker.SnakeToCamel(v),
-			Fields: make([]MessageField, 0, len(split)-1),
-		}
-
-		for i := 1; i < len(split)-1; i++ {
-			var n = 2
-
-			i2 := strings.Split(split[i], " ")
-			if len(i2) == 8 && i2[n] == "repeated" {
-				n += 1
-				i2[n] = "[]*" + i2[n]
-			}
-
-			if len(i2) < 7 || strings.Contains(i2[n], "//") {
-				continue
-			}
-
-			field := NewMessageField(i2[n], i2[n+1], strings.Replace(i2[n+4], "//", "", -1), snaker.CamelToSnake(i2[n+1]))
-
-			message.AppendField(field)
-		}
-
-		s.CusMessages = append(s.CusMessages, message)
+	// 这里解析 proto文件，读取里面的message
+	// 这里要重新读取，上面的读取指针已经是移动过的
+	r, err := os.Open(file)
+	if err != nil {
+		return nil
 	}
+	defer r.Close()
+	var ret parser.Proto
+	pr := proto.NewParser(r)
+	set, err := pr.Parse()
+	if err != nil {
+		fmt.Println("parse proto failed", err)
+
+		return nil
+	}
+
+	proto.Walk(set,
+		proto.WithMessage(func(m *proto.Message) {
+			ret.Message = append(ret.Message, parser.Message{Message: m})
+		}),
+	)
+	fmt.Println("====================")
+	for _, v := range ret.Message {
+		fmt.Printf("name:[%s]", v.Name)
+	}
+
+	// tmpStr := bufNew.String()
+
+	// for _, v := range strs {
+
+	// 	reg := fmt.Sprintf("message %s%s", v, `[\s]*{[^}]+}`)
+	// 	re := regexp.MustCompile(reg)
+	// 	oldSubStrings := re.FindStringSubmatch(tmpStr)
+
+	// 	if oldSubStrings[0] == "" {
+	// 		continue
+	// 	}
+
+	// 	split := strings.Split(oldSubStrings[0], "\n")
+
+	// 	message := &Message{
+	// 		Name:   snaker.SnakeToCamel(v),
+	// 		Fields: make([]MessageField, 0, len(split)-1),
+	// 	}
+
+	// 	for i := 1; i < len(split)-1; i++ {
+	// 		var n = 2
+
+	// 		i2 := strings.Split(split[i], " ")
+	// 		if len(i2) == 8 && i2[n] == "repeated" {
+	// 			n += 1
+	// 			i2[n] = "[]*" + i2[n]
+	// 		}
+
+	// 		if len(i2) < 7 || strings.Contains(i2[n], "//") {
+	// 			continue
+	// 		}
+
+	// 		field := NewMessageField(i2[n], i2[n+1], strings.Replace(i2[n+4], "//", "", -1), snaker.CamelToSnake(i2[n+1]))
+
+	// 		message.AppendField(field)
+	// 	}
+
+	// 	s.CusMessages = append(s.CusMessages, message)
+	// }
 
 	return nil
 }

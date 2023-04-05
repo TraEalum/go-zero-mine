@@ -32,7 +32,6 @@ func apigen(_ *cobra.Command, _ []string) error {
 	dir = path.Join(dir, "/") + "/"
 
 	if password != "" && schema != "" && table != "" && protoFile != "" {
-
 		connStr := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", user, password, host, port, schema)
 		db, err := sql.Open("mysql", connStr)
 		if err != nil {
