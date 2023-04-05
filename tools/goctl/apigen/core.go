@@ -188,8 +188,10 @@ Loop:
 			Fields: make([]MessageField, 0, len(v.Message.Elements)),
 		}
 		for _, ele := range v.Message.Elements {
-			field := (ele).(*proto.NormalField)
-
+			field, ok := (ele).(*proto.NormalField)
+			if !ok {
+				continue
+			}
 			//  注释
 			var comment string
 			if field.InlineComment != nil {
