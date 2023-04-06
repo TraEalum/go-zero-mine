@@ -201,7 +201,7 @@ Loop:
 			//数组判断
 			var typ = field.Type
 			if field.Repeated {
-				typ = fmt.Sprintf("[]*%s", field.Type)
+				typ = fmt.Sprintf("[]%s", field.Type)
 			}
 
 			// 首字母大写
