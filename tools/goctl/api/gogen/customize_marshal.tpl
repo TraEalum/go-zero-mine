@@ -30,15 +30,15 @@ func Marshal{{.upperStartCamelObject}}Lst(r *[]{{.upperStartCamelObject}},p []*p
 	}
 }
 
-func UnMarshal{{.upperStartCamelObject}}Lst(r []*{{.upperStartCamelObject}}, p *[]proto.{{.upperStartCamelObject}}){
+func UnMarshal{{.upperStartCamelObject}}Lst(r []{{.upperStartCamelObject}}, p *[]*proto.{{.upperStartCamelObject}}){
     if p == nil {
         return
     }
 
     for _, item := range r {
-        var tmp *proto.{{.upperStartCamelObject}}
-        item.Unmarshal(tmp)
-        *p = append(*p,*tmp)
+        var tmp proto.{{.upperStartCamelObject}}
+        item.Unmarshal(&tmp)
+        *p = append(*p,&tmp)
     }
 }
 

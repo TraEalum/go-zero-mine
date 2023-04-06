@@ -12,6 +12,7 @@ import (
 	"github.com/zeromicro/go-zero/tools/goctl/config"
 	"github.com/zeromicro/go-zero/tools/goctl/util/format"
 	"github.com/zeromicro/go-zero/tools/goctl/util/pathx"
+	"github.com/zeromicro/go-zero/tools/goctl/util/stringx"
 	"github.com/zeromicro/go-zero/tools/goctl/vars"
 )
 
@@ -143,13 +144,16 @@ func genLogicContext(logic string, serviceName string) string {
 	var builder strings.Builder
 	title := strings.Title(strings.TrimSuffix(logic, "Logic"))
 	length := len(title)
+
+	serviceName = stringx.From(serviceName).FirstUpper()
+
 	if strings.Contains(title, "Create") {
 		tableName := title[6:]
 		paraName := strings.ToLower(tableName)
 		builder.WriteString(fmt.Sprintf("\tresp = &types.%sResp{}\n\n", title))
 		builder.WriteString(fmt.Sprintf("\tvar %s proto.%s\n", paraName, tableName))
 		builder.WriteString(fmt.Sprintf("\treq.Unmarshal(&%s)\n\n", paraName))
-		builder.WriteString(fmt.Sprintf("\trpcResp,err := l.svcCtx.%s.%s(l.ctx, &%s)\n", tableName, title, paraName))
+		builder.WriteString(fmt.Sprintf("\trpcResp,err := l.svcCtx.%s.%s.%s(l.ctx, &%s)\n", serviceName, tableName, title, paraName))
 		builder.WriteString("\tif err != nil {\n")
 		builder.WriteString("\t\treturn nil,err\n")
 		builder.WriteString("\t}\n\n")
@@ -161,7 +165,7 @@ func genLogicContext(logic string, serviceName string) string {
 		builder.WriteString(fmt.Sprintf("\tresp = &types.Query%sResp{}\n\n", tableName))
 		builder.WriteString(fmt.Sprintf("\tvar %s proto.%sFilter\n", paraName, tableName))
 		builder.WriteString(fmt.Sprintf("\treq.Unmarshal(&%s)\n\n", paraName))
-		builder.WriteString(fmt.Sprintf("\trpcResp, err := l.svcCtx.%s.Query%sList(l.ctx, &%s)\n", tableName, tableName, paraName))
+		builder.WriteString(fmt.Sprintf("\trpcResp, err := l.svcCtx.%s.%s.Query%sList(l.ctx, &%s)\n", serviceName, tableName, tableName, paraName))
 		builder.WriteString("\tif err != nil {\n")
 		builder.WriteString("\t\treturn nil,err\n")
 		builder.WriteString("\t}\n\n")
@@ -173,7 +177,7 @@ func genLogicContext(logic string, serviceName string) string {
 		builder.WriteString(fmt.Sprintf("\tresp = &types.%s{}\n\n", tableName))
 		builder.WriteString(fmt.Sprintf("\tvar %s proto.%sFilter\n", paraName, tableName))
 		builder.WriteString(fmt.Sprintf("\treq.Unmarshal(&%s)\n\n", paraName))
-		builder.WriteString(fmt.Sprintf("\trpcResp, err := l.svcCtx.%s.Query%sDetail(l.ctx, &%s)\n", tableName, tableName, paraName))
+		builder.WriteString(fmt.Sprintf("\trpcResp, err := l.svcCtx.%s.%s.Query%sDetail(l.ctx, &%s)\n", serviceName, tableName, tableName, paraName))
 		builder.WriteString("\tif err != nil {\n")
 		builder.WriteString("\t\treturn nil,err\n")
 		builder.WriteString("\t}\n\n")
@@ -185,7 +189,7 @@ func genLogicContext(logic string, serviceName string) string {
 		builder.WriteString(fmt.Sprintf("\tresp = &types.%sResp{}\n\n", title))
 		builder.WriteString(fmt.Sprintf("\tvar %s proto.%s\n", paraName, tableName))
 		builder.WriteString(fmt.Sprintf("\treq.Unmarshal(&%s)\n\n", paraName))
-		builder.WriteString(fmt.Sprintf("\trpcResp, err := l.svcCtx.%s.Update%s(l.ctx, &%s)\n", tableName, tableName, paraName))
+		builder.WriteString(fmt.Sprintf("\trpcResp, err := l.svcCtx.%s.%s.Update%s(l.ctx, &%s)\n", serviceName, tableName, tableName, paraName))
 		builder.WriteString("\tif err != nil {\n")
 		builder.WriteString("\t\treturn nil,err\n")
 		builder.WriteString("\t}\n\n")
