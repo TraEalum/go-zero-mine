@@ -33,25 +33,25 @@ type ProjectContext struct {
 // where can be found the project path and the project module,
 func Prepare(workDir string) (*ProjectContext, error) {
 	var s []string
-	//	var dir string
+	var dir string
 	var goModDir, serviceName string
 	var hadInputReplace bool // 检测是否已经replace过comm
 
-	// if runtime.GOOS == "windows" {
-	// 	s = strings.Split(workDir, "\\")
-	// 	goModDir = strings.Join(s[:len(s)-1], "\\")
-	// } else {
-	// 	s = strings.Split(workDir, "/") // 兼容linux
-	// 	goModDir = strings.Join(s[:len(s)-1], "/")
-	// }
+	if runtime.GOOS == "windows" {
+		s = strings.Split(workDir, "\\")
+		goModDir = strings.Join(s[:len(s)-1], "\\")
+	} else {
+		s = strings.Split(workDir, "/") // 兼容linux
+		goModDir = strings.Join(s[:len(s)-1], "/")
+	}
 
-	// // 先移除 go.work go.work.sum 这两个文件会导致 go list 命令检测不了 go.mod
-	// // 执行 rm  go.work go.work.sum
-	// if len(s) > 2 && runtime.GOOS == "windows" { // 这个问题主要是在windows存在
-	// 	dir = strings.Join(s[:len(s)-3], "\\") // 回退到 app这个路径执行命令
-	// 	execx.Run("rm go.work", dir)
-	// 	execx.Run("rm go.work.sum", dir)
-	// }
+	// 先移除 go.work go.work.sum 这两个文件会导致 go list 命令检测不了 go.mod
+	// 执行 rm  go.work go.work.sum
+	if len(s) > 2 && runtime.GOOS == "windows" { // 这个问题主要是在windows存在
+		dir = strings.Join(s[:len(s)-3], "\\") // 回退到 app这个路径执行命令
+		execx.Run("rm go.work", dir)
+		execx.Run("rm go.work.sum", dir)
+	}
 
 	b, _ := IsGoMod(workDir)
 
@@ -61,20 +61,20 @@ func Prepare(workDir string) (*ProjectContext, error) {
 	}
 
 	//重新执行 go  work init
-	defer func(s []string) {
-		if len(s) < 2 {
-			return
-		}
+	// defer func(s []string) {
+	// 	if len(s) < 2 {
+	// 		return
+	// 	}
 
-		var execPath string
-		if runtime.GOOS == "windows" {
-			execPath = strings.Join(s[:len(s)-3], "\\")
-		} else {
-			execPath = strings.Join(s[:len(s)-3], "/")
-		}
-		execx.Run("go work init", execPath)
-		execx.Run("go work use -r app/*", execPath)
-	}(s)
+	// 	var execPath string
+	// 	if runtime.GOOS == "windows" {
+	// 		execPath = strings.Join(s[:len(s)-3], "\\")
+	// 	} else {
+	// 		execPath = strings.Join(s[:len(s)-3], "/")
+	// 	}
+	// 	execx.Run("go work init", execPath)
+	// 	execx.Run("go work use -r app/*", execPath)
+	// }(s)
 
 	if b { // 还没有go mod 就新建一个
 		execx.Run(serviceName, goModDir)
