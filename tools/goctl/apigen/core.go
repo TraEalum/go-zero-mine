@@ -1139,7 +1139,10 @@ func parseColumn(s *Schema, msg *Message, col Column) error {
 	}
 
 	if isUnsigned {
-		fieldType = unsignedTypeMap[fieldType]
+		tmp, ok := unsignedTypeMap[fieldType]
+		if ok {
+			fieldType = tmp
+		}
 	}
 
 	if "" == fieldType {

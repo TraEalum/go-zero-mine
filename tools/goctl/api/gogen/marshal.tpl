@@ -39,7 +39,7 @@ func (r *Query{{.upperStartCamelObject}}Req) Unmarshal(p *proto.{{.upperStartCam
 }
 
 func Marshal{{.upperStartCamelObject}}Lst(r *[]{{.upperStartCamelObject}},p []*proto.{{.upperStartCamelObject}}){
-	*r=[]{{.upperStartCamelObject}}{}  // 2022-11-11 fix object init not nil
+	*r = make([]{{.upperStartCamelObject}}, 0, len(p))
 
 	for _,item := range p {
 		var tmp {{.upperStartCamelObject}}

@@ -30,7 +30,7 @@ func Marshal{{.upperStartCamelObject}}Lst(r *[]{{.upperStartCamelObject}},p []*p
 	}
 }
 
-func UnMarshal{{.upperStartCamelObject}}Lst(r []{{.upperStartCamelObject}}, p *[]*proto.{{.upperStartCamelObject}}){
+func Unmarshal{{.upperStartCamelObject}}Lst(r []{{.upperStartCamelObject}}, p *[]*proto.{{.upperStartCamelObject}}){
     if p == nil {
         return
     }
