@@ -61,20 +61,20 @@ func Prepare(workDir string) (*ProjectContext, error) {
 	}
 
 	//重新执行 go  work init
-	// defer func(s []string) {
-	// 	if len(s) < 2 {
-	// 		return
-	// 	}
+	defer func(s []string) {
+		if len(s) < 2 {
+			return
+		}
 
-	// 	var execPath string
-	// 	if runtime.GOOS == "windows" {
-	// 		execPath = strings.Join(s[:len(s)-3], "\\")
-	// 	} else {
-	// 		execPath = strings.Join(s[:len(s)-3], "/")
-	// 	}
-	// 	execx.Run("go work init", execPath)
-	// 	execx.Run("go work use -r app/*", execPath)
-	// }(s)
+		var execPath string
+		if runtime.GOOS == "windows" {
+			execPath = strings.Join(s[:len(s)-3], "\\")
+		} else {
+			execPath = strings.Join(s[:len(s)-3], "/")
+		}
+		execx.Run("go work init", execPath)
+		execx.Run("go work use -r app/*", execPath)
+	}(s)
 
 	if b { // 还没有go mod 就新建一个
 		execx.Run(serviceName, goModDir)
