@@ -117,7 +117,8 @@ func (m *{{.upperStartCamelObject}}) unmarshal(p *proto.{{.upperStartCamelObject
 	return nil
 }
 
-func Marshal{{.upperStartCamelObject}}Lst(lst *[]{{.upperStartCamelObject}}, protoLst []*proto.{{.upperStartCamelObject}}) {
+func marshal{{.upperStartCamelObject}}Lst(lst *[]{{.upperStartCamelObject}}, protoLst []*proto.{{.upperStartCamelObject}}) {
+	*lst = make([]{{.upperStartCamelObject}}, 0, len(protoLst))
 	for _, v := range protoLst {
 		var tmp {{.upperStartCamelObject}}
 		tmp.Marshal(v)
@@ -125,12 +126,21 @@ func Marshal{{.upperStartCamelObject}}Lst(lst *[]{{.upperStartCamelObject}}, pro
 	}
 }
 
-func Unmarshal{{.upperStartCamelObject}}Lst(protoLst *[]*proto.{{.upperStartCamelObject}}, lst []{{.upperStartCamelObject}}) {
+func Marshal{{.upperStartCamelObject}}Lst(lst *[]{{.upperStartCamelObject}}, protoLst []*proto.{{.upperStartCamelObject}}) {
+	marshal{{.upperStartCamelObject}}Lst(lst, protoLst)
+}
+
+func unmarshal{{.upperStartCamelObject}}Lst(protoLst *[]*proto.{{.upperStartCamelObject}}, lst []{{.upperStartCamelObject}}) {
+	*protoLst = make([]*proto.{{.upperStartCamelObject}}, 0, len(lst))
 	for _, v := range lst {
 		var tmp proto.{{.upperStartCamelObject}}
 		v.Unmarshal(&tmp)
 		*protoLst = append(*protoLst, &tmp)
 	}
+}
+
+func Unmarshal{{.upperStartCamelObject}}Lst(protoLst *[]*proto.{{.upperStartCamelObject}}, lst []{{.upperStartCamelObject}}) {
+	unmarshal{{.upperStartCamelObject}}Lst(protoLst, lst)
 }
 
 func (m *{{.upperStartCamelObject}}) TableName() string {
