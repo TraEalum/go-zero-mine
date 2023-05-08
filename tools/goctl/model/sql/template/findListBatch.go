@@ -20,6 +20,7 @@ func (m *default{{.upperStartCamelObject}}Model) findListSortById(ctx context.Co
 	var maxId *int64
 	var minId *int64
 	var limitSize int64
+	var batchSize int64 = 1000
 
 	count := struct {
 		MaxId int64 {{.maxTag}}
@@ -33,7 +34,6 @@ func (m *default{{.upperStartCamelObject}}Model) findListSortById(ctx context.Co
 	maxId = &count.MaxId
 	minId = &count.MinId
 
-	var batchSize int64 = 1000
 
 	//if origin sql have limit
 	limit, b := sqlBuilder.Get(selectBuilder, "Limit")
@@ -78,6 +78,8 @@ func (m *default{{.upperStartCamelObject}}Model) findListBatch(ctx context.Conte
 	var resp []{{.upperStartCamelObject}}
 	var totalCount *int64
 	var limitSize int64
+	var batchSize int64 = 1000
+	var startIndex int64 = 0
 
 	_, _, err := selectBuilder.ToSql()
 	if err != nil {
@@ -92,8 +94,6 @@ func (m *default{{.upperStartCamelObject}}Model) findListBatch(ctx context.Conte
 	}
 	totalCount = &count.Count
 
-	var batchSize int64 = 1000
-	var startIndex int64 = 0
 
 	//if origin sql have limit offset
 	offset, b := sqlBuilder.Get(selectBuilder, "Offset")

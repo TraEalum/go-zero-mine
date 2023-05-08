@@ -4,13 +4,14 @@ const (
 	//FindOneByCondition defines find a row method.
 	FindOneByCondition = `
 func (m *default{{.upperStartCamelObject}}Model) FindOneByCondition(ctx context.Context, builder squirrel.SelectBuilder) (*{{.upperStartCamelObject}},error) {
+	var resp {{.upperStartCamelObject}}
+
 	builder = builder.Limit(1)
 	query, values, err := builder.ToSql()
 	if err != nil {
 		return nil, err
 	}
 
-	var resp {{.upperStartCamelObject}}
 	if err = m.conn.QueryRowPartialCtx(ctx, &resp, query, values...); err != nil && err != sqlx.ErrNotFound {
 		return nil, err
 	}

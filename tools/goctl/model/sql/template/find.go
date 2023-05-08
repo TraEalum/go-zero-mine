@@ -4,8 +4,8 @@ const (
 	// FindOne defines find row by id.
 	FindOne = `
 func (m *default{{.upperStartCamelObject}}Model) FindOne(ctx context.Context, {{.lowerStartCamelPrimaryKey}} {{.dataType}}) (*{{.upperStartCamelObject}}, error) {
-	{{if .withCache}}{{.cacheKey}}
 	var resp {{.upperStartCamelObject}}
+	{{if .withCache}}{{.cacheKey}}
 	err := m.QueryRowPartialCtx(ctx, &resp, {{.cacheKeyVariable}}, func(ctx context.Context, conn sqlx.SqlConn, v interface{}) error {
 		query :=  fmt.Sprintf("select %s from %s where {{.originalPrimaryKey}} = {{if .postgreSql}}$1{{else}}?{{end}} limit 1", {{.lowerStartCamelObject}}Rows, m.table)
 		return conn.QueryRowPartialCtx(ctx, v, query, {{.lowerStartCamelPrimaryKey}})
@@ -18,7 +18,6 @@ func (m *default{{.upperStartCamelObject}}Model) FindOne(ctx context.Context, {{
 	default:
 		return nil, err
 	}{{else}}query := fmt.Sprintf("select %s from %s where {{.originalPrimaryKey}} = {{if .postgreSql}}$1{{else}}?{{end}} limit 1", {{.lowerStartCamelObject}}Rows, m.table)
-	var resp {{.upperStartCamelObject}}
 	err := m.conn.QueryRowPartialCtx(ctx, &resp, query, {{.lowerStartCamelPrimaryKey}})
 	switch err {
 	case nil:
@@ -34,8 +33,8 @@ func (m *default{{.upperStartCamelObject}}Model) FindOne(ctx context.Context, {{
 	// FindOneByField defines find row by field.
 	FindOneByField = `
 func (m *default{{.upperStartCamelObject}}Model) FindOneBy{{.upperField}}(ctx context.Context, {{.in}}) (*{{.upperStartCamelObject}}, error) {
-	{{if .withCache}}{{.cacheKey}}
 	var resp {{.upperStartCamelObject}}
+	{{if .withCache}}{{.cacheKey}}
 	err := m.QueryRowIndexCtx(ctx, &resp, {{.cacheKeyVariable}}, m.formatPrimary, func(ctx context.Context, conn sqlx.SqlConn, v interface{}) (i interface{}, e error) {
 		query := fmt.Sprintf("select %s from %s where {{.originalField}} limit 1", {{.lowerStartCamelObject}}Rows, m.table)
 		if err := conn.QueryRowCtx(ctx, &resp, query, {{.lowerStartCamelField}}); err != nil {
