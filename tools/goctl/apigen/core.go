@@ -972,6 +972,12 @@ type Message struct {
 	Fields  []MessageField
 }
 
+func StructAddTag(tmpStr string) string {
+	tmpStr = strings.Replace(tmpStr, "{", "{\n    //Database Tag Begin. DO NOT EDIT !!! ", 1)
+	tmpStr = strings.Replace(tmpStr, "}", "  //Database Tag End. DO NOT EDIT!!!  \n\n    //Custom Tag .You Can Edit. \n\n  }", 1)
+	return tmpStr
+}
+
 // gen default message
 func (m Message) GenApiDefault(buf *bytes.Buffer) {
 	mOrginName := m.Name
@@ -988,11 +994,8 @@ func (m Message) GenApiDefault(buf *bytes.Buffer) {
 		curFields = append(curFields, field)
 	}
 	m.Fields = curFields
-	tmpStr := fmt.Sprintf("%s\n", m)
 	//增加数据库字段开始结束标签, 自定义标签
-	tmpStr = strings.Replace(tmpStr, "{", "{\n    //Database Tag Begin. DO NOT EDIT !!! ", 1)
-	tmpStr = strings.Replace(tmpStr, "}", "  //Database Tag End. DO NOT EDIT!!!  \n\n    //Custom Tag .You Can Edit. \n\n  }", 1)
-	buf.WriteString(tmpStr)
+	buf.WriteString(StructAddTag(fmt.Sprintf("%s\n", m)))
 
 	//reset
 	m.Name = mOrginName
@@ -1002,45 +1005,45 @@ func (m Message) GenApiDefault(buf *bytes.Buffer) {
 // 先固定写为id
 func (m Message) GenApiDefaultResp(buf *bytes.Buffer) {
 	mOrginName := FirstUpper(m.Name)
-	buf.WriteString(fmt.Sprintf("%sCreate%sResp {\n", indent, mOrginName))
+	buf.WriteString(StructAddTag(fmt.Sprintf("%sUpdate%sReq {\n", indent, mOrginName)))
 	// buf.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`   \n", indent, indent, "Id", "int64", "id"))
-	buf.WriteString(fmt.Sprintf("%s}\n", indent))
+	buf.WriteString(StructAddTag(fmt.Sprintf("%s}\n", indent)))
 }
 
 func (m Message) GenApiUpdateReq(buf *bytes.Buffer) {
 	mOrginName := FirstUpper(m.Name)
-	buf.WriteString(fmt.Sprintf("%sUpdate%sReq {\n", indent, mOrginName))
+	buf.WriteString(StructAddTag(fmt.Sprintf("%sUpdate%sReq {\n", indent, mOrginName)))
 	for _, f := range m.Fields {
 		buf.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`   //%s\n", indent, indent, FirstUpper(stringx.From(f.Name).ToCamelWithStartLower()), f.Typ, f.ColumnName, f.Comment))
 	}
-	buf.WriteString(fmt.Sprintf("%s}\n", indent))
+	buf.WriteString(StructAddTag(fmt.Sprintf("%s}\n", indent)))
 }
 
 func (m Message) GenApiUpdateResp(buf *bytes.Buffer) {
 	mOrginName := FirstUpper(m.Name)
-	buf.WriteString(fmt.Sprintf("%sUpdate%sResp {\n", indent, mOrginName))
+	buf.WriteString(StructAddTag(fmt.Sprintf("%sUpdate%sResp {\n", indent, mOrginName)))
 	// buf.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`   \n", indent, indent, "Id", "int64", "id"))
-	buf.WriteString(fmt.Sprintf("%s}\n", indent))
+	buf.WriteString(StructAddTag(fmt.Sprintf("%s}\n", indent)))
 }
 
 // 先固定三个参数
 func (m Message) GenApiQueryListReq(buf *bytes.Buffer) {
 	mOrginName := FirstUpper(m.Name)
-	buf.WriteString(fmt.Sprintf("%sQuery%sReq {\n", indent, mOrginName))
+	buf.WriteString(StructAddTag(fmt.Sprintf("%sQuery%sReq {\n", indent, mOrginName)))
 	// buf.WriteString(fmt.Sprintf("%s%s%s   %s  `form:\"%s,optional\"`   \n", indent, indent, "Id", "int64", "id"))
 	buf.WriteString(fmt.Sprintf("%s%s%s   %s  `form:\"%s,optional\"`   \n", indent, indent, "PageNo", "int64", "page_no"))
 	buf.WriteString(fmt.Sprintf("%s%s%s   %s  `form:\"%s,optional\"`   \n", indent, indent, "PageSize", "int64", "page_size"))
-	buf.WriteString(fmt.Sprintf("%s}\n", indent))
+	buf.WriteString(StructAddTag(fmt.Sprintf("%s}\n", indent)))
 }
 
 func (m Message) GenApiQueryListResp(buf *bytes.Buffer) {
 	mOrginName := FirstUpper(m.Name)
-	buf.WriteString(fmt.Sprintf("%sQuery%sResp {\n", indent, mOrginName))
+	buf.WriteString(StructAddTag(fmt.Sprintf("%sQuery%sResp {\n", indent, mOrginName)))
 	buf.WriteString(fmt.Sprintf("%s%s%s   []%s  `json:\"%s\"`   \n", indent, indent, m.Name+"List", mOrginName, fmt.Sprintf("%s_list", FirstToLower(m.Name))))
 	buf.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`   \n", indent, indent, "CurrPage", "int64", "curr_page"))
 	buf.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`   \n", indent, indent, "TotalPage", "int64", "total_page"))
 	buf.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`   \n", indent, indent, "TotalCount", "int64", "total_count"))
-	buf.WriteString(fmt.Sprintf("%s}\n", indent))
+	buf.WriteString(StructAddTag(fmt.Sprintf("%s}\n", indent)))
 }
 
 // String returns a string representation of a Message.
