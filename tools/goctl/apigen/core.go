@@ -420,7 +420,7 @@ func (s *Schema) CreateParamString(fileName string) string {
 		buf.WriteString("\n")
 		buf.WriteString("type (\n")
 		// 创建
-		m.GenApiDefault(buf)
+		m.GenApiDefault(buf, true)
 		buf.WriteString("\n")
 		m.GenApiDefaultResp(buf)
 		buf.WriteString("\n")
@@ -451,7 +451,7 @@ func (s *Schema) CreateParamString(fileName string) string {
 		buf.WriteString("\n")
 		buf.WriteString("type (\n")
 
-		m.GenApiDefault(buf)
+		m.GenApiDefault(buf, true)
 
 		buf.WriteString(")")
 		buf.WriteString("\n\n")
@@ -571,13 +571,41 @@ func (s *Schema) UpdateParamString(fileName string) string {
 	}
 	bufNew.WriteString(endLine)
 
-	// 写Messages
+	//使用map减少匹配的时间复杂度
+	MessagesMap := make(map[string]*Message, 0)
+	for _, m := range s.CusMessages {
+		if isInSlice(existFieldName, m.Name) {
+			MessagesMap[m.Name] = m
+		}
+	}
+	//写Messages
+	var prevLine string
 	for {
 		line, err := buf.ReadString('\n')
+		if strings.Contains(line, "Database Tag Begin. DO NOT EDIT !!!") {
+			//去除多余字符，只保留messages name
+			messageName := strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(prevLine, "\r", ""), " ", ""), "{", ""), "\n", "")
+			//如果message name 存在于map中，则更新
+			if m, ok := MessagesMap[messageName]; ok {
+				m.GenApiDefault(bufNew, false)
+				//将tag外的字段写入文件（只变动tag内的数据）
+				for {
+					line, err = buf.ReadString('\n')
+					if strings.Contains(line, "Database Tag End. DO NOT EDIT!!!") {
+						//吃掉空行，避免空行过多
+						line, err = buf.ReadString('\n')
+						break
+					}
+				}
+				continue
+			}
+		}
 		if strings.Contains(line, "Type Record End") {
 			endLine = line
 			break
 		}
+		//记录上一行内容，方便检索到tag时找到对应的message name
+		prevLine = line
 		bufNew.WriteString(line)
 		if err != nil {
 			if err == io.EOF {
@@ -595,7 +623,7 @@ func (s *Schema) UpdateParamString(fileName string) string {
 			bufNew.WriteString("type (\n")
 
 			// 创建
-			m.GenApiDefault(bufNew)
+			m.GenApiDefault(bufNew, true)
 			bufNew.WriteString("\n")
 			m.GenApiDefaultResp(bufNew)
 			bufNew.WriteString("\n")
@@ -623,7 +651,7 @@ func (s *Schema) UpdateParamString(fileName string) string {
 			bufNew.WriteString("type (\n")
 
 			// 创建
-			m.GenApiDefault(bufNew)
+			m.GenApiDefault(bufNew, true)
 			bufNew.WriteString("\n")
 
 			bufNew.WriteString(")")
@@ -972,14 +1000,22 @@ type Message struct {
 	Fields  []MessageField
 }
 
+// StructAddTag 往生成的结构体中添加tag
 func StructAddTag(tmpStr string) string {
 	tmpStr = strings.Replace(tmpStr, "{", "{\n    //Database Tag Begin. DO NOT EDIT !!! ", 1)
 	tmpStr = strings.Replace(tmpStr, "}", "  //Database Tag End. DO NOT EDIT!!!  \n\n    //Custom Tag .You Can Edit. \n\n  }", 1)
 	return tmpStr
 }
 
+// StructAddTags 特殊逻辑，在更新结构体时需要额外处理tag，不然会导致重复打tag
+func StructAddTags(tmpStr, name string) string {
+	tmpStr = strings.Replace(tmpStr, fmt.Sprintf("%s%s {", indent, name), "    //Database Tag Begin. DO NOT EDIT !!! ", 1)
+	tmpStr = strings.Replace(tmpStr, "}", "  //Database Tag End. DO NOT EDIT!!!", 1)
+	return tmpStr
+}
+
 // gen default message
-func (m Message) GenApiDefault(buf *bytes.Buffer) {
+func (m Message) GenApiDefault(buf *bytes.Buffer, flag bool) {
 	mOrginName := m.Name
 	mOrginFields := m.Fields
 	curFields := []MessageField{}
@@ -995,8 +1031,11 @@ func (m Message) GenApiDefault(buf *bytes.Buffer) {
 	}
 	m.Fields = curFields
 	//增加数据库字段开始结束标签, 自定义标签
-	buf.WriteString(StructAddTag(fmt.Sprintf("%s\n", m)))
-
+	if flag {
+		buf.WriteString(StructAddTag(fmt.Sprintf("%s\n", m)))
+	} else {
+		buf.WriteString(StructAddTags(fmt.Sprintf("%s\n", m), m.Name))
+	}
 	//reset
 	m.Name = mOrginName
 	m.Fields = mOrginFields
