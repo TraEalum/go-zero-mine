@@ -1,7 +1,9 @@
 package generator
 
 import (
+	"fmt"
 	"path/filepath"
+	"time"
 
 	"github.com/zeromicro/go-zero/tools/goctl/rpc/parser"
 	"github.com/zeromicro/go-zero/tools/goctl/util/console"
@@ -38,21 +40,28 @@ func (g *Generator) Generate(zctx *ZRpcContext) error {
 	if err != nil {
 		return err
 	}
+	startTime := time.Now()
 
 	err = pathx.MkdirIfNotExist(abs)
 	if err != nil {
 		return err
 	}
 
+	fmt.Println("MkdirIfNotExist，耗时:", time.Since(startTime))
+
 	err = g.Prepare()
 	if err != nil {
 		return err
 	}
 
+	fmt.Println("g.Prepare,耗时", time.Since(startTime))
+
 	projectCtx, err := ctx.Prepare(abs)
 	if err != nil {
 		return err
 	}
+
+	fmt.Println("Prepare，耗时", time.Since(startTime))
 
 	p := parser.NewDefaultProtoParser()
 	proto, err := p.Parse(zctx.Src, zctx.Multiple)
@@ -60,49 +69,71 @@ func (g *Generator) Generate(zctx *ZRpcContext) error {
 		return err
 	}
 
+	fmt.Println("p.Parse，耗时", time.Since(startTime))
+
 	dirCtx, err := mkdir(projectCtx, proto, g.cfg, zctx)
 	if err != nil {
 		return err
 	}
+
+	fmt.Println("mkdir，耗时", time.Since(startTime))
 
 	err = g.GenEtc(dirCtx, proto, g.cfg)
 	if err != nil {
 		return err
 	}
 
+	fmt.Println("GenEtc，耗时", time.Since(startTime))
+
 	err = g.GenPb(dirCtx, zctx)
 	if err != nil {
 		return err
 	}
+
+	fmt.Println("GenPb，耗时", time.Since(startTime))
 
 	err = g.GenConfig(dirCtx, proto, g.cfg)
 	if err != nil {
 		return err
 	}
 
+	fmt.Println("GenConfig，耗时", time.Since(startTime))
+
 	err = g.GenSvc(dirCtx, proto, g.cfg)
 	if err != nil {
 		return err
 	}
+
+	fmt.Println("GenSvc，耗时", time.Since(startTime))
 
 	err = g.GenLogic(dirCtx, proto, g.cfg, zctx)
 	if err != nil {
 		return err
 	}
 
+	fmt.Println("GenLogic，耗时", time.Since(startTime))
+
 	err = g.GenServer(dirCtx, proto, g.cfg, zctx)
 	if err != nil {
 		return err
 	}
+
+	fmt.Println("GenServer，耗时", time.Since(startTime))
 
 	err = g.GenMain(dirCtx, proto, g.cfg, zctx)
 	if err != nil {
 		return err
 	}
 
+	fmt.Println("GenMain，耗时", time.Since(startTime))
+
 	err = g.GenCall(dirCtx, proto, g.cfg, zctx)
 
+	fmt.Println("GenCall，耗时", time.Since(startTime))
+
 	console.NewColorConsole().MarkDone()
+
+	fmt.Println("总耗时", time.Since(startTime))
 
 	return err
 }

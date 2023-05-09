@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	conf "github.com/zeromicro/go-zero/tools/goctl/config"
 	"github.com/zeromicro/go-zero/tools/goctl/rpc/parser"
@@ -79,7 +80,11 @@ func (g *Generator) GenMain(ctx DirContext, proto parser.Proto, cfg *conf.Config
 
 	// len大于二 只修改注册服务行代码
 	if c.Multiple && len(proto.Service) > 1 {
-		return upDateNewServer(fileName, registerServer, imports)
+		start := time.Now()
+		fmt.Println("gen main方法-upDateNewServer耗时开始时间:", start)
+		err2 := upDateNewServer(fileName, registerServer, imports)
+		fmt.Println("gen main方法-upDateNewServer执行耗时:", time.Since(start))
+		return err2
 	}
 
 	text, err := pathx.LoadTemplate(category, mainTemplateFile, mainTemplate)
@@ -123,25 +128,26 @@ Loop:
 			}
 		}
 
-		if strings.Contains(line, "\"fmt\"") {
-			newBuf.WriteString(line)
-			newBuf.WriteString("\n")
+		// if strings.Contains(line, "\"fmt\"") {
+		// 	newBuf.WriteString(line)
+		// 	newBuf.WriteString("\n")
 
-			for {
-				line, _ := buf.ReadString('\n')
-				if strings.Contains(line, "comm/configm") {
-					// 写入新imports
-					for _, v := range imports {
-						newBuf.WriteString("\t" + v + "\n")
-					}
+		// 	for {
+		// 		fmt.Println("upDateNewServer 1")
+		// 		line, _ := buf.ReadString('\n')
+		// 		if strings.Contains(line, "comm/configm") {
+		// 			// 写入新imports
+		// 			for _, v := range imports {
+		// 				newBuf.WriteString("\t" + v + "\n")
+		// 			}
 
-					newBuf.WriteString("\n")
-					newBuf.WriteString(line)
+		// 			newBuf.WriteString("\n")
+		// 			newBuf.WriteString(line)
 
-					continue Loop
-				}
-			}
-		}
+		// 			continue Loop
+		// 		}
+		// 	}
+		// }
 
 		if strings.Contains(line, "zrpc.MustNewServer") {
 			newBuf.WriteString(line)
