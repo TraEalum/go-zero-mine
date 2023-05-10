@@ -3,20 +3,29 @@ package types
 {{.importProto}}
 
 
-func (r *{{.upperStartCamelObject}}) Unmarshal(p *proto.{{.upperStartCamelObject}}) error {
+func (r *{{.upperStartCamelObject}}) unmarshal(p *proto.{{.upperStartCamelObject}}) error {
 	{{.unmarshallFields}}
 
 	return nil
 }
 
+func (r *{{.upperStartCamelObject}}) Unmarshal(p *proto.{{.upperStartCamelObject}}) error {
+	r.unmarshal(p)
 
-func (r *{{.upperStartCamelObject}}) Marshal(p *proto.{{.upperStartCamelObject}}) error {
+	return nil
+}
+
+func (r *{{.upperStartCamelObject}}) marshal(p *proto.{{.upperStartCamelObject}}) error {
 	{{.marshalFields}}
 
 	return nil
 }
 
+func (r *{{.upperStartCamelObject}}) Marshal(p *proto.{{.upperStartCamelObject}}) error {
+	r.marshal(p)
 
+	return nil
+}
 
 func Marshal{{.upperStartCamelObject}}Lst(r *[]{{.upperStartCamelObject}},p []*proto.{{.upperStartCamelObject}}){
 	if r == nil {
