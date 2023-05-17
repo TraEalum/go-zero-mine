@@ -14,8 +14,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/chuckpreslar/inflect"
+	"github.com/emicklei/proto"
 	"github.com/serenize/snaker"
+	"github.com/zeromicro/go-zero/tools/goctl/rpc/parser"
 	"github.com/zeromicro/go-zero/tools/goctl/util/stringx"
 )
 
@@ -24,6 +25,14 @@ const (
 
 	indent = "  "
 )
+
+var unsignedTypeMap = map[string]string{
+	"int":   "uint",
+	"int8":  "uint8",
+	"int16": "uint16",
+	"int32": "uint32",
+	"int64": "uint64",
+}
 
 func GenerateSchema(db *sql.DB, table string, ignoreTables []string, serviceName string, dir string) (*Schema, error) {
 
@@ -102,9 +111,10 @@ func GenerateProtoType(s *Schema, serviceName string, protoFile, dir string) (*S
 	return s, nil
 }
 
+// 读取proto文件，在apiParam生成对应的类型
 func typesFromProto(s *Schema, file, serviceName string) error {
 	if file == "" {
-		file = "./rpc/proto/" + serviceName + ".proto"
+		file = fmt.Sprintf("proto/%s/%s.proto", serviceName, serviceName)
 	}
 
 	f, err := os.Open(file)
@@ -147,42 +157,60 @@ Loop:
 	if _, err = buf.WriteTo(bufNew); err != nil {
 		return err
 	}
+	// 这里解析 proto文件，读取里面的message
+	// 这里要重新读取，上面的读取指针已经是移动过的
+	r, err := os.Open(file)
+	if err != nil {
+		return nil
+	}
+	defer r.Close()
+	var ret parser.Proto
+	pr := proto.NewParser(r)
+	set, err := pr.Parse()
+	if err != nil {
+		fmt.Println("parse proto failed", err)
 
-	tmpStr := bufNew.String()
+		return nil
+	}
 
-	for _, v := range strs {
-
-		reg := fmt.Sprintf("message %s%s", v, `[\s]*{[^}]+}`)
-		re := regexp.MustCompile(reg)
-		oldSubStrings := re.FindStringSubmatch(tmpStr)
-
-		if oldSubStrings[0] == "" {
+	proto.Walk(set,
+		proto.WithMessage(func(m *proto.Message) {
+			ret.Message = append(ret.Message, parser.Message{Message: m})
+		}),
+	)
+	for _, v := range ret.Message {
+		// 判断是否在生成的api gen struct里面
+		if !isInSlice(strs, v.Message.Name) {
 			continue
 		}
-
-		split := strings.Split(oldSubStrings[0], "\n")
-
 		message := &Message{
-			Name:   snaker.SnakeToCamel(v),
-			Fields: make([]MessageField, 0, len(split)-1),
+			Name:   v.Message.Name,
+			Fields: make([]MessageField, 0, len(v.Message.Elements)),
 		}
-
-		for i := 1; i < len(split)-1; i++ {
-			var n = 2
-
-			i2 := strings.Split(split[i], " ")
-			if len(i2) == 8 && i2[n] == "repeated" {
-				n += 1
-				i2[n] = "[]*" + i2[n]
-			}
-
-			if len(i2) < 7 || strings.Contains(i2[n], "//") {
+		for _, ele := range v.Message.Elements {
+			field, ok := (ele).(*proto.NormalField)
+			if !ok {
 				continue
 			}
+			//  注释
+			var comment string
+			if field.InlineComment != nil {
+				comment = strings.Join(field.InlineComment.Lines, comment)
+			}
 
-			field := NewMessageField(i2[n], i2[n+1], strings.Replace(i2[n+4], "//", "", -1), snaker.CamelToSnake(i2[n+1]))
+			//数组判断
+			var typ = field.Type
+			if field.Repeated {
+				typ = fmt.Sprintf("[]%s", field.Type)
+			}
 
-			message.AppendField(field)
+			// 首字母大写
+			paraName := stringx.From(field.Name).FirstUpper()
+
+			apiField := NewMessageField(typ, paraName, comment,
+				snaker.CamelToSnake(field.Name))
+
+			message.AppendField(apiField)
 		}
 
 		s.CusMessages = append(s.CusMessages, message)
@@ -273,7 +301,8 @@ func dbColumns(db *sql.DB, schema, table string) ([]Column, error) {
 		if cs.TableComment == "" {
 			cs.TableComment = stringx.From(cs.TableName).ToCamelWithStartLower()
 		}
-		//这里过滤掉不需要生成的字段
+
+		// 这里过滤掉不需要生成的字段
 		if !isInSlice([]string{"create_time", "update_time"}, cs.ColumnName) {
 			cols = append(cols, cs)
 		}
@@ -409,7 +438,10 @@ func (s *Schema) CreateParamString(fileName string) string {
 
 	}
 
-	buf.WriteString(")")
+	if len(s.Messages) > 0 {
+		buf.WriteString(")")
+	}
+
 	buf.WriteString("\n\n")
 
 	for _, m := range s.CusMessages {
@@ -967,7 +999,7 @@ func (m Message) GenApiDefault(buf *bytes.Buffer) {
 func (m Message) GenApiDefaultResp(buf *bytes.Buffer) {
 	mOrginName := FirstUpper(m.Name)
 	buf.WriteString(fmt.Sprintf("%sCreate%sResp {\n", indent, mOrginName))
-	buf.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`   \n", indent, indent, "Id", "int64", "id"))
+	// buf.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`   \n", indent, indent, "Id", "int64", "id"))
 	buf.WriteString(fmt.Sprintf("%s}\n", indent))
 }
 
@@ -983,7 +1015,7 @@ func (m Message) GenApiUpdateReq(buf *bytes.Buffer) {
 func (m Message) GenApiUpdateResp(buf *bytes.Buffer) {
 	mOrginName := FirstUpper(m.Name)
 	buf.WriteString(fmt.Sprintf("%sUpdate%sResp {\n", indent, mOrginName))
-	buf.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`   \n", indent, indent, "Id", "int64", "id"))
+	// buf.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`   \n", indent, indent, "Id", "int64", "id"))
 	buf.WriteString(fmt.Sprintf("%s}\n", indent))
 }
 
@@ -991,7 +1023,7 @@ func (m Message) GenApiUpdateResp(buf *bytes.Buffer) {
 func (m Message) GenApiQueryListReq(buf *bytes.Buffer) {
 	mOrginName := FirstUpper(m.Name)
 	buf.WriteString(fmt.Sprintf("%sQuery%sReq {\n", indent, mOrginName))
-	buf.WriteString(fmt.Sprintf("%s%s%s   %s  `form:\"%s,optional\"`   \n", indent, indent, "Id", "int64", "id"))
+	// buf.WriteString(fmt.Sprintf("%s%s%s   %s  `form:\"%s,optional\"`   \n", indent, indent, "Id", "int64", "id"))
 	buf.WriteString(fmt.Sprintf("%s%s%s   %s  `form:\"%s,optional\"`   \n", indent, indent, "PageNo", "int64", "page_no"))
 	buf.WriteString(fmt.Sprintf("%s%s%s   %s  `form:\"%s,optional\"`   \n", indent, indent, "PageSize", "int64", "page_size"))
 	buf.WriteString(fmt.Sprintf("%s}\n", indent))
@@ -1068,6 +1100,7 @@ type Table struct {
 func parseColumn(s *Schema, msg *Message, col Column) error {
 	typ := strings.ToLower(col.DataType)
 	var fieldType string
+	isUnsigned := strings.Contains(col.ColumnType, "unsigned")
 
 	switch typ {
 	case "char", "varchar", "text", "longtext", "mediumtext", "tinytext":
@@ -1080,7 +1113,8 @@ func parseColumn(s *Schema, msg *Message, col Column) error {
 			return "," == cs || "'" == cs
 		})
 
-		enumName := inflect.Singularize(snaker.SnakeToCamel(col.TableName)) + snaker.SnakeToCamel(col.ColumnName)
+		// enumName := inflect.Singularize(snaker.SnakeToCamel(col.TableName)) + snaker.SnakeToCamel(col.ColumnName)
+		enumName := ""
 		enum, err := newEnumFromStrings(enumName, col.ColumnComment, enums)
 		if nil != err {
 			return err
@@ -1098,19 +1132,25 @@ func parseColumn(s *Schema, msg *Message, col Column) error {
 		fieldType = "bool"
 	case "tinyint", "smallint", "int", "mediumint", "bigint":
 		fieldType = "int64"
+	case "float", "double":
+		fieldType = "double"
 	case "decimal":
-		fieldType = "string" // decimal diff float64  fix bug 2022-11-8
-	case "double":
-		fieldType = "float64" // fix bug 2022-11-8
-	case "float":
-		fieldType = "float64" // fix bug 2022-11-8
+		fieldType = "string"
+	}
+
+	if isUnsigned {
+		tmp, ok := unsignedTypeMap[fieldType]
+		if ok {
+			fieldType = tmp
+		}
 	}
 
 	if "" == fieldType {
-		return fmt.Errorf("no compatible go type found for `%s`. column: `%s`.`%s`", col.DataType, col.TableName, col.ColumnName)
+		return fmt.Errorf("no compatible protobuf type found for `%s`. column: `%s`.`%s`", col.DataType, col.TableName, col.ColumnName)
 	}
 
 	field := NewMessageField(fieldType, col.ColumnName, col.ColumnComment, col.ColumnName)
+
 	err := msg.AppendField(field)
 	if nil != err {
 		return err

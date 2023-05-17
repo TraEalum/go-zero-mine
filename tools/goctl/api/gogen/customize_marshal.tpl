@@ -10,7 +10,6 @@ func (r *{{.upperStartCamelObject}}) Unmarshal(p *proto.{{.upperStartCamelObject
 }
 
 
-// ----------------marshal----------------
 func (r *{{.upperStartCamelObject}}) Marshal(p *proto.{{.upperStartCamelObject}}) error {
 	{{.marshalFields}}
 
@@ -18,4 +17,31 @@ func (r *{{.upperStartCamelObject}}) Marshal(p *proto.{{.upperStartCamelObject}}
 }
 
 
-// TheEndLine please do not delete this line
+
+func Marshal{{.upperStartCamelObject}}Lst(r *[]{{.upperStartCamelObject}},p []*proto.{{.upperStartCamelObject}}){
+	if r == nil {
+	    return
+	}
+
+	for _,item := range p {
+		var tmp {{.upperStartCamelObject}}
+		tmp.Marshal(item)
+		*r = append(*r,tmp)
+	}
+}
+
+func Unmarshal{{.upperStartCamelObject}}Lst(r []{{.upperStartCamelObject}}, p *[]*proto.{{.upperStartCamelObject}}){
+    if p == nil {
+        return
+    }
+
+    for _, item := range r {
+        var tmp proto.{{.upperStartCamelObject}}
+        item.Unmarshal(&tmp)
+        *p = append(*p,&tmp)
+    }
+}
+
+
+
+// Generated End. Please do not delete this line.

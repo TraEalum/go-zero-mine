@@ -29,39 +29,42 @@ func (l *{{.logicName}}) {{.method}} ({{if .hasReq}}in {{.request}}{{if .stream}
 var logicTemplate string
 
 // GenLogic generates the logic file of the rpc service, which corresponds to the RPC definition items in proto.
-func (g *Generator) GenLogic(ctx DirContext, proto parser.Proto, cfg *conf.Config) error {
-	dir := ctx.GetLogic()
-	service := proto.Service.Service.Name
+func (g *Generator) GenLogic(ctx DirContext, proto parser.Proto, cfg *conf.Config,
+	c *ZRpcContext) error {
+	if !c.Multiple {
+		return g.genLogicInCompatibility(ctx, proto, cfg)
+	}
 
-	for _, rpc := range proto.Service.RPC {
+	return g.genLogicGroup(ctx, proto, cfg)
+}
+
+func (g *Generator) genLogicInCompatibility(ctx DirContext, proto parser.Proto,
+	cfg *conf.Config) error {
+	dir := ctx.GetLogic()
+	service := proto.Service[0].Service.Name
+	for _, rpc := range proto.Service[0].RPC {
+		logicName := fmt.Sprintf("%sLogic", stringx.From(rpc.Name).ToCamel())
 		logicFilename, err := format.FileNamingFormat(cfg.NamingFormat, rpc.Name+"_logic")
 		if err != nil {
 			return err
 		}
-
-		filename := filepath.Join(dir.Filename, logicFilename+".go")
-
-		if pathx.FileExists(filename) {
-			continue
-		}
-
 		pK, pV, err := getPrimaryKey(strings.Replace(parser.CamelCase(rpc.RequestType), "Filter", "", 1))
 		if err != nil {
 			pK = "Id"
 			pV = "0"
 		}
 
-		functions, err := g.genLogicFunction(service, proto.PbPackage, rpc, pK, pV)
-		if err != nil {
-			return err
+		filename := filepath.Join(dir.Filename, logicFilename+".go")
+		functions, err := g.genLogicFunction(service, proto.PbPackage, logicName, rpc, pK, pV)
+
+		if pathx.FileExists(filename) {
+			continue
 		}
 
 		imports := collection.NewSet()
 		imports.AddStr(fmt.Sprintf(`"%v"`, ctx.GetSvc().Package))
-		//imports.AddStr(fmt.Sprintf(`"%v"`, ctx.GetPb().Package))
 		imports.AddStr(fmt.Sprintf(`proto "proto/%s"`, service))
 
-		imports.AddStr("\"comm/errorm\"")
 		if functions.HasSqlc {
 			imports.AddStr("\"github.com/zeromicro/go-zero/core/stores/sqlc\"")
 		}
@@ -69,21 +72,48 @@ func (g *Generator) GenLogic(ctx DirContext, proto parser.Proto, cfg *conf.Confi
 			imports.AddStr("\"comm/util\"")
 		}
 		if functions.HasModel {
-			imports.AddStr(fmt.Sprintf(`"%s-service/model"`, proto.Service.Name))
+			imports.AddStr(fmt.Sprintf(`"%s-service/model"`, service))
+			imports.AddStr("\"comm/errorm\"")
 		}
 		text, err := pathx.LoadTemplate(category, logicTemplateFileFile, logicTemplate)
 		if err != nil {
 			return err
 		}
 		err = util.With("logic").GoFmt(true).Parse(text).SaveTo(map[string]interface{}{
-			"logicName": fmt.Sprintf("%sLogic", stringx.From(rpc.Name).ToCamel()),
-			"functions": functions.Fn,
-			"imports":   strings.Join(imports.KeysStr(), pathx.NL),
+			"logicName":   fmt.Sprintf("%sLogic", stringx.From(rpc.Name).ToCamel()),
+			"functions":   functions.Fn,
+			"packageName": "logic",
+			"imports":     strings.Join(imports.KeysStr(), pathx.NL),
 		}, filename, false)
 		if err != nil {
 			return err
 		}
 	}
+	return nil
+}
+
+func (g *Generator) genLogicGroup(ctx DirContext, proto parser.Proto, cfg *conf.Config) error {
+	// dir := ctx.GetLogic()
+	// service := proto.PbPackage
+
+	var lock sync.WaitGroup
+
+	for _, item := range proto.Service {
+		lock.Add(1)
+
+		go func(service parser.Service) {
+			defer lock.Done()
+			if err := g.genGroupLogic(ctx, proto, service, cfg); err != nil {
+				fmt.Println("gen logic error:", err)
+				return
+			}
+
+		}(item)
+
+	}
+
+	lock.Wait()
+
 	return nil
 }
 
@@ -95,7 +125,7 @@ type genLogic struct {
 	Fn string
 }
 
-func (g *Generator) genLogicFunction(serviceName, goPackage string, rpc *parser.RPC, pK, pV string) (genLogic, error) {
+func (g *Generator) genLogicFunction(serviceName, goPackage string, logicName string, rpc *parser.RPC, pK, pV string) (genLogic, error) {
 	functions := make([]string, 0)
 	gen := genLogic{}
 	text, err := pathx.LoadTemplate(category, logicFuncTemplateFileFile, logicFunctionTemplate)
@@ -133,9 +163,10 @@ func (g *Generator) genLogicFunction(serviceName, goPackage string, rpc *parser.
 		gen.HasModel = true
 	}
 
-	logicName := stringx.From(rpc.Name + "_logic").ToCamel()
 	comment := parser.GetComment(rpc.Doc())
-	streamServer := fmt.Sprintf("%s.%s_%s%s", goPackage, parser.CamelCase(serviceName), parser.CamelCase(rpc.Name), "Server")
+	// fmt.Printf("method[%s] comment[%s]", parser.CamelCase(rpc.Name), comment)
+	streamServer := fmt.Sprintf("%s.%s_%s%s", goPackage, parser.CamelCase(serviceName),
+		parser.CamelCase(rpc.Name), "Server")
 	buffer, err := util.With("fun").Parse(text).Execute(map[string]interface{}{
 		"pK":                  pK,
 		"pV":                  pV,
@@ -249,4 +280,77 @@ func GetDb() *sql.DB {
 	})
 
 	return DB
+}
+
+func (g *Generator) genGroupLogic(ctx DirContext, proto parser.Proto, item parser.Service, cfg *conf.Config) error {
+	dir := ctx.GetLogic()
+	service := proto.PbPackage
+
+	serviceName := item.Name
+
+	for _, rpc := range item.RPC {
+		var (
+			err           error
+			filename      string
+			logicName     string
+			logicFilename string
+			packageName   string
+		)
+
+		pK, pV, err := getPrimaryKey(strings.Replace(parser.CamelCase(rpc.RequestType), "Filter", "", 1))
+		if err != nil {
+			pK = "Id"
+			pV = "0"
+		}
+
+		logicName = fmt.Sprintf("%sLogic", stringx.From(rpc.Name).ToCamel())
+		childPkg, err := dir.GetChildPackage(serviceName)
+		if err != nil {
+			return err
+		}
+
+		serviceDir := filepath.Base(childPkg)
+		nameJoin := fmt.Sprintf("%sLogic", serviceName)
+		packageName = nameJoin
+		logicFilename, err = format.FileNamingFormat(cfg.NamingFormat, rpc.Name+"_logic")
+		if err != nil {
+			return err
+		}
+
+		filename = filepath.Join(dir.Filename, serviceDir, logicFilename+".go")
+		functions, err := g.genLogicFunction(serviceName, proto.PbPackage, logicName, rpc, pK, pV)
+		if err != nil {
+			return err
+		}
+
+		imports := collection.NewSet()
+		imports.AddStr(fmt.Sprintf(`"%v"`, ctx.GetSvc().Package))
+		imports.AddStr(fmt.Sprintf(`proto "proto/%s"`, service))
+
+		if functions.HasSqlc {
+			imports.AddStr("\"github.com/zeromicro/go-zero/core/stores/sqlc\"")
+		}
+		if functions.HasUtil {
+			imports.AddStr("\"comm/util\"")
+		}
+		if functions.HasModel {
+			imports.AddStr(fmt.Sprintf(`"%s-service/model"`, service))
+			imports.AddStr("\"comm/errorm\"")
+		}
+
+		text, err := pathx.LoadTemplate(category, logicTemplateFileFile, logicTemplate)
+		if err != nil {
+			return err
+		}
+
+		if err = util.With("logic").GoFmt(true).Parse(text).SaveTo(map[string]interface{}{
+			"logicName":   logicName,
+			"functions":   functions.Fn,
+			"packageName": packageName,
+			"imports":     strings.Join(imports.KeysStr(), pathx.NL),
+		}, filename, false); err != nil {
+			return err
+		}
+	}
+	return nil
 }

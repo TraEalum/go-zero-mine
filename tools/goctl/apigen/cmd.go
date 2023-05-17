@@ -15,12 +15,12 @@ const (
 var (
 	intPort            int
 	stringPassword     string
-	stringDir          string
+	stringDir          string // 读取api文件的路径
 	stringHost         string
 	stringUser         string
-	stringSchema       string
-	stringTable        string
-	stringServiceName  string
+	stringSchema       string // 库名
+	stringTable        string // 表名
+	stringServiceName  string // 服务名
 	stringIgnoreTables string
 	stringProtoFile    string
 	stringCurdMethod   string
@@ -46,6 +46,4 @@ func init() {
 	Cmd.Flags().StringVar(&stringProtoFile, "proto", "", "the proto file path")
 	Cmd.Flags().StringVar(&stringCurdMethod, "i", "", "生成update、insert、query、delete方法，不传默认只生成查询方法,多个方法之间用逗号(,)分割")
 
-	//Cmd.AddCommand(mysqlCmd)
-	//Cmd.AddCommand(mongoCmd)
 }

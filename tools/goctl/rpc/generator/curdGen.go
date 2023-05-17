@@ -39,9 +39,10 @@ func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 const DeleteLogic = commonHead + `
 func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 	var err error
+	id := in.Get{{.pK}}()
 
 	// delete
-	if err = l.svcCtx.{{.modelName}}Model.Delete(l.ctx, nil, &model.{{.modelName}}{ {{.pK}}: &in.Get{{.pK}}()}); err != nil {
+	if err = l.svcCtx.{{.modelName}}Model.Delete(l.ctx, nil, &model.{{.modelName}}{ {{.pK}}: &id}); err != nil {
 		return nil, errorm.New(errorm.RecordDeleteFailed, "delete data fail.%v", err)
 	}
 
@@ -65,8 +66,9 @@ func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 		return nil, err
 	}
 
+	id := in.Get{{.pK}}()
 	where := model.{{.modelName}}{
-		 {{.pK}}: &in.Get{{.pK}}(),
+		 {{.pK}}: &id,
 	}
 	{{.modelNameFirstLower}} := model.{{.modelName}}{}
 	{{.modelNameFirstLower}}.Marshal(in)
@@ -93,8 +95,9 @@ func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 	}
 
 	// build where
+	id := in.Get{{.pK}}()
 	where := model.{{.modelName}}{
-		 {{.pK}}: &in.Get{{.pK}}(),
+		 {{.pK}}: &id,
 	}
 	builder := util.NewSelectBuilder(util.WithTable(where.TableName())).
 		Where(&where).
@@ -103,6 +106,7 @@ func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 	// query
 	if {{.modelNameFirstLower}}List, err = l.svcCtx.{{.modelName}}Model.FindList(l.ctx, builder.SelectBuilder, &totalCount); err != nil {
 		logx.WithContext(l.ctx).Infof("FindList fail. %v", err)
+		
 		return nil, errorm.New(errorm.RecordFindFailed, "FindList fail.%v", err)
 	}
 

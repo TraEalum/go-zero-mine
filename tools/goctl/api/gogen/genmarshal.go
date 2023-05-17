@@ -248,7 +248,7 @@ func getCustomizationContext(filePath string) (string, error) {
 	//找到结束标志
 	for {
 		line, err := bufR.ReadString('\n')
-		if strings.Contains(line, "TheEndLine") {
+		if strings.Contains(line, "Generated End") {
 			break
 		}
 		if err != nil {

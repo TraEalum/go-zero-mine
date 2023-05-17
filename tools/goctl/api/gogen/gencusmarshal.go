@@ -6,6 +6,7 @@ import (
 	_ "embed"
 	"errors"
 	"fmt"
+	goformat "go/format"
 
 	"github.com/zeromicro/go-zero/core/stringx"
 	"github.com/zeromicro/go-zero/tools/goctl/api/spec"
@@ -195,4 +196,13 @@ func readFileField(path string) ([]string, error) {
 	}
 
 	return res, nil
+}
+
+func formatCode(code string) string {
+	ret, err := goformat.Source([]byte(code))
+	if err != nil {
+		return code
+	}
+
+	return string(ret)
 }

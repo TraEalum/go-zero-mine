@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/zeromicro/go-zero/tools/goctl/rpc/execx"
@@ -76,15 +77,20 @@ func getRealModule(workDir string, execRun execx.RunFunc) (*Module, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	modules, err := decodePackages(strings.NewReader(data))
 	if err != nil {
 		return nil, err
 	}
+
+	workDir = getLastOnePath(workDir)
+
 	for _, m := range modules {
 		if strings.HasPrefix(workDir, m.Dir) {
 			return &m, nil
 		}
 	}
+
 	return nil, errors.New("no matched module")
 }
 
@@ -100,4 +106,20 @@ func decodePackages(rc io.Reader) ([]Module, error) {
 	}
 
 	return modules, nil
+}
+
+// 获取入参路径的上一个路径
+func getLastOnePath(path string) string {
+	if path == "" {
+		return path
+	}
+
+	var sep = `\`
+	if runtime.GOOS == "linux" {
+		sep = "/"
+	}
+
+	split := strings.Split(path, sep)
+
+	return strings.Join(split, sep)
 }

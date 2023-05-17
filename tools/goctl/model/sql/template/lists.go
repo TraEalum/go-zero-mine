@@ -11,7 +11,7 @@ func (m *default{{.upperStartCamelObject}}Model) FindList(ctx context.Context, s
 		return nil, err
 	}
 	
-	if err = m.conn.QueryRowsCtx(ctx, &resp, query, values...);err != nil{
+	if err = m.conn.QueryRowsPartialCtx(ctx, &resp, query, values...);err != nil{
 		return nil, err
 	}
 

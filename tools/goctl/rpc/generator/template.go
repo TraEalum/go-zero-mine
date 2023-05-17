@@ -20,21 +20,21 @@ const (
 	serverFuncTemplateFile            = "server-func.tpl"
 	svcTemplateFile                   = "svc.tpl"
 	rpcTemplateFile                   = "template.tpl"
+	clientTemplateFile                = "client.tpl"
 )
 
 var templates = map[string]string{
-	callTemplateFile:                  callTemplateText,
-	callInterfaceFunctionTemplateFile: callInterfaceFunctionTemplate,
-	callFunctionTemplateFile:          callFunctionTemplate,
-	configTemplateFileFile:            configTemplate,
-	etcTemplateFileFile:               etcTemplate,
-	logicTemplateFileFile:             logicTemplate,
-	logicFuncTemplateFileFile:         logicFunctionTemplate,
-	mainTemplateFile:                  mainTemplate,
-	serverTemplateFile:                serverTemplate,
-	serverFuncTemplateFile:            functionTemplate,
-	svcTemplateFile:                   svcTemplate,
-	rpcTemplateFile:                   rpcTemplateText,
+	callTemplateFile:          callTemplateText,
+	clientTemplateFile:        clientTemplateText,
+	configTemplateFileFile:    configTemplate,
+	etcTemplateFileFile:       etcTemplate,
+	logicTemplateFileFile:     logicTemplate,
+	logicFuncTemplateFileFile: logicFunctionTemplate,
+	mainTemplateFile:          mainTemplate,
+	serverTemplateFile:        serverTemplate,
+	serverFuncTemplateFile:    functionTemplate,
+	svcTemplateFile:           svcTemplate,
+	rpcTemplateFile:           rpcTemplateText,
 }
 
 // GenTemplates is the entry for command goctl template,

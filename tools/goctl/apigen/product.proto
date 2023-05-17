@@ -1,0 +1,145 @@
+syntax = "proto3";
+
+option go_package = "../product";
+
+package product;
+
+// Already Exist Table:
+// Spu
+// Sku
+// SkuAttribute
+// SkuRental
+// SpuLogistics
+// SpuMsInfo
+// SpuPicture
+// SpuService
+// SpuTarget
+// EsCityPush
+// TblGoodsScoreV2
+// SortCriterionModel
+// SortCriterionScore
+// PromotionTemplate
+// PromotionTemplateModificationRecord
+// Exist Table End
+
+//指定message生成api struct
+// Api Struct Gen
+// SkuRentalInfo
+// Struct Gen End
+
+// Message Record Start
+//--------------------------------商品主表SPU--------------------------------
+
+
+//--------------------------------商品推广-模板主表--------------------------------
+message PromotionTemplate {
+  //Database Tag Begin. DO NOT EDIT !!! 
+  uint64 id = 1; //主键
+  string name = 2; //模板名称
+  string remark = 3; //模板备注
+  uint64 pricingModel = 4; //定价模式：0-默认模式，1-默认模式2.0
+  uint64 categoryId = 5; //分类id
+  int64 createdBy = 6; //创建人id
+  string createdName = 7; //创建人名称
+  int64 updatedBy = 8; //修改人id
+  string updatedName = 9; //修改人名称
+  uint64 version = 10; //最新版本，默认1
+  uint64 createdAt = 11; //创建日期
+  uint64 updatedAt = 12; //修改日期
+  uint64 deletedAt = 13; //删除日期
+  uint64 isDelete = 14; //是否删除：1 - 否，2 - 是
+  //Database Tag End. DO NOT EDIT!!!  
+
+  //Custom Tag .You Can Edit. 
+
+}
+// 推广模板 sku_sales_info
+
+message SkuSaleInfo {
+  repeated SkuTemplateInfo skuTemplateInfo = 1;
+  repeated SkuTemplateColor skuTemplateColor = 2;
+  repeated SkuTemplateSpec skuTemplateSpec = 3;
+  string typ = 4;
+  string LeasePlanType = 5;
+  string specName = 6 ;
+  repeated SkuRentalInfo  skuRentalInfo = 7; // 租期信息
+}
+
+// sku_rental_info
+message SkuRentalInfo {
+  float averageRent_1 = 1;  // 一天平均租金
+  float averageRent_3 = 2 ;
+  float averageRent_7 = 3;
+  float averageRent_30 = 4;
+  float averageRent_90 = 5;
+  float averageRent_180 = 6;
+  float averageRent_365 = 7;
+  float averageRent_730 = 8;
+  float averageRent_1095 = 9;
+  float totalRent_1 = 10;
+  float totalRent_3= 11;
+  float totalRent_7 = 12;
+  float totalRent_30 = 13;
+  float totalRent_90 = 14;
+  float totalRent_180 = 15;
+  float totalRent_365 = 16;
+  float totalRent_730 = 17;
+  float totalRent_1095 = 18;
+  float deposit = 19 ; // 押金
+  float price = 20 ; // 买断价格
+  float msPrice=21 ;
+  int64 stock = 22 ; // 库存数量
+  bool disabled = 23; // 是否缺货
+  float minRental = 24 ; // 日均最小租金
+  float maxRental = 25 ; // 日均最大租金
+  bool  disable_1 = 26 ; // 租期 1天是否可用
+  bool  disable_3 = 27 ;
+  bool disable_7 = 28;
+  bool disable_8 = 29;
+  bool disable_30 = 30;
+  bool disable_90 = 31;
+  bool disable_180 = 32;
+  bool disable_365 = 33;
+  bool disable_730 = 34 ;
+  bool disable_1095 = 36;
+  bool disabledmsPrice = 37;
+  float maxRentalAll = 38; // 最大总租金
+  float minRentalAll = 39; // 最小总租金
+  int64 id = 40 ;
+}
+
+//套餐基本信息
+message SkuTemplateInfo {
+   int64  min = 1 ; // 最少起租天数
+   int64  max = 2 ; // 最大可租天数
+   string value = 3 ; // 套餐名称
+   string name = 4 ; // 套餐名称
+}
+
+// 颜色
+message SkuTemplateColor {
+   repeated string iconList = 1;
+   string value = 2 ;// 颜色
+   string icon = 3; 
+   string name = 4 ;
+}
+
+// 自定义规格
+message SkuTemplateSpec {
+   string name = 1;
+   repeated string options = 2;   
+}
+
+
+// Message Record End
+
+enum ProductAuditScene {
+  None = 0;
+  Pass = 1;   // 通过
+  NoPass = 2; // 不通过
+  Recall = 3; // 撤回
+}
+
+// ------------------------------------
+// Rpc Func
+// ------------------------------------

@@ -51,11 +51,11 @@ func (g *Generator) GenSvc(ctx DirContext, proto parser.Proto, cfg *conf.Config)
 	if err != nil {
 		return err
 	}
-	return util.With("svc").GoFmt(true).Parse(text).SaveTo(map[string]interface{}{
+	return util.With("svc").GoFmt(false).Parse(text).SaveTo(map[string]interface{}{
 		"imports":     fmt.Sprintf(`"%v"`, ctx.GetConfig().Package),
 		"modelDefine": modelDefine,
 		"modelInit":   modelInit,
-		"serviceName": proto.Service.Name,
+		"serviceName": proto.PbPackage,
 	}, fileName, true)
 }
 

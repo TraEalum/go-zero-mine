@@ -6,7 +6,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -19,6 +18,7 @@ import (
 	"github.com/zeromicro/go-zero/tools/goctl/api/parser"
 	apiutil "github.com/zeromicro/go-zero/tools/goctl/api/util"
 	"github.com/zeromicro/go-zero/tools/goctl/config"
+	"github.com/zeromicro/go-zero/tools/goctl/pkg/golang"
 	"github.com/zeromicro/go-zero/tools/goctl/util"
 	"github.com/zeromicro/go-zero/tools/goctl/util/pathx"
 )
@@ -89,26 +89,23 @@ func DoGenProject(apiFile, dir, style, marshal string) error {
 	}
 
 	logx.Must(pathx.MkdirIfNotExist(dir))
-	rootPkg, err := getParentPackage(dir)
+	rootPkg, err := golang.GetParentPackage(dir)
 	if err != nil {
 		return err
 	}
 
-	var sep = `\`
-	if runtime.GOOS == "linux" {
-		sep = "/"
-	}
+	var sep = `/`
+	// if runtime.GOOS == "linux" {
+	// 	sep = "\\"
+	// }
 
 	split := strings.Split(apiFile, sep)
 
 	importFile := ""
 
-	for i := 0; i < len(split) -1 ; i++ {
+	for i := 0; i < len(split)-1; i++ {
 		importFile = path.Join(importFile, split[i])
 	}
-
-
-
 
 	logx.Must(genEtc(dir, cfg, api))
 	logx.Must(genConfig(dir, cfg, api))

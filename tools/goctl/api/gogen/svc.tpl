@@ -9,7 +9,7 @@ import (
 type ServiceContext struct {
 	Config {{.config}}
 	{{.middleware}}
-	{{.rpc}}Cli
+	{{.rpc}}
 }
 
 func NewServiceContext(c {{.config}}) *ServiceContext {

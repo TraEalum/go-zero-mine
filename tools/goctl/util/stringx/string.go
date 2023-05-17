@@ -145,12 +145,28 @@ func (s String) ToCamelWithStartLower() string {
 	}, true)
 	var target []string
 	for i, item := range list {
-		if i !=0{
+		if i != 0 {
 			target = append(target, From(item).Title())
-		}else{
+		} else {
 			target = append(target, item)
 		}
 
 	}
 	return strings.Join(target, "")
+}
+
+func (s String) FirstLower() string {
+	if s.source == "" {
+		return ""
+	}
+
+	return strings.ToLower(s.source[:1]) + s.source[1:]
+}
+
+func (s String) FirstUpper() string {
+	if s.source == "" {
+		return ""
+	}
+
+	return strings.ToUpper(s.source[:1]) + s.source[1:]
 }

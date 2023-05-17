@@ -16,10 +16,17 @@ import (
 
 	"github.com/zeromicro/go-zero/tools/goctl/util"
 
-	"github.com/chuckpreslar/inflect"
 	"github.com/serenize/snaker"
 	"github.com/zeromicro/go-zero/tools/goctl/util/stringx"
 )
+
+var unsignedTypeMap = map[string]string{
+	"int":   "uint",
+	"int8":  "uint8",
+	"int16": "uint16",
+	"int32": "uint32",
+	"int64": "uint64",
+}
 
 const (
 	// proto3 is a describing the proto3 syntax type.
@@ -68,6 +75,7 @@ func GenerateSchema(db *sql.DB, table string, ignoreTables []string, serviceName
 	}
 
 	s.HumpTbName = humpTableName
+	s.TableName = table
 
 	if s.HumpTbName != "" {
 		cols, err := dbColumns(db, dbs, table, subTableNumber, subTableKey)
@@ -192,6 +200,7 @@ type Schema struct {
 	Enums          EnumCollection
 	HumpTbName     string
 	GenerateMethod []string
+	TableName      string
 }
 
 // MessageCollection represents a sortable collection of messages.
@@ -293,7 +302,9 @@ func (s *Schema) CreateString() string {
 	buf.WriteString("// Rpc Func\n")
 	buf.WriteString("// ------------------------------------ \n\n")
 
-	funcTpl := "service " + s.ServiceName + "{\n"
+	serviceName := stringx.From(s.TableName).ToCamelWithStartLower()
+
+	funcTpl := "service " + serviceName + " {\n"
 	for _, m := range s.Messages {
 		funcTpl += "\t //-----------------------" + m.Comment + "----------------------- \n"
 		if len(s.GenerateMethod) == 1 && strings.TrimSpace(s.GenerateMethod[0]) == "" {
@@ -480,34 +491,44 @@ func (s *Schema) UpdateString() string {
 		}
 	}
 
-	funcTpl := ""
+	//  独立一个服务
+	newSeviceTpl := ""
 	for _, m := range s.Messages {
 		if !isInSlice(existTableName, m.Name) {
-			funcTpl += "\t //-----------------------" + m.Comment + "----------------------- \n"
+			serviceName := stringx.From(s.TableName).ToCamelWithStartLower()
+			newSeviceTpl = "\nservice " + serviceName + " {\n"
+			newSeviceTpl += "\t //-----------------------" + m.Comment + "----------------------- \n"
 			if len(s.GenerateMethod) == 1 && strings.TrimSpace(s.GenerateMethod[0]) == "" {
-				funcTpl += "\t rpc Query" + m.Name + "Detail(" + m.Name + "Filter) returns (" + m.Name + "); \n"
-				funcTpl += "\t rpc Query" + m.Name + "List(" + m.Name + "Filter) returns (" + m.Name + "List); \n"
+				newSeviceTpl += "\t rpc Query" + m.Name + "Detail(" + m.Name + "Filter) returns (" + m.Name + "); \n"
+				newSeviceTpl += "\t rpc Query" + m.Name + "List(" + m.Name + "Filter) returns (" + m.Name + "List); \n"
 			} else {
 				if isInSlice(s.GenerateMethod, INSERT) {
-					funcTpl += "\t rpc Create" + m.Name + "(" + m.Name + ") returns (" + m.Name + "); \n"
+					newSeviceTpl += "\t rpc Create" + m.Name + "(" + m.Name + ") returns (" + m.Name + "); \n"
 				}
 				if isInSlice(s.GenerateMethod, DELETE) {
-					funcTpl += "\t rpc Delete" + m.Name + "(" + m.Name + ") returns (" + m.Name + "); \n"
+					newSeviceTpl += "\t rpc Delete" + m.Name + "(" + m.Name + ") returns (" + m.Name + "); \n"
 				}
 				if isInSlice(s.GenerateMethod, UPDATE) {
-					funcTpl += "\t rpc Update" + m.Name + "(" + m.Name + ") returns (" + m.Name + "); \n"
+					newSeviceTpl += "\t rpc Update" + m.Name + "(" + m.Name + ") returns (" + m.Name + "); \n"
 				}
 				if isInSlice(s.GenerateMethod, QUERY) {
-					funcTpl += "\t rpc Query" + m.Name + "Detail(" + m.Name + "Filter) returns (" + m.Name + "); \n"
-					funcTpl += "\t rpc Query" + m.Name + "List(" + m.Name + "Filter) returns (" + m.Name + "List); \n"
+					newSeviceTpl += "\t rpc Query" + m.Name + "Detail(" + m.Name + "Filter) returns (" + m.Name + "); \n"
+					newSeviceTpl += "\t rpc Query" + m.Name + "List(" + m.Name + "Filter) returns (" + m.Name + "List); \n"
 				}
 			}
+			newSeviceTpl = newSeviceTpl + "\t // Service Record End\n"
+			newSeviceTpl = newSeviceTpl + "}"
 		}
 	}
-	funcTpl = funcTpl + "\t // Service Record End\n"
-	funcTpl = funcTpl + "}"
 
-	bufNew.WriteString(funcTpl)
+	if newSeviceTpl == "" {
+		bufNew.WriteString("\t // Service Record End\n")
+		bufNew.WriteString("}\n")
+	} else {
+		bufNew.WriteString("}\n")
+	}
+
+	bufNew.WriteString(newSeviceTpl)
 	err = ioutil.WriteFile(s.Dir, []byte(bufNew.String()), 0666) //写入文件(字节数组)
 	return "Done"
 }
@@ -989,6 +1010,7 @@ type Table struct {
 func parseColumn(s *Schema, msg *Message, col Column) error {
 	typ := strings.ToLower(col.DataType)
 	var fieldType string
+	isUnsigned := strings.Contains(col.ColumnType, "unsigned")
 
 	switch typ {
 	case "char", "varchar", "text", "longtext", "mediumtext", "tinytext":
@@ -1001,7 +1023,8 @@ func parseColumn(s *Schema, msg *Message, col Column) error {
 			return "," == cs || "'" == cs
 		})
 
-		enumName := inflect.Singularize(snaker.SnakeToCamel(col.TableName)) + snaker.SnakeToCamel(col.ColumnName)
+		// enumName := inflect.Singularize(snaker.SnakeToCamel(col.TableName)) + snaker.SnakeToCamel(col.ColumnName)
+		enumName := ""
 		enum, err := newEnumFromStrings(enumName, col.ColumnComment, enums)
 		if nil != err {
 			return err
@@ -1023,6 +1046,13 @@ func parseColumn(s *Schema, msg *Message, col Column) error {
 		fieldType = "double"
 	case "decimal":
 		fieldType = "string"
+	}
+
+	if isUnsigned {
+		tmp, ok := unsignedTypeMap[fieldType]
+		if ok {
+			fieldType = tmp
+		}
 	}
 
 	if "" == fieldType {

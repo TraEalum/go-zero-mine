@@ -71,7 +71,6 @@ func genTypes(dir string, cfg *config.Config, api *spec.ApiSpec, marshalFlag, ap
 		}
 	}()
 
-
 	if err != nil {
 		return err
 	}

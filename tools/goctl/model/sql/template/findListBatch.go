@@ -87,7 +87,7 @@ func (m *default{{.upperStartCamelObject}}Model) findListBatch(ctx context.Conte
 	count := struct{Count int64 {{.countTag}}}{}
 
 	query, values, err := sqlBuilder.Delete(selectBuilder, "Columns").(squirrel.SelectBuilder).Columns("COUNT(*) as count").ToSql()
-	if err = m.conn.QueryRowCtx(ctx, &count, query, values...); err != nil {
+	if err = m.conn.QueryRowPartialCtx(ctx, &count, query, values...); err != nil {
 		return nil, err
 	}
 	totalCount = &count.Count
@@ -117,7 +117,7 @@ func (m *default{{.upperStartCamelObject}}Model) findListBatch(ctx context.Conte
 		
 		query, values, _ = selectBuilder.Offset(uint64(startIndex)).Limit(uint64(batchSize)).ToSql()
 
-		err = m.conn.QueryRowPartialCtx(ctx, &temp, query, values...)
+		err = m.conn.QueryRowsPartialCtx(ctx, &temp, query, values...)
 		if err != nil && err != ErrNotFound{
 			return nil,err
 		}

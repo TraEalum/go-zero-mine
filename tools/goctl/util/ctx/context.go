@@ -1,8 +1,12 @@
 package ctx
 
 import (
+	"bufio"
 	"errors"
+	"fmt"
+	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/zeromicro/go-zero/tools/goctl/rpc/execx"
@@ -28,25 +32,89 @@ type ProjectContext struct {
 // workDir parameter is the directory of the source of generating code,
 // where can be found the project path and the project module,
 func Prepare(workDir string) (*ProjectContext, error) {
-	ctx, err := background(workDir)
-	if err == nil {
-		return ctx, nil
+	var s []string
+	var dir string
+	var goModDir, serviceName string
+	var hadInputReplace bool // 检测是否已经replace过comm
+
+	if runtime.GOOS == "windows" {
+		s = strings.Split(workDir, "\\")
+		goModDir = strings.Join(s[:len(s)-1], "\\")
+	} else {
+		s = strings.Split(workDir, "/") // 兼容linux
+		goModDir = strings.Join(s[:len(s)-1], "/")
 	}
 
-	//获取此路径下面的最低的路径名称
-	name := filepath.Base(workDir)
-
-	s := strings.Split(workDir, "\\")
-	if len(s) > 2 {
-		//获取倒数第二个路径
-		name = s[len(s)-2] + "-service"
-		workDir = strings.Join(s[:len(s)-1], "\\")
+	// 先移除 go.work go.work.sum 这两个文件会导致 go list 命令检测不了 go.mod
+	// 执行 rm  go.work go.work.sum
+	if len(s) > 2 && runtime.GOOS == "windows" { // 这个问题主要是在windows存在
+		dir = strings.Join(s[:len(s)-3], "\\") // 回退到 app这个路径执行命令
+		execx.Run("rm go.work", dir)
+		execx.Run("rm go.work.sum", dir)
 	}
 
-	_, err = execx.Run("go mod init "+name, workDir)
+	b, _ := IsGoMod(workDir)
+
+	if len(s) >= 2 {
+		serviceName = "go mod init " + s[len(s)-2] + "-service"
+
+	}
+
+	//重新执行 go  work init
+	defer func(s []string) {
+		if len(s) < 2 {
+			return
+		}
+
+		var execPath string
+		if runtime.GOOS == "windows" {
+			execPath = strings.Join(s[:len(s)-3], "\\")
+		} else {
+			execPath = strings.Join(s[:len(s)-3], "/")
+		}
+		execx.Run("go work init", execPath)
+		execx.Run("go work use -r app/*", execPath)
+	}(s)
+
+	if b { // 还没有go mod 就新建一个
+		execx.Run(serviceName, goModDir)
+	}
+
+	// replace操作
+	path := filepath.Join(goModDir, "go.mod")
+	file, err := os.OpenFile(path, os.O_RDWR, 0666)
 	if err != nil {
-		return nil, err
+		fmt.Println("go.mod replace failed")
+	} else {
+		defer file.Close()
+
+		reader := bufio.NewReader(file)
+		var w strings.Builder
+		replace := "\nreplace (\n\tcomm => ../../comm\n\tproto => ../../proto\n)"
+
+		for {
+			line, err := reader.ReadString('\n')
+			if err != nil {
+				w.WriteString(line)
+				break
+			}
+
+			if strings.Contains(line, "comm") || strings.Contains(line, "proto") {
+				hadInputReplace = true
+			}
+			w.WriteString(line)
+		}
+
+		file.Truncate(0)
+		file.Seek(0, 0)
+
+		if !hadInputReplace {
+			w.WriteString(replace)
+		}
+
+		file.WriteString(w.String())
 	}
+
 	return background(workDir)
 }
 

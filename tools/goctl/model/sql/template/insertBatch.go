@@ -3,7 +3,7 @@ package template
 const (
 	InsertBatch = `
 func (m *default{{.upperStartCamelObject}}Model)InsertBatch(ctx context.Context,session sqlx.Session,dataList *[]{{.upperStartCamelObject}})(sql.Result,error){
-	if dataList == nil && len(*dataList) == 0 {
+	if dataList == nil || len(*dataList) == 0 {
 		return nil, fmt.Errorf( "batch insert fail, dataList not set")
 	}
 

@@ -3,7 +3,6 @@ package gogen
 import (
 	"bytes"
 	"fmt"
-	goformat "go/format"
 	"io"
 	"path/filepath"
 	"strings"
@@ -12,6 +11,7 @@ import (
 	"github.com/zeromicro/go-zero/core/collection"
 	"github.com/zeromicro/go-zero/tools/goctl/api/spec"
 	"github.com/zeromicro/go-zero/tools/goctl/api/util"
+	"github.com/zeromicro/go-zero/tools/goctl/pkg/golang"
 	"github.com/zeromicro/go-zero/tools/goctl/util/ctx"
 	"github.com/zeromicro/go-zero/tools/goctl/util/pathx"
 )
@@ -54,7 +54,7 @@ func genFile(c fileGenConfig) error {
 		return err
 	}
 
-	code := formatCode(buffer.String())
+	code := golang.FormatCode(buffer.String())
 	_, err = fp.WriteString(code)
 	return err
 }
@@ -65,7 +65,7 @@ func getParentPackage(dir string) (string, error) {
 		return "", err
 	}
 
-	//这里检查生成go.mod
+	//  这里检查生成go.mod
 	projectCtx, err := ctx.Prepare(abs)
 	if err != nil {
 		return "", err
@@ -135,15 +135,6 @@ func getMiddleware(api *spec.ApiSpec) []string {
 	}
 
 	return result.KeysStr()
-}
-
-func formatCode(code string) string {
-	ret, err := goformat.Source([]byte(code))
-	if err != nil {
-		return code
-	}
-
-	return string(ret)
 }
 
 func responseGoTypeName(r spec.Route, pkg ...string) string {

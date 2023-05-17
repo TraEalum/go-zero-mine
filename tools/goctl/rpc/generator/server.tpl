@@ -1,6 +1,6 @@
 {{.head}}
 
-package server
+package {{.packageName}}
 
 import (
 	{{if .notStream}}"context"{{end}}
