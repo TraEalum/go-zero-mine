@@ -196,7 +196,7 @@ func getTables(path string) []string {
 			break
 		}
 
-		table := strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(line, " ", ""), "//", ""), "\n", "")
+		table := strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(line, " ", ""), "//", ""), "\n", ""), "\r", "")
 		existTableName = append(existTableName, table)
 		if err != nil {
 			if err == io.EOF {
