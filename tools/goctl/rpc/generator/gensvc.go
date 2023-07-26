@@ -27,6 +27,7 @@ var svcTemplate string
 // GenSvc generates the servicecontext.go file, which is the resource dependency of a service,
 // such as rpc dependency, model dependency, etc.
 func (g *Generator) GenSvc(ctx DirContext, proto parser.Proto, cfg *conf.Config) error {
+	var modelDefine, modelInit string
 	dir := ctx.GetSvc()
 	svcFilename, err := format.FileNamingFormat(cfg.NamingFormat, "service_context")
 	if err != nil {
@@ -34,7 +35,9 @@ func (g *Generator) GenSvc(ctx DirContext, proto parser.Proto, cfg *conf.Config)
 	}
 
 	// fmt.Println(proto.Tables)
-	modelDefine, modelInit := genModels(proto.Tables)
+	if len(proto.Tables) != 0 {
+		modelDefine, modelInit = genModels(proto.Tables)
+	}
 
 	fileName := filepath.Join(dir.Filename, svcFilename+".go")
 	text := ""

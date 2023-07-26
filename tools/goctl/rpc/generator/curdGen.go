@@ -32,7 +32,7 @@ func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 		logx.Error(err)
 	}
 	
-	return &{{.responseType}}{ {{.pK}} :id }, nil
+	return &{{.responseType}}{ {{.pK}} :uint64(id) }, nil
 }
 `
 
