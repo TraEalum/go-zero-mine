@@ -136,7 +136,7 @@ func getMarshalProtoDataType(field *parser.Field) string {
 		}
 	case "sql.NullInt64":
 		{
-			return fmt.Sprintf("&sql.NullInt64{Int64:p.%s}", fileName)
+			return fmt.Sprintf("&sql.NullInt64{Int64: int64(p.%s), Valid: true}", fileName)
 		}
 	case "sql.NullBool":
 		{
@@ -175,7 +175,7 @@ func getUnmarshalModelDataType(field *parser.Field) string {
 		}
 	case "sql.NullInt64":
 		{
-			return fmt.Sprintf("m.%s.Int64", fileName)
+			return fmt.Sprintf("uint64(m.%s.Int64)", fileName)
 		}
 	case "sql.NullBool":
 		{

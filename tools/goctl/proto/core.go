@@ -561,11 +561,13 @@ func (s *Schema) makeInstanceMessage(buf *bytes.Buffer, m *Message, extStr strin
 	if len(oldSubStrings) > 0 {
 		tmpBuf := new(bytes.Buffer)
 
+		newM := m.GetOldMessage(oldSubStrings[0])
+
 		switch extStr {
 		case "Filter":
-			m.GenRpcSearchReqMessage(tmpBuf, false)
+			newM.GenRpcSearchReqMessage(tmpBuf, false)
 		default:
-			m.GenDefaultMessage(tmpBuf)
+			newM.GenDefaultMessage(tmpBuf)
 		}
 
 		newTableString := strings.Replace(tmpBuf.String(), "}\n", "}", 1)
@@ -598,6 +600,114 @@ func (s *Schema) makeInstanceMessage(buf *bytes.Buffer, m *Message, extStr strin
 	}
 
 	return
+}
+
+// GetOldMessage 获取旧字段message
+func (m Message) GetOldMessage(oldSubStrings string) Message {
+	resp := Message{Fields: make([]MessageField, 0)}
+
+	var comparisonMap = make(map[string]int, 0)
+	if !strings.Contains(oldSubStrings, "Database Tag Begin.") {
+		log.Println("empty Database Tag Begin. 执行旧操作")
+
+		return m
+	}
+
+	rows := strings.Split(oldSubStrings, "\n")
+
+	for _, v := range rows {
+		if strings.Contains(v, "Database Tag End.") {
+			break
+		}
+
+		tmpM := MessageField{}
+		commits := strings.Split(v, ";")
+
+		if len(commits) < 2 {
+			continue
+		}
+
+		var cList = make([]string, 0)
+		columns := strings.Split(commits[0], " ")
+
+		for _, cV := range columns {
+			if cV == "" {
+				continue
+			}
+
+			cList = append(cList, strings.TrimSpace(cV))
+		}
+
+		fieldComment := strings.TrimSpace(strings.Replace(commits[1], "\n", "", -1))
+		fieldComment = strings.TrimSpace(strings.Replace(commits[1], "//", "", 1))
+
+		tmpM.Comment = fieldComment
+
+		for i, v := range cList {
+			if v == "=" {
+				switch i {
+				case 2:
+					tmpM.Name = stringx.From(cList[1]).ToSnake()
+					tmpM.Typ = cList[0]
+				case 3:
+					tmpM.Name = stringx.From(cList[2]).ToSnake()
+					tmpM.Typ = fmt.Sprintf("%s %s", cList[0], cList[1])
+				case 4:
+					tmpM.Name = stringx.From(cList[3]).ToSnake()
+					tmpM.Typ = fmt.Sprintf("%s %s %s", cList[0], cList[1], cList[2])
+				}
+
+				break
+			}
+		}
+
+		resp.Fields = append(resp.Fields, tmpM)
+		comparisonMap[tmpM.Name] = 1
+	}
+
+	// 对比数据
+	for _, field := range m.Fields {
+		_, ok := comparisonMap[field.Name]
+		if !ok {
+			resp.Fields = append(resp.Fields, MessageField{
+				Typ:     field.Typ,
+				Name:    field.Name,
+				Comment: field.Comment,
+			})
+		} else {
+			comparisonMap[field.Name] = 0
+		}
+	}
+
+	var nFields = make([]MessageField, 0)
+
+	for _, v := range resp.Fields {
+		value, ok := comparisonMap[v.Name]
+		if ok && value == 1 {
+			continue
+		}
+
+		nFields = append(nFields, MessageField{
+			Typ:     v.Typ,
+			Name:    v.Name,
+			Comment: v.Comment,
+		})
+	}
+
+	resp.Fields = make([]MessageField, 0, len(nFields))
+	for i, v := range nFields {
+		resp.Fields = append(resp.Fields, MessageField{
+			Typ:     v.Typ,
+			Name:    v.Name,
+			tag:     i + 1,
+			Comment: v.Comment,
+		})
+	}
+
+	resp.Name = m.Name
+	resp.Comment = m.Comment
+
+	return resp
 }
 
 func (s *Schema) makeCustomStr(oldCustomStr string, count int) string {
