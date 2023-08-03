@@ -105,13 +105,13 @@ package {{.pkg}}
 {{.types}}
 {{.new}}
 
-func (m *{{.upperStartCamelObject}}) marshal(p *proto.{{.upperStartCamelObject}}) error {
+func (m *{{.upperStartCamelObject}}) Marshal(p *proto.{{.upperStartCamelObject}}) error {
 	{{.marshalFields}}
 
 	return nil
 }
 
-func (m *{{.upperStartCamelObject}}) unmarshal(p *proto.{{.upperStartCamelObject}}) error {
+func (m *{{.upperStartCamelObject}}) Unmarshal(p *proto.{{.upperStartCamelObject}}) error {
 	{{.unmarshallFields}}
 	
 	return nil

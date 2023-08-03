@@ -181,3 +181,82 @@ func getFields(fields []*parser.Field, dir, namingFormat string, table stringx.S
 
 	return fields, nil
 }
+
+func getMarshalFields(dir, namingFormat string, table stringx.String) (map[string]struct{}, error) {
+	resp := make(map[string]struct{}, 0)
+
+	dirAbs, err := filepath.Abs(dir)
+	if err != nil {
+		return nil, err
+	}
+
+	tn := stringx.From(table.Source())
+	modelFilename, err := format.FileNamingFormat(namingFormat,
+		fmt.Sprintf("%s_model", tn.Source()))
+	if err != nil {
+		return nil, err
+	}
+
+	name := util.SafeString(modelFilename) + "_gen.go"
+	filename := filepath.Join(dirAbs, name)
+
+	if pathx.FileExists(filename) {
+		file, err := os.OpenFile(filename, os.O_RDWR, 0666)
+		if err != nil {
+			log.Printf("Open file error!%v\n", err)
+			return nil, err
+		}
+		defer file.Close()
+
+		buf := bufio.NewReader(file)
+
+		match := fmt.Sprintf("%s%s", table.ToCamel(), ")Marshal")
+
+		for {
+			line, err := buf.ReadString('\n')
+
+			line = strings.Replace(line, " ", "", -1)
+
+			if strings.Contains(line, match) {
+				break
+			}
+
+			if err != nil {
+				if err == io.EOF {
+					break
+				} else {
+					return nil, err
+				}
+			}
+		}
+
+		for {
+			line, err := buf.ReadString('\n')
+			if strings.Contains(line, "return") {
+				break
+			}
+
+			if strings.Contains(line, "//") {
+				line = strings.Replace(line, "//", "", -1)
+				line = strings.Replace(line, " ", "", -1)
+				split := strings.Split(line, "=")
+
+				if len(split) > 1 {
+					r := strings.TrimSpace(strings.Replace(split[0], "m.", "", 1))
+					r = stringx.From(r).ToSnake()
+					resp[r] = struct{}{}
+				}
+			}
+
+			if err != nil {
+				if err == io.EOF {
+					break
+				} else {
+					return nil, err
+				}
+			}
+		}
+	}
+
+	return resp, nil
+}
