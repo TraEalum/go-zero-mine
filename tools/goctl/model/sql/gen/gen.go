@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -436,14 +435,12 @@ func (g *defaultGenerator) executeModel(in Table, code *code) (*bytes.Buffer, er
 	var table Table
 	table.Table = in.Table
 
-	fields, err := getFields(table.Fields, g.dir, g.cfg.NamingFormat, table.Name)
+	skipFields, err := getMarshalFields(g.dir, g.cfg.NamingFormat, table.Name)
 	if err != nil {
-		log.Fatalf("updateGen err: [%v]", err)
-
 		return nil, err
 	}
 
-	marshalFields, unmarshallFields, err := genFieldParser(table, fields)
+	marshalFields, unmarshallFields, err := genFieldParser(table, table.Fields, skipFields)
 
 	t := util.With("model").
 		Parse(text).

@@ -25,17 +25,17 @@ func genFields(table Table, fields []*parser.Field) (string, error) {
 	return strings.Join(list, "\n"), nil
 }
 
-func genFieldParser(table Table, fields []*parser.Field) (string, string, error) {
+func genFieldParser(table Table, fields []*parser.Field, skipFields map[string]struct{}) (string, string, error) {
 	var marshalList []string
 	var unmarshalList []string
 
 	for _, field := range fields {
-		marshalRes, err := genMarshalFields(table, field)
+		marshalRes, err := genMarshalFields(table, field, skipFields)
 		if err != nil {
 			return "", "", err
 		}
 
-		unmarshalRes, err := genUnmarshalFields(table, field)
+		unmarshalRes, err := genUnmarshalFields(table, field, skipFields)
 		if err != nil {
 			return "", "", err
 		}
@@ -75,19 +75,24 @@ func genField(table Table, field *parser.Field) (string, error) {
 	return output.String(), nil
 }
 
-func genMarshalFields(table Table, field *parser.Field) (string, error) {
+func genMarshalFields(table Table, field *parser.Field, skipFields map[string]struct{}) (string, error) {
 	text, err := pathx.LoadTemplate(category, fieldTemplateFile, template.MarshalFields)
 	if err != nil {
 		return "", err
 	}
 
-	name := field.Name.ToCamel() // 左侧model的名称
+	name := "m." + util.SafeString(field.Name.ToCamel()) // 左侧model的名称
+	_, ok := skipFields[field.Name.Source()]
+	if ok {
+		name = "// " + name
+	}
+
 	protoConvertType := getMarshalProtoDataType(field)
 
 	output, err := util.With("types").
 		Parse(text).
 		Execute(map[string]interface{}{
-			"name":      util.SafeString(name),
+			"name":      name,
 			"protoName": protoConvertType,
 		})
 	if err != nil {
@@ -97,10 +102,16 @@ func genMarshalFields(table Table, field *parser.Field) (string, error) {
 	return output.String(), nil
 }
 
-func genUnmarshalFields(table Table, field *parser.Field) (string, error) {
+func genUnmarshalFields(table Table, field *parser.Field, skipFields map[string]struct{}) (string, error) {
 	text, err := pathx.LoadTemplate(category, fieldTemplateFile, template.UnmarshalFields)
 	if err != nil {
 		return "", err
+	}
+
+	name := "p." + util.SafeString(field.Name.ToCamel())
+	_, ok := skipFields[field.Name.Source()]
+	if ok {
+		name = "// " + name
 	}
 
 	modelName := getUnmarshalModelDataType(field)
@@ -108,7 +119,7 @@ func genUnmarshalFields(table Table, field *parser.Field) (string, error) {
 	output, err := util.With("types").
 		Parse(text).
 		Execute(map[string]interface{}{
-			"name":      util.SafeString(field.Name.ToCamel()),
+			"name":      name,
 			"modelName": modelName,
 		})
 	if err != nil {
