@@ -357,7 +357,7 @@ func (g *defaultGenerator) genModel(in parser.Table, withCache bool) (string, er
 	list = append(list, insertCodeMethod, findOneCodeMethod, ret.findOneInterfaceMethod,
 		updateCodeMethod, deleteCodeMethod, listsCodeMethod, findOneByConditionInterface, transInterface,
 		findListByTransCodeInterface, findListBatchInterface, insertBatchInterface)
-	typesCode, err := genTypes(table, strings.Join(modelutil.TrimStringSlice(list), pathx.NL), withCache)
+	typesCode, err := genTypes(table, strings.Join(modelutil.TrimStringSlice(list), pathx.NL), withCache, g.dir, g.cfg.NamingFormat)
 	if err != nil {
 		return "", err
 	}
@@ -435,7 +435,12 @@ func (g *defaultGenerator) executeModel(in Table, code *code) (*bytes.Buffer, er
 	var table Table
 	table.Table = in.Table
 
-	marshalFields, unmarshallFields, err := genFieldParser(table, table.Fields)
+	skipFields, err := getMarshalFields(g.dir, g.cfg.NamingFormat, table.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	marshalFields, unmarshallFields, err := genFieldParser(table, table.Fields, skipFields)
 
 	t := util.With("model").
 		Parse(text).
