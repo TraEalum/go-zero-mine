@@ -193,7 +193,7 @@ func genLogicContext(logic string, serviceName string) string {
 		builder.WriteString("\tif err != nil {\n")
 		builder.WriteString("\t\treturn nil,err\n")
 		builder.WriteString("\t}\n\n")
-		builder.WriteString("\tresp.Marshal(rpcResp)\n")
+		//builder.WriteString("\tresp.Marshal(rpcResp)\n")
 	} else {
 		return ""
 	}
