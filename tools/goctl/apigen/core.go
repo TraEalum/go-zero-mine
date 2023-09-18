@@ -437,10 +437,9 @@ func (s *Schema) CreateParamString(fileName string) string {
 		buf.WriteString("\n")
 		m.GenApiQueryListResp(buf)
 
-	}
-
-	if len(s.Messages) > 0 {
-		buf.WriteString(")")
+		if len(s.Messages) > 0 {
+			buf.WriteString(")\n")
+		}
 	}
 
 	buf.WriteString("\n\n")
