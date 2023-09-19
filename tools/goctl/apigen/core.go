@@ -24,6 +24,10 @@ const (
 	synatx = "v1"
 
 	indent = "  "
+
+	leftBracesReplaceString = "{\n    //Database Tag Begin. DO NOT EDIT !!!"
+
+	rightBracesReplaceString = "  //Database Tag End. DO NOT EDIT!!!\n\n    //Custom Tag .You Can Edit.\n  }"
 )
 
 var unsignedTypeMap = map[string]string{
@@ -988,7 +992,8 @@ func (m Message) GenApiDefault(buf *bytes.Buffer) {
 		curFields = append(curFields, field)
 	}
 	m.Fields = curFields
-	buf.WriteString(fmt.Sprintf("%s\n", m))
+
+	buf.WriteString(ReplaceBraces(fmt.Sprintf("%s\n", m)))
 
 	//reset
 	m.Name = mOrginName
@@ -998,45 +1003,45 @@ func (m Message) GenApiDefault(buf *bytes.Buffer) {
 // 先固定写为id
 func (m Message) GenApiDefaultResp(buf *bytes.Buffer) {
 	mOrginName := FirstUpper(m.Name)
-	buf.WriteString(fmt.Sprintf("%sCreate%sResp {\n", indent, mOrginName))
+	buf.WriteString(ReplaceLeftBraces(fmt.Sprintf("%sCreate%sResp {\n", indent, mOrginName)))
 	// buf.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`   \n", indent, indent, "Id", "int64", "id"))
-	buf.WriteString(fmt.Sprintf("%s}\n", indent))
+	buf.WriteString(ReplaceRightBraces(fmt.Sprintf("%s}\n", indent)))
 }
 
 func (m Message) GenApiUpdateReq(buf *bytes.Buffer) {
 	mOrginName := FirstUpper(m.Name)
-	buf.WriteString(fmt.Sprintf("%sUpdate%sReq {\n", indent, mOrginName))
+	buf.WriteString(ReplaceLeftBraces(fmt.Sprintf("%sUpdate%sReq {\n", indent, mOrginName)))
 	for _, f := range m.Fields {
 		buf.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`   // %s\n", indent, indent, FirstUpper(stringx.From(f.Name).ToCamelWithStartLower()), f.Typ, f.ColumnName, f.Comment))
 	}
-	buf.WriteString(fmt.Sprintf("%s}\n", indent))
+	buf.WriteString(ReplaceRightBraces(fmt.Sprintf("%s}\n", indent)))
 }
 
 func (m Message) GenApiUpdateResp(buf *bytes.Buffer) {
 	mOrginName := FirstUpper(m.Name)
-	buf.WriteString(fmt.Sprintf("%sUpdate%sResp {\n", indent, mOrginName))
+	buf.WriteString(ReplaceLeftBraces(fmt.Sprintf("%sUpdate%sResp {\n", indent, mOrginName)))
 	// buf.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`   \n", indent, indent, "Id", "int64", "id"))
-	buf.WriteString(fmt.Sprintf("%s}\n", indent))
+	buf.WriteString(ReplaceRightBraces(fmt.Sprintf("%s}\n", indent)))
 }
 
 // 先固定三个参数
 func (m Message) GenApiQueryListReq(buf *bytes.Buffer) {
 	mOrginName := FirstUpper(m.Name)
-	buf.WriteString(fmt.Sprintf("%sQuery%sReq {\n", indent, mOrginName))
+	buf.WriteString(ReplaceLeftBraces(fmt.Sprintf("%sQuery%sReq {\n", indent, mOrginName)))
 	// buf.WriteString(fmt.Sprintf("%s%s%s   %s  `form:\"%s,optional\"`   \n", indent, indent, "Id", "int64", "id"))
 	buf.WriteString(fmt.Sprintf("%s%s%s   %s  `form:\"%s,optional\"`   \n", indent, indent, "PageNo", "int64", "page_no"))
 	buf.WriteString(fmt.Sprintf("%s%s%s   %s  `form:\"%s,optional\"`   \n", indent, indent, "PageSize", "int64", "page_size"))
-	buf.WriteString(fmt.Sprintf("%s}\n", indent))
+	buf.WriteString(ReplaceRightBraces(fmt.Sprintf("%s}\n", indent)))
 }
 
 func (m Message) GenApiQueryListResp(buf *bytes.Buffer) {
 	mOrginName := FirstUpper(m.Name)
-	buf.WriteString(fmt.Sprintf("%sQuery%sResp {\n", indent, mOrginName))
+	buf.WriteString(ReplaceLeftBraces(fmt.Sprintf("%sQuery%sResp {\n", indent, mOrginName)))
 	buf.WriteString(fmt.Sprintf("%s%s%s   []%s  `json:\"%s\"`   \n", indent, indent, m.Name+"List", mOrginName, fmt.Sprintf("%s_list", FirstToLower(m.Name))))
 	buf.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`   \n", indent, indent, "CurrPage", "int64", "curr_page"))
 	buf.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`   \n", indent, indent, "TotalPage", "int64", "total_page"))
 	buf.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`   \n", indent, indent, "TotalCount", "int64", "total_count"))
-	buf.WriteString(fmt.Sprintf("%s}\n", indent))
+	buf.WriteString(ReplaceRightBraces(fmt.Sprintf("%s}\n", indent)))
 }
 
 // String returns a string representation of a Message.
@@ -1181,4 +1186,19 @@ func FirstToLower(s string) string {
 		return ""
 	}
 	return strings.ToLower(s[:1]) + s[1:]
+}
+
+//	ReplaceBraces Replace a Braces to designated string, include left Braces and right Braces.
+func ReplaceBraces(s string) string {
+	return ReplaceRightBraces(ReplaceLeftBraces(s))
+}
+
+//	ReplaceLeftBraces Replace a Left Braces to designated string.
+func ReplaceLeftBraces(s string) string {
+	return strings.Replace(s, "{", leftBracesReplaceString, 1)
+}
+
+//	ReplaceRightBraces Replace a Right Braces to designated string.
+func ReplaceRightBraces(s string) string {
+	return strings.Replace(s, "}", rightBracesReplaceString, 1)
 }
