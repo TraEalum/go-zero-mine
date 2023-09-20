@@ -25,9 +25,11 @@ const (
 
 	indent = "  "
 
-	leftBracesReplaceString = "{\n    //Database Tag Begin. DO NOT EDIT !!!"
-
-	rightBracesReplaceString = "  //Database Tag End. DO NOT EDIT!!!\n\n    //Custom Tag .You Can Edit.\n  }"
+	databaseTagBegin         = "//Database Tag Begin. DO NOT EDIT !!!"
+	databaseTagEnd           = "//Database Tag End. DO NOT EDIT!!!"
+	customTag                = "//Custom Tag. You Can Edit."
+	leftBracesReplaceString  = "{\n    //Database Tag Begin. DO NOT EDIT !!!"
+	rightBracesReplaceString = "  //Database Tag End. DO NOT EDIT!!!\n\n    //Custom Tag. You Can Edit.\n  }"
 )
 
 var unsignedTypeMap = map[string]string{
@@ -425,21 +427,21 @@ func (s *Schema) CreateParamString(fileName string) string {
 		buf.WriteString("\n")
 		buf.WriteString("type (\n")
 		// 创建
-		m.GenApiDefault(buf)
+		m.GenApiDefault(buf, ReplaceBraces)
 		buf.WriteString("\n")
-		m.GenApiDefaultResp(buf)
+		m.GenApiDefaultResp(buf, ReplaceBraces)
 		buf.WriteString("\n")
 
 		//更新
-		m.GenApiUpdateReq(buf)
+		m.GenApiUpdateReq(buf, ReplaceBraces)
 		buf.WriteString("\n")
-		m.GenApiUpdateResp(buf)
+		m.GenApiUpdateResp(buf, ReplaceBraces)
 		buf.WriteString("\n")
 
 		//查询
-		m.GenApiQueryListReq(buf)
+		m.GenApiQueryListReq(buf, ReplaceBraces)
 		buf.WriteString("\n")
-		m.GenApiQueryListResp(buf)
+		m.GenApiQueryListResp(buf, ReplaceBraces)
 
 		if len(s.Messages) > 0 {
 			buf.WriteString(")\n")
@@ -455,7 +457,7 @@ func (s *Schema) CreateParamString(fileName string) string {
 		buf.WriteString("\n")
 		buf.WriteString("type (\n")
 
-		m.GenApiDefault(buf)
+		m.GenApiDefault(buf, ReplaceBraces)
 
 		buf.WriteString(")")
 		buf.WriteString("\n\n")
@@ -576,64 +578,8 @@ func (s *Schema) UpdateParamString(fileName string) string {
 	bufNew.WriteString(endLine)
 
 	// 写Messages
-	for {
-		line, err := buf.ReadString('\n')
-		if strings.Contains(line, "Type Record End") {
-			endLine = line
-			break
-		}
-		bufNew.WriteString(line)
-		if err != nil {
-			if err == io.EOF {
-				break
-			} else {
-				return "Read file error!"
-			}
-		}
-	}
-
-	for _, m := range s.Messages {
-		if !isInSlice(existTableName, m.Name) {
-			bufNew.WriteString("//--------------------------------" + m.Comment + "--------------------------------")
-			bufNew.WriteString("\n")
-			bufNew.WriteString("type (\n")
-
-			// 创建
-			m.GenApiDefault(bufNew)
-			bufNew.WriteString("\n")
-			m.GenApiDefaultResp(bufNew)
-			bufNew.WriteString("\n")
-
-			//更新
-			m.GenApiUpdateReq(bufNew)
-			bufNew.WriteString("\n")
-			m.GenApiUpdateResp(bufNew)
-			bufNew.WriteString("\n")
-
-			//查询
-			m.GenApiQueryListReq(bufNew)
-			bufNew.WriteString("\n")
-			m.GenApiQueryListResp(bufNew)
-
-			bufNew.WriteString(")")
-			bufNew.WriteString("\n\n")
-		}
-	}
-
-	for _, m := range s.CusMessages {
-		if !isInSlice(existFieldName, m.Name) {
-			bufNew.WriteString("//--------------------------------" + "customize_proto" + m.Name + "--------------------------------")
-			bufNew.WriteString("\n")
-			bufNew.WriteString("type (\n")
-
-			// 创建
-			m.GenApiDefault(bufNew)
-			bufNew.WriteString("\n")
-
-			bufNew.WriteString(")")
-			bufNew.WriteString("\n\n")
-
-		}
+	if err := writeUpdateParamString(buf, bufNew, s.Messages, s.CusMessages); err != nil {
+		return err.Error()
 	}
 
 	bufNew.WriteString("// Type Record End\n")
@@ -977,7 +923,7 @@ type Message struct {
 }
 
 // gen default message
-func (m Message) GenApiDefault(buf *bytes.Buffer) {
+func (m Message) GenApiDefault(buf *bytes.Buffer, warp func(s string) string) {
 	mOrginName := m.Name
 	mOrginFields := m.Fields
 	curFields := []MessageField{}
@@ -993,7 +939,11 @@ func (m Message) GenApiDefault(buf *bytes.Buffer) {
 	}
 	m.Fields = curFields
 
-	buf.WriteString(ReplaceBraces(fmt.Sprintf("%s\n", m)))
+	if warp == nil {
+		buf.WriteString(fmt.Sprintf("%s\n", m))
+	} else {
+		buf.WriteString(warp(fmt.Sprintf("%s\n", m)))
+	}
 
 	//reset
 	m.Name = mOrginName
@@ -1001,47 +951,89 @@ func (m Message) GenApiDefault(buf *bytes.Buffer) {
 }
 
 // 先固定写为id
-func (m Message) GenApiDefaultResp(buf *bytes.Buffer) {
+func (m Message) GenApiDefaultResp(buf *bytes.Buffer, warp func(s string) string) {
 	mOrginName := FirstUpper(m.Name)
-	buf.WriteString(ReplaceLeftBraces(fmt.Sprintf("%sCreate%sResp {\n", indent, mOrginName)))
+	w := fmt.Sprintf("%sCreate%sResp {\n", indent, mOrginName)
 	// buf.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`   \n", indent, indent, "Id", "int64", "id"))
-	buf.WriteString(ReplaceRightBraces(fmt.Sprintf("%s}\n", indent)))
-}
+	w += fmt.Sprintf("%s}\n", indent)
 
-func (m Message) GenApiUpdateReq(buf *bytes.Buffer) {
-	mOrginName := FirstUpper(m.Name)
-	buf.WriteString(ReplaceLeftBraces(fmt.Sprintf("%sUpdate%sReq {\n", indent, mOrginName)))
-	for _, f := range m.Fields {
-		buf.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`   // %s\n", indent, indent, FirstUpper(stringx.From(f.Name).ToCamelWithStartLower()), f.Typ, f.ColumnName, f.Comment))
+	if warp == nil {
+		buf.WriteString(w)
+		return
 	}
-	buf.WriteString(ReplaceRightBraces(fmt.Sprintf("%s}\n", indent)))
+
+	buf.WriteString(warp(w))
 }
 
-func (m Message) GenApiUpdateResp(buf *bytes.Buffer) {
+func (m Message) GenApiUpdateReq(buf *bytes.Buffer, warp func(s string) string) {
+	var tmp bytes.Buffer
+
 	mOrginName := FirstUpper(m.Name)
-	buf.WriteString(ReplaceLeftBraces(fmt.Sprintf("%sUpdate%sResp {\n", indent, mOrginName)))
+	tmp.WriteString(fmt.Sprintf("%sUpdate%sReq {\n", indent, mOrginName))
+	for _, f := range m.Fields {
+		tmp.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`   // %s\n", indent, indent, FirstUpper(stringx.From(f.Name).ToCamelWithStartLower()), f.Typ, f.ColumnName, f.Comment))
+	}
+	tmp.WriteString(fmt.Sprintf("%s}\n", indent))
+
+	if warp == nil {
+		buf.WriteString(tmp.String())
+		return
+	}
+
+	buf.WriteString(warp(tmp.String()))
+}
+
+func (m Message) GenApiUpdateResp(buf *bytes.Buffer, warp func(s string) string) {
+	mOrginName := FirstUpper(m.Name)
+
+	w := fmt.Sprintf("%sUpdate%sResp {\n", indent, mOrginName)
 	// buf.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`   \n", indent, indent, "Id", "int64", "id"))
-	buf.WriteString(ReplaceRightBraces(fmt.Sprintf("%s}\n", indent)))
+	w += fmt.Sprintf("%s}\n", indent)
+
+	if warp == nil {
+		buf.WriteString(w)
+		return
+	}
+
+	buf.WriteString(warp(w))
 }
 
 // 先固定三个参数
-func (m Message) GenApiQueryListReq(buf *bytes.Buffer) {
+func (m Message) GenApiQueryListReq(buf *bytes.Buffer, warp func(s string) string) {
+	var tmp bytes.Buffer
+
 	mOrginName := FirstUpper(m.Name)
-	buf.WriteString(ReplaceLeftBraces(fmt.Sprintf("%sQuery%sReq {\n", indent, mOrginName)))
+	tmp.WriteString(fmt.Sprintf("%sQuery%sReq {\n", indent, mOrginName))
 	// buf.WriteString(fmt.Sprintf("%s%s%s   %s  `form:\"%s,optional\"`   \n", indent, indent, "Id", "int64", "id"))
-	buf.WriteString(fmt.Sprintf("%s%s%s   %s  `form:\"%s,optional\"`   \n", indent, indent, "PageNo", "int64", "page_no"))
-	buf.WriteString(fmt.Sprintf("%s%s%s   %s  `form:\"%s,optional\"`   \n", indent, indent, "PageSize", "int64", "page_size"))
-	buf.WriteString(ReplaceRightBraces(fmt.Sprintf("%s}\n", indent)))
+	tmp.WriteString(fmt.Sprintf("%s%s%s   %s  `form:\"%s,optional\"`   \n", indent, indent, "PageNo", "int64", "page_no"))
+	tmp.WriteString(fmt.Sprintf("%s%s%s   %s  `form:\"%s,optional\"`   \n", indent, indent, "PageSize", "int64", "page_size"))
+	tmp.WriteString(fmt.Sprintf("%s}\n", indent))
+
+	if warp == nil {
+		buf.WriteString(tmp.String())
+		return
+	}
+
+	buf.WriteString(warp(tmp.String()))
 }
 
-func (m Message) GenApiQueryListResp(buf *bytes.Buffer) {
+func (m Message) GenApiQueryListResp(buf *bytes.Buffer, warp func(s string) string) {
+	var tmp bytes.Buffer
+
 	mOrginName := FirstUpper(m.Name)
-	buf.WriteString(ReplaceLeftBraces(fmt.Sprintf("%sQuery%sResp {\n", indent, mOrginName)))
-	buf.WriteString(fmt.Sprintf("%s%s%s   []%s  `json:\"%s\"`   \n", indent, indent, m.Name+"List", mOrginName, fmt.Sprintf("%s_list", FirstToLower(m.Name))))
-	buf.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`   \n", indent, indent, "CurrPage", "int64", "curr_page"))
-	buf.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`   \n", indent, indent, "TotalPage", "int64", "total_page"))
-	buf.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`   \n", indent, indent, "TotalCount", "int64", "total_count"))
-	buf.WriteString(ReplaceRightBraces(fmt.Sprintf("%s}\n", indent)))
+	tmp.WriteString(fmt.Sprintf("%sQuery%sResp {\n", indent, mOrginName))
+	tmp.WriteString(fmt.Sprintf("%s%s%s   []%s  `json:\"%s\"`   \n", indent, indent, m.Name+"List", mOrginName, fmt.Sprintf("%s_list", FirstToLower(m.Name))))
+	tmp.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`   \n", indent, indent, "CurrPage", "int64", "curr_page"))
+	tmp.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`   \n", indent, indent, "TotalPage", "int64", "total_page"))
+	tmp.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`   \n", indent, indent, "TotalCount", "int64", "total_count"))
+	tmp.WriteString(fmt.Sprintf("%s}\n", indent))
+
+	if warp == nil {
+		buf.WriteString(tmp.String())
+		return
+	}
+
+	buf.WriteString(warp(tmp.String()))
 }
 
 // String returns a string representation of a Message.
@@ -1201,4 +1193,175 @@ func ReplaceLeftBraces(s string) string {
 //	ReplaceRightBraces Replace a Right Braces to designated string.
 func ReplaceRightBraces(s string) string {
 	return strings.Replace(s, "}", rightBracesReplaceString, 1)
+}
+
+func getMessageInLine(line string) (message string) {
+	re := regexp.MustCompile(`\b[a-zA-Z_][a-zA-Z0-9_]*\b`)
+	matches := re.FindAllString(line, -1)
+
+	if len(matches) == 0 {
+		return ""
+	}
+
+	return matches[0]
+}
+
+// getCustomFields get message mapping customFields
+func getCustomFields(buf *bufio.Reader) (customFields map[string][]string, err error) {
+	customFields = make(map[string][]string)
+
+	for {
+		line, err := buf.ReadString('\n')
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+
+			return customFields, errors.New("Read file error!")
+		}
+
+		if strings.Contains(line, "Type Record End") {
+			break
+		}
+
+		if !strings.Contains(line, "{") {
+			continue
+		}
+
+		message := getMessageInLine(line)
+
+		for {
+			TagEndL, err := buf.ReadString('\n')
+			if err != nil {
+				if err == io.EOF {
+					break
+				}
+
+				return map[string][]string{}, errors.New("Read file error!")
+			}
+
+			if !strings.Contains(TagEndL, databaseTagEnd) {
+				continue
+			}
+
+			fields := make([]string, 0, 10)
+
+			for {
+				l, err := buf.ReadString('\n')
+				if err != nil {
+					if err == io.EOF {
+						break
+					}
+
+					return customFields, errors.New("Read file error!")
+				}
+
+				if strings.Contains(l, customTag) {
+					break
+				}
+
+				fields = append(fields, l)
+			}
+
+			if len(fields) == 0 {
+				break
+			}
+
+			customFields[message] = fields
+			break
+		}
+	}
+
+	return customFields, nil
+}
+
+func insertStrBetweenSubStr(str, substr1, substr2, insertStr string) string {
+	if insertStr == "" {
+		return str
+	}
+
+	index1 := strings.Index(str, substr1)
+	index2 := strings.Index(str, substr2)
+
+	if index1 == -1 || index2 == -1 {
+		return str
+	}
+
+	index1 += len(substr1)
+	if index1 > index2 {
+		index1, index2 = index2, index1
+	}
+
+	warpStr := fmt.Sprintf("%s\n%s    %s", str[:index1], insertStr, str[index2:])
+
+	return warpStr
+}
+
+func writeUpdateParamString(buf *bufio.Reader, bufNew *bytes.Buffer, s []*Message, Cus []*Message) error {
+	//自定义字段
+	customFields, err := getCustomFields(buf)
+	if err != nil {
+		return err
+	}
+
+	updateWarp := func(s string) string {
+		s = ReplaceBraces(s)
+
+		//跳过两个空格
+		index := strings.Index(s[2:], " ") + 2
+		if index <= 0 {
+			log.Fatal("updateWarp failed")
+		}
+		message := s[2:index]
+
+		var insertStr string
+		for _, v := range customFields[message] {
+			insertStr += v
+		}
+
+		return insertStrBetweenSubStr(s, databaseTagEnd, customTag, insertStr)
+	}
+
+	// Database Tag内的字段按照数据表对应,Custom Tag内的自定义字段依旧
+	for _, m := range s {
+		bufNew.WriteString("//--------------------------------" + m.Comment + "--------------------------------")
+		bufNew.WriteString("\n")
+		bufNew.WriteString("type (\n")
+
+		// 创建
+		m.GenApiDefault(bufNew, updateWarp)
+		bufNew.WriteString("\n")
+		m.GenApiDefaultResp(bufNew, updateWarp)
+		bufNew.WriteString("\n")
+
+		//更新
+		m.GenApiUpdateReq(bufNew, updateWarp)
+		bufNew.WriteString("\n")
+		m.GenApiUpdateResp(bufNew, updateWarp)
+		bufNew.WriteString("\n")
+
+		//查询
+		m.GenApiQueryListReq(bufNew, updateWarp)
+		bufNew.WriteString("\n")
+		m.GenApiQueryListResp(bufNew, updateWarp)
+
+		if len(s) > 0 {
+			bufNew.WriteString(")\n")
+		}
+	}
+
+	//proto
+	for _, m := range Cus {
+		bufNew.WriteString("//--------------------------------" + "customize_proto" + m.Name + "--------------------------------")
+		bufNew.WriteString("\n")
+		bufNew.WriteString("type (\n")
+
+		// 创建
+		m.GenApiDefault(bufNew, updateWarp)
+
+		bufNew.WriteString(")")
+		bufNew.WriteString("\n\n")
+	}
+
+	return nil
 }
