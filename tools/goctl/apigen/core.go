@@ -25,11 +25,15 @@ const (
 
 	indent = "  "
 
-	databaseTagBegin         = "//Database Tag Begin. DO NOT EDIT !!!"
-	databaseTagEnd           = "//Database Tag End. DO NOT EDIT!!!"
-	customTag                = "//Custom Tag. You Can Edit."
-	leftBracesReplaceString  = "{\n    //Database Tag Begin. DO NOT EDIT !!!"
-	rightBracesReplaceString = "  //Database Tag End. DO NOT EDIT!!!\n\n    //Custom Tag. You Can Edit.\n  }"
+	RecordStart = "// Type Record Start"
+	RecordEnd   = "// Type Record End"
+
+	databaseTagBegin = "//Database Tag Begin. DO NOT EDIT !!!"
+	databaseTagEnd   = "//Database Tag End. DO NOT EDIT!!!"
+	customTag        = "//Custom Tag. You Can Edit."
+
+	leftBracesReplace  = "{\n    //Database Tag Begin. DO NOT EDIT !!!"
+	rightBracesReplace = "  //Database Tag End. DO NOT EDIT!!!\n\n    //Custom Tag. You Can Edit.\n  }"
 )
 
 var unsignedTypeMap = map[string]string{
@@ -575,7 +579,8 @@ func (s *Schema) UpdateParamString(fileName string) string {
 			bufNew.WriteString("// " + m.Name + "\n")
 		}
 	}
-	bufNew.WriteString(endLine)
+	bufNew.WriteString(endLine + "\n")
+	bufNew.WriteString(RecordStart + "\n")
 
 	// 写Messages
 	if err := writeUpdateParamString(buf, bufNew, s.Messages, s.CusMessages); err != nil {
@@ -1187,12 +1192,12 @@ func ReplaceBraces(s string) string {
 
 //	ReplaceLeftBraces Replace a Left Braces to designated string.
 func ReplaceLeftBraces(s string) string {
-	return strings.Replace(s, "{", leftBracesReplaceString, 1)
+	return strings.Replace(s, "{", leftBracesReplace, 1)
 }
 
 //	ReplaceRightBraces Replace a Right Braces to designated string.
 func ReplaceRightBraces(s string) string {
-	return strings.Replace(s, "}", rightBracesReplaceString, 1)
+	return strings.Replace(s, "}", rightBracesReplace, 1)
 }
 
 func getMessageInLine(line string) (message string) {
@@ -1324,7 +1329,7 @@ func writeUpdateParamString(buf *bufio.Reader, bufNew *bytes.Buffer, s []*Messag
 
 	// Database Tag内的字段按照数据表对应,Custom Tag内的自定义字段依旧
 	for _, m := range s {
-		bufNew.WriteString("//--------------------------------" + m.Comment + "--------------------------------")
+		bufNew.WriteString("\n//--------------------------------" + m.Comment + "--------------------------------")
 		bufNew.WriteString("\n")
 		bufNew.WriteString("type (\n")
 
@@ -1352,7 +1357,7 @@ func writeUpdateParamString(buf *bufio.Reader, bufNew *bytes.Buffer, s []*Messag
 
 	//proto
 	for _, m := range Cus {
-		bufNew.WriteString("//--------------------------------" + "customize_proto" + m.Name + "--------------------------------")
+		bufNew.WriteString("\n//--------------------------------" + "customize_proto" + m.Name + "--------------------------------")
 		bufNew.WriteString("\n")
 		bufNew.WriteString("type (\n")
 
@@ -1360,8 +1365,10 @@ func writeUpdateParamString(buf *bufio.Reader, bufNew *bytes.Buffer, s []*Messag
 		m.GenApiDefault(bufNew, updateWarp)
 
 		bufNew.WriteString(")")
-		bufNew.WriteString("\n\n")
+		bufNew.WriteString("\n")
 	}
+
+	bufNew.WriteString("\n")
 
 	return nil
 }
