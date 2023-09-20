@@ -730,9 +730,9 @@ func (s *Schema) UpdateString() string {
 		}
 	}
 	bufNew.WriteString(endLine)
-	if len(s.Messages) > 0 {
-		bufNew.WriteString(endLine)
-	}
+	//if len(s.Messages) > 0 {
+	//	bufNew.WriteString(endLine)
+	//}
 
 	// 写enum
 	var existEnumText []string
