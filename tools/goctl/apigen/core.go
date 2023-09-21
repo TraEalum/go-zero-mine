@@ -448,11 +448,11 @@ func (s *Schema) CreateParamString(fileName string) string {
 		m.GenApiQueryListResp(buf, ReplaceBraces)
 
 		if len(s.Messages) > 0 {
-			buf.WriteString(")\n")
+			buf.WriteString(")\n\n")
 		}
 	}
 
-	buf.WriteString("\n\n")
+	//buf.WriteString("\n\n")
 
 	for _, m := range s.CusMessages {
 
