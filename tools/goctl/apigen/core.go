@@ -583,9 +583,51 @@ func (s *Schema) UpdateParamString(fileName string) string {
 	bufNew.WriteString(RecordStart + "\n")
 
 	// 写Messages
-	//todo
-	if err := writeUpdateParamString(buf, bufNew, *s); err != nil {
+	if err := writeUpdateParamString(buf, bufNew, *s, file); err != nil {
 		return err.Error()
+	}
+
+	for _, m := range s.Messages {
+		if !isInSlice(existTableName, m.Name) {
+			bufNew.WriteString("//--------------------------------" + m.Comment + "--------------------------------")
+			bufNew.WriteString("\n")
+			bufNew.WriteString("type (\n")
+
+			// 创建
+			m.GenApiDefault(bufNew, ReplaceBraces)
+			bufNew.WriteString("\n")
+			m.GenApiDefaultResp(bufNew, ReplaceBraces)
+			bufNew.WriteString("\n")
+
+			//更新
+			m.GenApiUpdateReq(bufNew, ReplaceBraces)
+			bufNew.WriteString("\n")
+			m.GenApiUpdateResp(bufNew, ReplaceBraces)
+			bufNew.WriteString("\n")
+
+			//查询
+			m.GenApiQueryListReq(bufNew, ReplaceBraces)
+			bufNew.WriteString("\n")
+			m.GenApiQueryListResp(bufNew, ReplaceBraces)
+
+			bufNew.WriteString(")")
+			bufNew.WriteString("\n\n")
+		}
+	}
+
+	for _, m := range s.CusMessages {
+		if !isInSlice(existFieldName, m.Name) {
+			bufNew.WriteString("//--------------------------------" + "customize_proto" + m.Name + "--------------------------------")
+			bufNew.WriteString("\n")
+			bufNew.WriteString("type (\n")
+
+			// 创建
+			m.GenApiDefault(bufNew, ReplaceBraces)
+			bufNew.WriteString("\n")
+
+			bufNew.WriteString(")")
+			bufNew.WriteString("\n\n")
+		}
 	}
 
 	bufNew.WriteString("// Type Record End\n")
@@ -1202,6 +1244,7 @@ func ReplaceRightBraces(s string) string {
 }
 
 func getMessageNameInLine(line string) (message string) {
+	//example: "  SalesServer {"  ======>  "SalesServer"
 	re := regexp.MustCompile(`\b[a-zA-Z_][a-zA-Z0-9_]*\b`)
 	matches := re.FindAllString(line, -1)
 
@@ -1281,7 +1324,8 @@ func getCustomFields(buf *bufio.Reader) (customFields map[string][]string, err e
 	return customFields, nil
 }
 
-func insertStrBetweenSubStr(str, substr1, substr2, insertStr string) string {
+//	insertStrBetween insert string Between subStrings
+func insertStrBetween(str, substr1, substr2, insertStr string) string {
 	if insertStr == "" {
 		return str
 	}
@@ -1303,7 +1347,8 @@ func insertStrBetweenSubStr(str, substr1, substr2, insertStr string) string {
 	return warpStr
 }
 
-func writeUpdateParamString(buf *bufio.Reader, bufNew *bytes.Buffer, s Schema) error {
+// writeUpdateParamString write Update ParamString into file
+func writeUpdateParamString(buf *bufio.Reader, bufNew *bytes.Buffer, s Schema, file *os.File) error {
 	//保存自定义字段
 	customFields, err := getCustomFields(buf)
 	if err != nil {
@@ -1325,13 +1370,18 @@ func writeUpdateParamString(buf *bufio.Reader, bufNew *bytes.Buffer, s Schema) e
 			insertStr += v
 		}
 
-		return insertStrBetweenSubStr(s, databaseTagEnd, customTag, insertStr)
+		return insertStrBetween(s, databaseTagEnd, customTag, insertStr)
 	}
 
-	buff := buf
+	//复位到文件开始位置
+	_, err = file.Seek(0, io.SeekStart)
+	if err != nil {
+		return err
+	}
+
 	//重新读到写的位置
 	for {
-		l, err := buff.ReadString('\n')
+		l, err := buf.ReadString('\n')
 		if err != nil {
 			if err == io.EOF {
 				break
@@ -1349,12 +1399,14 @@ func writeUpdateParamString(buf *bufio.Reader, bufNew *bytes.Buffer, s Schema) e
 	for _, m := range s.Messages {
 		messages[m.Name] = m
 	}
+
+	cusMessages := make(map[string]*Message)
 	for _, m := range s.CusMessages {
-		messages[m.Name] = m
+		cusMessages[m.Name] = m
 	}
 
 	for {
-		line, err := buff.ReadString('\n')
+		line, err := buf.ReadString('\n')
 		if err != nil {
 			return err
 		}
@@ -1370,44 +1422,51 @@ func writeUpdateParamString(buf *bufio.Reader, bufNew *bytes.Buffer, s Schema) e
 		}
 
 		name := getMessageNameInLine(line)
-		m, isExist := messages[name]
+		m, isMExist := messages[name]
+		cusM, isCusMExist := cusMessages[name]
 
-		if !isExist {
+		if !isMExist && !isCusMExist {
 			bufNew.WriteString(line)
 			continue
 		}
 
-		//============start
-		// 创建
-		m.GenApiDefault(bufNew, updateWarp)
-		bufNew.WriteString("\n")
-		m.GenApiDefaultResp(bufNew, updateWarp)
-		bufNew.WriteString("\n")
+		if isMExist {
+			// 创建
+			m.GenApiDefault(bufNew, updateWarp)
+			bufNew.WriteString("\n")
+			m.GenApiDefaultResp(bufNew, updateWarp)
+			bufNew.WriteString("\n")
 
-		//更新
-		m.GenApiUpdateReq(bufNew, updateWarp)
-		bufNew.WriteString("\n")
-		m.GenApiUpdateResp(bufNew, updateWarp)
-		bufNew.WriteString("\n")
+			//更新
+			m.GenApiUpdateReq(bufNew, updateWarp)
+			bufNew.WriteString("\n")
+			m.GenApiUpdateResp(bufNew, updateWarp)
+			bufNew.WriteString("\n")
 
-		//查询
-		m.GenApiQueryListReq(bufNew, updateWarp)
-		bufNew.WriteString("\n")
-		m.GenApiQueryListResp(bufNew, updateWarp)
+			//查询
+			m.GenApiQueryListReq(bufNew, updateWarp)
+			bufNew.WriteString("\n")
+			m.GenApiQueryListResp(bufNew, updateWarp)
 
-		if len(s.Messages) > 0 {
+			if len(s.Messages) > 0 {
+				bufNew.WriteString(")\n")
+			}
+		}
+
+		if isCusMExist {
+			// 创建
+			cusM.GenApiDefault(bufNew, updateWarp)
 			bufNew.WriteString(")\n")
 		}
-		//============end
 
-		//buff跳过{}
+		//buf读跳过
 		for {
-			l, err := buff.ReadString('\n')
+			l, err := buf.ReadString('\n')
 			if err != nil {
 				return err
 			}
 
-			if strings.Contains(l, "}") {
+			if strings.Contains(l, ")") {
 				break
 			}
 		}
