@@ -990,7 +990,7 @@ func (m Message) GenApiDefault(buf *bytes.Buffer, warp func(s string) string) {
 	if warp == nil {
 		buf.WriteString(fmt.Sprintf("%s\n", m))
 	} else {
-		buf.WriteString(warp(fmt.Sprintf("%s\n", m)))
+		buf.WriteString(warp(fmt.Sprintf("%s", m)))
 	}
 
 	//reset
@@ -1289,7 +1289,8 @@ func getCustomFields(buf *bufio.Reader) (customFields map[string][]string, err e
 				return map[string][]string{}, errors.New("Read file error!")
 			}
 
-			if !strings.Contains(TagEndL, databaseTagEnd) {
+			//自定义字段的开始标志
+			if !strings.Contains(TagEndL, customTag) {
 				continue
 			}
 
@@ -1305,7 +1306,7 @@ func getCustomFields(buf *bufio.Reader) (customFields map[string][]string, err e
 					return customFields, errors.New("Read file error!")
 				}
 
-				if strings.Contains(l, customTag) {
+				if strings.Contains(l, "}") {
 					break
 				}
 
@@ -1324,27 +1325,13 @@ func getCustomFields(buf *bufio.Reader) (customFields map[string][]string, err e
 	return customFields, nil
 }
 
-//	insertStrBetween insert string Between subStrings
-func insertStrBetween(str, substr1, substr2, insertStr string) string {
+//	insertStrAfter insert string after tag String
+func insertStrAfter(s, insertStr, tag string) string {
 	if insertStr == "" {
-		return str
+		return s
 	}
 
-	index1 := strings.Index(str, substr1)
-	index2 := strings.Index(str, substr2)
-
-	if index1 == -1 || index2 == -1 {
-		return str
-	}
-
-	index1 += len(substr1)
-	if index1 > index2 {
-		index1, index2 = index2, index1
-	}
-
-	warpStr := fmt.Sprintf("%s\n%s    %s", str[:index1], insertStr, str[index2:])
-
-	return warpStr
+	return strings.Replace(s, tag+"\n", fmt.Sprintf("%s\n%s", tag, insertStr), 1)
 }
 
 // writeUpdateParamString write Update ParamString into file
@@ -1363,6 +1350,7 @@ func writeUpdateParamString(buf *bufio.Reader, bufNew *bytes.Buffer, s Schema, f
 		if index <= 0 {
 			log.Fatal("updateWarp failed")
 		}
+		//example: 	"  DictPdmFilters {" 	=====>		"DictPdmFilters"
 		message := s[2:index]
 
 		var insertStr string
@@ -1370,7 +1358,7 @@ func writeUpdateParamString(buf *bufio.Reader, bufNew *bytes.Buffer, s Schema, f
 			insertStr += v
 		}
 
-		return insertStrBetween(s, databaseTagEnd, customTag, insertStr)
+		return insertStrAfter(s, insertStr, customTag)
 	}
 
 	//复位到文件开始位置
