@@ -431,21 +431,21 @@ func (s *Schema) CreateParamString(fileName string) string {
 		buf.WriteString("\n")
 		buf.WriteString("type (\n")
 		// 创建
-		m.GenApiDefault(buf, ReplaceBraces)
+		m.GenApiDefault(buf, replaceBraces)
 		buf.WriteString("\n")
-		m.GenApiDefaultResp(buf, ReplaceBraces)
+		m.GenApiDefaultResp(buf, replaceBraces)
 		buf.WriteString("\n")
 
 		//更新
-		m.GenApiUpdateReq(buf, ReplaceBraces)
+		m.GenApiUpdateReq(buf, replaceBraces)
 		buf.WriteString("\n")
-		m.GenApiUpdateResp(buf, ReplaceBraces)
+		m.GenApiUpdateResp(buf, replaceBraces)
 		buf.WriteString("\n")
 
 		//查询
-		m.GenApiQueryListReq(buf, ReplaceBraces)
+		m.GenApiQueryListReq(buf, replaceBraces)
 		buf.WriteString("\n")
-		m.GenApiQueryListResp(buf, ReplaceBraces)
+		m.GenApiQueryListResp(buf, replaceBraces)
 
 		if len(s.Messages) > 0 {
 			buf.WriteString(")\n\n")
@@ -461,7 +461,7 @@ func (s *Schema) CreateParamString(fileName string) string {
 		buf.WriteString("\n")
 		buf.WriteString("type (\n")
 
-		m.GenApiDefault(buf, ReplaceBraces)
+		m.GenApiDefault(buf, replaceBraces)
 
 		buf.WriteString(")")
 		buf.WriteString("\n\n")
@@ -594,21 +594,21 @@ func (s *Schema) UpdateParamString(fileName string) string {
 			bufNew.WriteString("type (\n")
 
 			// 创建
-			m.GenApiDefault(bufNew, ReplaceBraces)
+			m.GenApiDefault(bufNew, replaceBraces)
 			bufNew.WriteString("\n")
-			m.GenApiDefaultResp(bufNew, ReplaceBraces)
+			m.GenApiDefaultResp(bufNew, replaceBraces)
 			bufNew.WriteString("\n")
 
 			//更新
-			m.GenApiUpdateReq(bufNew, ReplaceBraces)
+			m.GenApiUpdateReq(bufNew, replaceBraces)
 			bufNew.WriteString("\n")
-			m.GenApiUpdateResp(bufNew, ReplaceBraces)
+			m.GenApiUpdateResp(bufNew, replaceBraces)
 			bufNew.WriteString("\n")
 
 			//查询
-			m.GenApiQueryListReq(bufNew, ReplaceBraces)
+			m.GenApiQueryListReq(bufNew, replaceBraces)
 			bufNew.WriteString("\n")
-			m.GenApiQueryListResp(bufNew, ReplaceBraces)
+			m.GenApiQueryListResp(bufNew, replaceBraces)
 
 			bufNew.WriteString(")")
 			bufNew.WriteString("\n\n")
@@ -622,7 +622,7 @@ func (s *Schema) UpdateParamString(fileName string) string {
 			bufNew.WriteString("type (\n")
 
 			// 创建
-			m.GenApiDefault(bufNew, ReplaceBraces)
+			m.GenApiDefault(bufNew, replaceBraces)
 			bufNew.WriteString("\n")
 
 			bufNew.WriteString(")")
@@ -630,7 +630,7 @@ func (s *Schema) UpdateParamString(fileName string) string {
 		}
 	}
 
-	bufNew.WriteString("// Type Record End\n")
+	bufNew.WriteString(RecordEnd + "\n")
 	err = ioutil.WriteFile(fileName, bufNew.Bytes(), 0666)
 
 	return "paramFile DONE"
@@ -1228,113 +1228,7 @@ func FirstToLower(s string) string {
 	return strings.ToLower(s[:1]) + s[1:]
 }
 
-//	ReplaceBraces Replace a Braces to designated string, include left Braces and right Braces.
-func ReplaceBraces(s string) string {
-	return ReplaceRightBraces(ReplaceLeftBraces(s))
-}
-
-//	ReplaceLeftBraces Replace a Left Braces to designated string.
-func ReplaceLeftBraces(s string) string {
-	return strings.Replace(s, "{", leftBracesReplace, 1)
-}
-
-//	ReplaceRightBraces Replace a Right Braces to designated string.
-func ReplaceRightBraces(s string) string {
-	return strings.Replace(s, "}", rightBracesReplace, 1)
-}
-
-func getMessageNameInLine(line string) (message string) {
-	//example: "  SalesServer {"  ======>  "SalesServer"
-	re := regexp.MustCompile(`\b[a-zA-Z_][a-zA-Z0-9_]*\b`)
-	matches := re.FindAllString(line, -1)
-
-	if len(matches) == 0 {
-		return ""
-	}
-
-	return matches[0]
-}
-
-// getCustomFields get message mapping customFields
-func getCustomFields(buf *bufio.Reader) (customFields map[string][]string, err error) {
-	customFields = make(map[string][]string)
-
-	for {
-		line, err := buf.ReadString('\n')
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
-
-			return customFields, errors.New("Read file error!")
-		}
-
-		if strings.Contains(line, "Type Record End") {
-			break
-		}
-
-		if !strings.Contains(line, "{") {
-			continue
-		}
-
-		message := getMessageNameInLine(line)
-
-		for {
-			TagEndL, err := buf.ReadString('\n')
-			if err != nil {
-				if err == io.EOF {
-					break
-				}
-
-				return map[string][]string{}, errors.New("Read file error!")
-			}
-
-			//自定义字段的开始标志
-			if !strings.Contains(TagEndL, customTag) {
-				continue
-			}
-
-			fields := make([]string, 0, 10)
-
-			for {
-				l, err := buf.ReadString('\n')
-				if err != nil {
-					if err == io.EOF {
-						break
-					}
-
-					return customFields, errors.New("Read file error!")
-				}
-
-				if strings.Contains(l, "}") {
-					break
-				}
-
-				fields = append(fields, l)
-			}
-
-			if len(fields) == 0 {
-				break
-			}
-
-			customFields[message] = fields
-			break
-		}
-	}
-
-	return customFields, nil
-}
-
-//	insertStrAfter insert string after tag String
-func insertStrAfter(s, insertStr, tag string) string {
-	if insertStr == "" {
-		return s
-	}
-
-	return strings.Replace(s, tag+"\n", fmt.Sprintf("%s\n%s", tag, insertStr), 1)
-}
-
-// writeUpdateParamString write Update ParamString into file
+// writeUpdateParamString write Update Param String into file
 func writeUpdateParamString(buf *bufio.Reader, bufNew *bytes.Buffer, s Schema, file *os.File) error {
 	//保存自定义字段
 	customFields, err := getCustomFields(buf)
@@ -1343,7 +1237,7 @@ func writeUpdateParamString(buf *bufio.Reader, bufNew *bytes.Buffer, s Schema, f
 	}
 
 	updateWarp := func(s string) string {
-		s = ReplaceBraces(s)
+		s = replaceBraces(s)
 
 		//跳过两个空格
 		index := strings.Index(s[2:], " ") + 2
@@ -1461,4 +1355,111 @@ func writeUpdateParamString(buf *bufio.Reader, bufNew *bytes.Buffer, s Schema, f
 	}
 
 	return nil
+}
+
+//	replaceBraces replace a Braces to designated string, include left Braces and right Braces.
+func replaceBraces(s string) string {
+	return replaceRightBraces(replaceLeftBraces(s))
+}
+
+//	replaceLeftBraces replace a Left Braces to designated string.
+func replaceLeftBraces(s string) string {
+	return strings.Replace(s, "{", leftBracesReplace, 1)
+}
+
+//	replaceRightBraces replace a Right Braces to designated string.
+func replaceRightBraces(s string) string {
+	return strings.Replace(s, "}", rightBracesReplace, 1)
+}
+
+//	getMessageNameInLine get Message Name in line string.
+func getMessageNameInLine(line string) (message string) {
+	//example: "  SalesServer {"  ======>  "SalesServer"
+	re := regexp.MustCompile(`\b[a-zA-Z_][a-zA-Z0-9_]*\b`)
+	matches := re.FindAllString(line, -1)
+
+	if len(matches) == 0 {
+		return ""
+	}
+
+	return matches[0]
+}
+
+// getCustomFields get message mapping customFields.
+func getCustomFields(buf *bufio.Reader) (customFields map[string][]string, err error) {
+	customFields = make(map[string][]string)
+
+	for {
+		line, err := buf.ReadString('\n')
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+
+			return customFields, errors.New("Read file error!")
+		}
+
+		if strings.Contains(line, "Type Record End") {
+			break
+		}
+
+		if !strings.Contains(line, "{") {
+			continue
+		}
+
+		message := getMessageNameInLine(line)
+
+		for {
+			TagEndL, err := buf.ReadString('\n')
+			if err != nil {
+				if err == io.EOF {
+					break
+				}
+
+				return map[string][]string{}, errors.New("Read file error!")
+			}
+
+			//自定义字段的开始标志
+			if !strings.Contains(TagEndL, customTag) {
+				continue
+			}
+
+			fields := make([]string, 0, 10)
+
+			for {
+				l, err := buf.ReadString('\n')
+				if err != nil {
+					if err == io.EOF {
+						break
+					}
+
+					return customFields, errors.New("Read file error!")
+				}
+
+				if strings.Contains(l, "}") {
+					break
+				}
+
+				fields = append(fields, l)
+			}
+
+			if len(fields) == 0 {
+				break
+			}
+
+			customFields[message] = fields
+			break
+		}
+	}
+
+	return customFields, nil
+}
+
+//	insertStrAfter insert string after tag String.
+func insertStrAfter(s, insertStr, tag string) string {
+	if insertStr == "" {
+		return s
+	}
+
+	return strings.Replace(s, tag+"\n", fmt.Sprintf("%s\n%s", tag, insertStr), 1)
 }
