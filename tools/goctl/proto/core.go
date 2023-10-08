@@ -302,10 +302,13 @@ func (s *Schema) CreateString() string {
 	buf.WriteString("// Rpc Func\n")
 	buf.WriteString("// ------------------------------------ \n\n")
 
-	serviceName := stringx.From(s.TableName).ToCamelWithStartLower()
+	var funcTpl string
+	for i, m := range s.Messages {
+		serviceName := stringx.From(m.Name).ToCamelWithStartLower()
+		//开头英文字母小写
+		serviceNameLower := strings.ToLower(serviceName[:1]) + serviceName[1:]
+		funcTpl += "service " + serviceNameLower + " {\n"
 
-	funcTpl := "service " + serviceName + " {\n"
-	for _, m := range s.Messages {
 		funcTpl += "\t //-----------------------" + m.Comment + "----------------------- \n"
 		if len(s.GenerateMethod) == 1 && strings.TrimSpace(s.GenerateMethod[0]) == "" {
 			funcTpl += "\t rpc Query" + m.Name + "Detail(" + m.Name + "Filter) returns (" + m.Name + "); \n"
@@ -326,9 +329,11 @@ func (s *Schema) CreateString() string {
 			}
 		}
 
+		if i == len(s.Messages)-1 {
+			funcTpl += "\t // Service Record End\n"
+		}
+		funcTpl += "}\n\n"
 	}
-	funcTpl = funcTpl + "\t // Service Record End\n"
-	funcTpl = funcTpl + "}"
 	buf.WriteString(funcTpl)
 	err := ioutil.WriteFile(s.Dir, []byte(buf.String()), 0666)
 	if err != nil {
