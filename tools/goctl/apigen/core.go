@@ -584,7 +584,7 @@ func (s *Schema) UpdateParamString(fileName string) string {
 
 	// 写Messages
 	if err := writeUpdateParamString(buf, bufNew, *s, file); err != nil {
-		return err.Error()
+		fmt.Printf("writeUpdateParamString err: %v \n", err)
 	}
 
 	for _, m := range s.Messages {
@@ -1290,6 +1290,9 @@ func writeUpdateParamString(buf *bufio.Reader, bufNew *bytes.Buffer, s Schema, f
 	for {
 		line, err := buf.ReadString('\n')
 		if err != nil {
+			if err == io.EOF {
+				return nil
+			}
 			return err
 		}
 
@@ -1345,6 +1348,9 @@ func writeUpdateParamString(buf *bufio.Reader, bufNew *bytes.Buffer, s Schema, f
 		for {
 			l, err := buf.ReadString('\n')
 			if err != nil {
+				if err == io.EOF {
+					return nil
+				}
 				return err
 			}
 
