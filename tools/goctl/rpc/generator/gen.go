@@ -2,6 +2,7 @@ package generator
 
 import (
 	"fmt"
+	"os/exec"
 	"path/filepath"
 	"time"
 
@@ -130,6 +131,21 @@ func (g *Generator) Generate(zctx *ZRpcContext) error {
 	err = g.GenCall(dirCtx, proto, g.cfg, zctx)
 
 	fmt.Println("GenCall，耗时", time.Since(startTime))
+
+	//rpc
+	cmd := exec.Command("goimports", "-w", zctx.Output)
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+	fmt.Printf("goimports -w %s，耗时: %v\n", zctx.Output, time.Since(startTime))
+
+	//proto
+	protoPath := filepath.Dir(zctx.Src)
+	cmd = exec.Command("goimports", "-w", protoPath)
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+	fmt.Printf("goimports -w %s，耗时: %v\n", protoPath, time.Since(startTime))
 
 	console.NewColorConsole().MarkDone()
 

@@ -70,18 +70,7 @@ func GoCommand(_ *cobra.Command, _ []string) error {
 		return errors.New("missing -dir")
 	}
 
-	if err := DoGenProject(apiFile, dir, namingStyle, marshal); err != nil {
-		return err
-	}
-
-	startTime := time.Now()
-	cmd := exec.Command("goimports", "-w", dir)
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-	fmt.Printf("goimports -w %s，耗时: %v\n", dir, time.Since(startTime))
-
-	return nil
+	return DoGenProject(apiFile, dir, namingStyle, marshal)
 }
 
 // DoGenProject gen go project files with api file
@@ -136,6 +125,13 @@ func DoGenProject(apiFile, dir, style, marshal string) error {
 	if err := apiformat.ApiFormatByPath(apiFile, false); err != nil {
 		return err
 	}
+
+	startTime := time.Now()
+	cmd := exec.Command("goimports", "-w", dir)
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+	fmt.Printf("goimports -w %s，耗时: %v\n", dir, time.Since(startTime))
 
 	fmt.Println(aurora.Green("Done."))
 	return nil
