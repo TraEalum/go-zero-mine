@@ -2,8 +2,11 @@ package command
 
 import (
 	"errors"
+	"fmt"
+	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/spf13/cobra"
@@ -117,7 +120,18 @@ func MySqlDataSource(_ *cobra.Command, _ []string) error {
 		return err
 	}
 
-	return fromMysqlDataSource(url, dir, patterns, cfg, cache, idea, service, subTableNumber, subTableKey)
+	if err := fromMysqlDataSource(url, dir, patterns, cfg, cache, idea, service, subTableNumber, subTableKey); err != nil {
+		return err
+	}
+
+	startTime := time.Now()
+	cmd := exec.Command("goimports", "-w", dir)
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+	fmt.Printf("goimports -w %s，耗时: %v\n", dir, time.Since(startTime))
+
+	return nil
 }
 
 type pattern map[string]struct{}

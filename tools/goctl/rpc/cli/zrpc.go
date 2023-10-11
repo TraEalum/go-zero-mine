@@ -2,9 +2,12 @@ package cli
 
 import (
 	"errors"
+	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/zeromicro/go-zero/tools/goctl/rpc/generator"
@@ -103,7 +106,28 @@ func ZRPC(_ *cobra.Command, args []string) error {
 	ctx.Output = zrpcOut
 	ctx.ProtocCmd = strings.Join(protocArgs, " ")
 	g := generator.NewGenerator(style, verbose)
-	return g.Generate(&ctx)
+	if err := g.Generate(&ctx); err != nil {
+		return err
+	}
+
+	startTime := time.Now()
+
+	//rpc
+	cmd := exec.Command("goimports", "-w", ctx.Output)
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+	fmt.Printf("goimports -w %s，耗时: %v\n", ctx.Output, time.Since(startTime))
+
+	//proto
+	protoPath := filepath.Dir(ctx.Src)
+	cmd = exec.Command("goimports", "-w", protoPath)
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+	fmt.Printf("goimports -w %s，耗时: %v\n", protoPath, time.Since(startTime))
+
+	return nil
 }
 
 func wrapProtocCmd(name string, args []string) []string {

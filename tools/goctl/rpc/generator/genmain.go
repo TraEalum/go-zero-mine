@@ -78,8 +78,15 @@ func (g *Generator) GenMain(ctx DirContext, proto parser.Proto, cfg *conf.Config
 		registerServer += fmt.Sprintf("\t\tproto.Register%sServer(grpcServer, %s.New%sServer(ctx))\n", parser.CamelCase(e.Name), serverPkg, parser.CamelCase(e.Name))
 	}
 
+	var isMainExist bool
+	if _, err := os.Stat(fileName); err == nil {
+		isMainExist = true
+	} else {
+		isMainExist = os.IsExist(err)
+	}
+
 	// len大于二 只修改注册服务行代码
-	if c.Multiple && len(proto.Service) > 1 {
+	if c.Multiple && len(proto.Service) > 1 && isMainExist {
 		start := time.Now()
 		fmt.Println("gen main方法-upDateNewServer耗时开始时间:", start)
 		err2 := upDateNewServer(fileName, registerServer, imports)
@@ -117,7 +124,12 @@ func upDateNewServer(fileName, registerServer string, imports []string) error {
 
 	buf := bufio.NewReader(f)
 	newBuf := new(bytes.Buffer)
-Loop:
+
+	addImports := make([]string, len(imports))
+	copy(addImports, imports)
+
+	const importTag = "import ("
+
 	for {
 		line, err := buf.ReadString('\n')
 		if err != nil {
@@ -128,26 +140,74 @@ Loop:
 			}
 		}
 
-		// if strings.Contains(line, "\"fmt\"") {
-		// 	newBuf.WriteString(line)
-		// 	newBuf.WriteString("\n")
+		newBuf.WriteString(line)
 
-		// 	for {
-		// 		fmt.Println("upDateNewServer 1")
-		// 		line, _ := buf.ReadString('\n')
-		// 		if strings.Contains(line, "comm/configm") {
-		// 			// 写入新imports
-		// 			for _, v := range imports {
-		// 				newBuf.WriteString("\t" + v + "\n")
-		// 			}
+		if strings.Contains(line, importTag) {
+			break
+		}
+	}
 
-		// 			newBuf.WriteString("\n")
-		// 			newBuf.WriteString(line)
+	//import(....)
+	first := true
+	for {
+		line, err := buf.ReadString('\n')
+		if err != nil {
+			if err == io.EOF {
+				break
+			} else {
+				return errors.New("Read file error!")
+			}
+		}
 
-		// 			continue Loop
-		// 		}
-		// 	}
-		// }
+		//import结束
+		if strings.Contains(line, ")") {
+			newBuf.WriteString(line)
+			break
+		}
+
+		//找出需要新增的import语句并添加
+		if first && line == "\n" {
+			first = false
+			newBuf.WriteString(line)
+
+			for _, v := range imports {
+				newBuf.WriteString("\t")
+				newBuf.WriteString(v)
+				newBuf.WriteString("\n")
+			}
+
+			//跳过
+			for {
+				l, err := buf.ReadString('\n')
+				if err != nil {
+					if err == io.EOF {
+						break
+					} else {
+						return errors.New("Read file error!")
+					}
+				}
+
+				if l == "\n" {
+					newBuf.WriteString(l)
+					break
+				}
+			}
+			continue
+		}
+
+		newBuf.WriteString(line)
+	}
+
+	//grpc Register
+	for {
+		line, err := buf.ReadString('\n')
+		if err != nil {
+			if err == io.EOF {
+				break
+			} else {
+				return errors.New("Read file error!")
+			}
+		}
 
 		if strings.Contains(line, "zrpc.MustNewServer") {
 			newBuf.WriteString(line)
@@ -161,17 +221,18 @@ Loop:
 					newBuf.WriteString("\n")
 					newBuf.WriteString(line)
 
-					continue Loop
+					break
 				}
 			}
+		} else {
+			newBuf.WriteString(line)
 		}
 
-		newBuf.WriteString(line)
 	}
 
 	err = ioutil.WriteFile(fileName, newBuf.Bytes(), 0666)
 	if err != nil {
-		fmt.Printf("生成paramFile文件失败:%v", err.Error())
+		fmt.Printf("生成rpc main函数文件失败:%v", err.Error())
 		return err
 	}
 
