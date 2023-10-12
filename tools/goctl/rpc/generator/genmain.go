@@ -116,6 +116,8 @@ func (g *Generator) GenMain(ctx DirContext, proto parser.Proto, cfg *conf.Config
 }
 
 func upDateNewServer(fileName, registerServer string, imports []string) error {
+	start := time.Now()
+
 	f, err := os.Open(fileName)
 	if err != nil {
 		return err
@@ -147,6 +149,9 @@ func upDateNewServer(fileName, registerServer string, imports []string) error {
 		}
 	}
 
+	fmt.Println("upDateNewServer - import前处理，执行耗时:", time.Since(start))
+
+	start = time.Now()
 	//import(....)
 	first := true
 	for {
@@ -176,7 +181,7 @@ func upDateNewServer(fileName, registerServer string, imports []string) error {
 				newBuf.WriteString("\n")
 			}
 
-			//跳过
+			//读跳过
 			for {
 				l, err := buf.ReadString('\n')
 				if err != nil {
@@ -197,7 +202,9 @@ func upDateNewServer(fileName, registerServer string, imports []string) error {
 
 		newBuf.WriteString(line)
 	}
+	fmt.Println("upDateNewServer - import处理，执行耗时:", time.Since(start))
 
+	start = time.Now()
 	//grpc Register
 	for {
 		line, err := buf.ReadString('\n')
@@ -229,6 +236,7 @@ func upDateNewServer(fileName, registerServer string, imports []string) error {
 		}
 
 	}
+	fmt.Println("upDateNewServer - grpc Register处理，执行耗时:", time.Since(start))
 
 	err = ioutil.WriteFile(fileName, newBuf.Bytes(), 0666)
 	if err != nil {
