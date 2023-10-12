@@ -88,7 +88,7 @@ func (g *Generator) GenMain(ctx DirContext, proto parser.Proto, cfg *conf.Config
 	// len大于二 只修改注册服务行代码
 	if c.Multiple && len(proto.Service) > 1 && isMainExist {
 		start := time.Now()
-		fmt.Println("gen main方法-upDateNewServer耗时开始时间:", start)
+		//fmt.Printf("gen main方法-upDateNewServer耗时开始时间: %v\n", start)
 		err2 := upDateNewServer(fileName, registerServer, imports)
 		fmt.Println("gen main方法-upDateNewServer执行耗时:", time.Since(start))
 		return err2
@@ -116,8 +116,6 @@ func (g *Generator) GenMain(ctx DirContext, proto parser.Proto, cfg *conf.Config
 }
 
 func upDateNewServer(fileName, registerServer string, imports []string) error {
-	start := time.Now()
-
 	f, err := os.Open(fileName)
 	if err != nil {
 		return err
@@ -126,9 +124,6 @@ func upDateNewServer(fileName, registerServer string, imports []string) error {
 
 	buf := bufio.NewReader(f)
 	newBuf := new(bytes.Buffer)
-
-	addImports := make([]string, len(imports))
-	copy(addImports, imports)
 
 	const importTag = "import ("
 
@@ -149,9 +144,6 @@ func upDateNewServer(fileName, registerServer string, imports []string) error {
 		}
 	}
 
-	fmt.Println("upDateNewServer - import前处理，执行耗时:", time.Since(start))
-
-	start = time.Now()
 	//import(....)
 	first := true
 	for {
@@ -198,13 +190,22 @@ func upDateNewServer(fileName, registerServer string, imports []string) error {
 				}
 			}
 			continue
+		} else {
+			//跳过重复的import
+			skip := false
+			for _, s := range imports {
+				if strings.Contains(line, s) {
+					skip = true
+					break
+				}
+			}
+			if skip {
+				continue
+			}
 		}
-
 		newBuf.WriteString(line)
 	}
-	fmt.Println("upDateNewServer - import处理，执行耗时:", time.Since(start))
 
-	start = time.Now()
 	//grpc Register
 	for {
 		line, err := buf.ReadString('\n')
@@ -236,7 +237,6 @@ func upDateNewServer(fileName, registerServer string, imports []string) error {
 		}
 
 	}
-	fmt.Println("upDateNewServer - grpc Register处理，执行耗时:", time.Since(start))
 
 	err = ioutil.WriteFile(fileName, newBuf.Bytes(), 0666)
 	if err != nil {
