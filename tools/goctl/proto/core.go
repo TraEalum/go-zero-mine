@@ -14,6 +14,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/go-openapi/inflect"
+
 	"github.com/zeromicro/go-zero/tools/goctl/util"
 
 	"github.com/serenize/snaker"
@@ -1133,8 +1135,8 @@ func parseColumn(s *Schema, msg *Message, col Column) error {
 			return "," == cs || "'" == cs
 		})
 
-		// enumName := inflect.Singularize(snaker.SnakeToCamel(col.TableName)) + snaker.SnakeToCamel(col.ColumnName)
-		enumName := ""
+		enumName := inflect.Singularize(snaker.SnakeToCamel(col.TableName)) + snaker.SnakeToCamel(col.ColumnName)
+		// enumName := ""
 		enum, err := newEnumFromStrings(enumName, col.ColumnComment, enums)
 		if nil != err {
 			return err
