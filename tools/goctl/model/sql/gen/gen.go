@@ -276,6 +276,7 @@ func (g *defaultGenerator) genModel(in parser.Table, withCache bool) (string, er
 	if len(in.PrimaryKey.Name.Source()) == 0 {
 		return "", fmt.Errorf("table %s: missing primary key", in.Name.Source())
 	}
+
 	primaryKey, uniqueKey := genCacheKeys(in)
 
 	var table Table
