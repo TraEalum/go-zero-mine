@@ -54,6 +54,7 @@ func (g *Generator) GenSvc(ctx DirContext, proto parser.Proto, cfg *conf.Config)
 	if err != nil {
 		return err
 	}
+
 	return util.With("svc").GoFmt(true).Parse(text).SaveTo(map[string]interface{}{
 		"imports":     fmt.Sprintf(`"%v"`, ctx.GetConfig().Package),
 		"modelDefine": modelDefine,
@@ -91,13 +92,13 @@ func dealExistsModelInit(modelInit string, fileName string, tables []string) (st
 	tmpModelInit := strings.Split(modelInit, ",")
 	re := regexp.MustCompile("[a-zA-z]+Model:")
 
-	for _, v := range tmpModelInit {
-		match := re.FindAllString(v, -1)
-		if len(match) == 0 || !strings.Contains(v, "Model") {
+	for i := 0; i < len(tmpModelInit); i++ {
+		match := re.FindAllString(tmpModelInit[i], -1)
+		if len(match) == 0 || !strings.Contains(tmpModelInit[i], "Model") {
 			continue
 		}
 
-		modelInitMap[match[0]] = strings.Trim(v, "\r\n")
+		modelInitMap[match[0]] = strings.Trim(tmpModelInit[i], "\r\n")
 	}
 	//前数据  正则 标签: // <codeGeneratedModelDefine>
 	content := string(fileBytes)
@@ -115,16 +116,29 @@ func dealExistsModelInit(modelInit string, fileName string, tables []string) (st
 
 	re = regexp.MustCompile("[a-zA-z]+Model:")
 	var tmpModelDefineNoMatch []string
-	for _, v := range tmpModelDefineArr {
-		if !strings.Contains(v, "Model") {
+	for i := 0; i < len(tmpModelDefineArr); i++ {
+		if !strings.Contains(tmpModelDefineArr[i], "Model") {
 			continue
 		}
 
-		match := re.FindAllString(v, -1)
+		if !strings.Contains(tmpModelDefineArr[i], "(") {
+			continue
+		}
+
+		if !strings.Contains(tmpModelDefineArr[i], ")") && !strings.Contains(tmpModelDefineArr[i], "//") {
+			tmpModelDefineArr[i] += "," + tmpModelDefineArr[i+1]
+		}
+
+		match := re.FindAllString(tmpModelDefineArr[i], 1)
 		if len(match) == 0 {
-			tmpModelDefineNoMatch = append(tmpModelDefineNoMatch, strings.Trim(v, "\r\n"))
+			tmpModelDefineNoMatch = append(tmpModelDefineNoMatch, strings.Trim(tmpModelDefineArr[i], "\r\n"))
 		} else {
-			modelExMap[match[0]] = strings.Trim(v, "\r\n")
+			_, ok := modelExMap[match[0]]
+			if ok {
+				continue
+			}
+
+			modelExMap[match[0]] = strings.Trim(tmpModelDefineArr[i], "\r\n")
 		}
 	}
 
