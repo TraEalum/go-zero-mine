@@ -452,10 +452,7 @@ func (s *Schema) CreateParamString(fileName string) string {
 		}
 	}
 
-	//buf.WriteString("\n\n")
-
 	for _, m := range s.CusMessages {
-
 		// 创建
 		buf.WriteString("//--------------------------------" + "customize_proto" + m.Name + "--------------------------------")
 		buf.WriteString("\n")
@@ -1073,9 +1070,7 @@ func (m Message) GenApiQueryListResp(buf *bytes.Buffer, warp func(s string) stri
 	mOrginName := FirstUpper(m.Name)
 	tmp.WriteString(fmt.Sprintf("%sQuery%sResp {\n", indent, mOrginName))
 	tmp.WriteString(fmt.Sprintf("%s%s%s   []%s  `json:\"%s\"`   \n", indent, indent, m.Name+"List", mOrginName, fmt.Sprintf("%s_list", FirstToLower(m.Name))))
-	tmp.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`   \n", indent, indent, "CurrPage", "int64", "curr_page"))
-	tmp.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`   \n", indent, indent, "TotalPage", "int64", "total_page"))
-	tmp.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`   \n", indent, indent, "TotalCount", "int64", "total_count"))
+	tmp.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`   \n", indent, indent, "Pagination", "Pagination", "pagination"))
 	tmp.WriteString(fmt.Sprintf("%s}\n", indent))
 
 	if warp == nil {
