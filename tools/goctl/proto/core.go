@@ -1002,6 +1002,9 @@ func (m Message) GenRpcSearchReqMessage(buf *bytes.Buffer, needList bool) {
 	curFields := []MessageField{
 		{Typ: "int64", Name: "pageNo", tag: 1, Comment: "pageNo"},
 		{Typ: "int64", Name: "pageSize", tag: 2, Comment: "pageSize"},
+		{Typ: "repeated string", Name: "sortField", tag: 3, Comment: "sortField"},
+		{Typ: "repeated string", Name: "sortType", tag: 4, Comment: "sortType"},
+		{Typ: "bool", Name: "genTotal", tag: 5, Comment: "genTotal"},
 	}
 	var filedTag = len(curFields)
 	for _, field := range m.Fields {

@@ -88,23 +88,27 @@ func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 const QueryLogic = commonHead + `
 func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 	var err error
-	var totalCount int64
+	var totalCount *int64
 	var {{.modelNameFirstLower}}List *[]model.{{.modelName}}
+
 	resp := proto.{{.modelName}}List{
 		{{.modelName}}: []*proto.{{.modelName}}{},
 	}
 
-	// build where
-	id := in.Get{{.pK}}()
-	where := model.{{.modelName}}{
-		 {{.pK}}: &id,
+	if (in.GenTotal) {
+		totalCount = new(int64)
 	}
+
+	// build where
+	where := model.{{.modelName}}{}
+	where.MarshalFilter(in)
 	builder := util.NewSelectBuilder(util.WithTable(where.TableName())).
 		Where(&where).
-		Limit(in)
+		Limit(in).
+		OrderBy(in.SortField, in.SortType)
 
 	// query
-	if {{.modelNameFirstLower}}List, err = l.svcCtx.{{.modelName}}Model.FindList(l.ctx, builder.SelectBuilder, &totalCount); err != nil {
+	if {{.modelNameFirstLower}}List, err = l.svcCtx.{{.modelName}}Model.FindList(l.ctx, builder.SelectBuilder, totalCount); err != nil {
 		logx.WithContext(l.ctx).Infof("FindList fail. %v", err)
 		
 		return nil, errorm.New(errorm.RecordFindFailed, "FindList fail.%v", err)
@@ -113,12 +117,14 @@ func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 	model.Unmarshal{{.modelName}}Lst(&resp.{{.modelName}}, *{{.modelNameFirstLower}}List)
 
 	// 分页
-	resp.TotalCount = totalCount
-	resp.CurPage = in.GetPageNo()
-	resp.TotalPage = totalCount / in.GetPageSize()
+	if in.GenTotal && totalCount != nil {
+		resp.TotalCount = *totalCount
+		resp.CurPage = in.GetPageNo()
+		resp.TotalPage = *totalCount / in.GetPageSize()
 
-	if totalCount%in.GetPageSize() != 0 {
-		resp.TotalPage += 1
+		if *totalCount%in.GetPageSize() != 0 {
+			resp.TotalPage += 1
+		}
 	}
 
 	return &resp, nil
@@ -130,8 +136,15 @@ func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 	var {{.modelNameFirstLower}} *model.{{.modelName}}
 	resp := {{.responseType}}{}
 
+	// build where
+	where := model.{{.modelName}}{}
+	where.MarshalFilter(in)
+	builder := util.NewSelectBuilder(util.WithTable(where.TableName())).
+		Where(&where).
+		OrderBy(in.SortField, in.SortType)
+
 	// query
-	if {{.modelNameFirstLower}}, err = l.svcCtx.{{.modelName}}Model.FindOne(l.ctx, in.Get{{.pK}}()); err != nil {
+	if {{.modelNameFirstLower}}, err = l.svcCtx.{{.modelName}}Model.FindOneByCondition(l.ctx, builder.SelectBuilder); err != nil {
 		return nil, errorm.New(errorm.RecordFindFailed, "FindOne fail.%v", err)
 	}
 

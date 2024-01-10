@@ -52,6 +52,12 @@ func (m *{{.upperStartCamelObject}}) Unmarshal(p *proto.{{.upperStartCamelObject
 	
 	return nil
 }
+
+func (m *{{.upperStartCamelObject}}) MarshalFilter(p *proto.{{.upperStartCamelObject}}Filter) error {
+	m.marshalFilter(p)
+
+	return nil
+}
 `
 
 // ModelCustomSubTable defines a template for extension
@@ -114,6 +120,12 @@ func (m *{{.upperStartCamelObject}}) marshal(p *proto.{{.upperStartCamelObject}}
 func (m *{{.upperStartCamelObject}}) unmarshal(p *proto.{{.upperStartCamelObject}}) error {
 	{{.unmarshallFields}}
 	
+	return nil
+}
+
+func (m *{{.upperStartCamelObject}}) marshalFilter(p *proto.{{.upperStartCamelObject}}Filter) error {
+	{{.marshalFields}}
+
 	return nil
 }
 

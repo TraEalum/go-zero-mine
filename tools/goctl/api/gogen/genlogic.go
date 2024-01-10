@@ -165,6 +165,7 @@ func genLogicContext(logic string, serviceName string) string {
 		builder.WriteString(fmt.Sprintf("\tresp = &types.Query%sResp{}\n\n", tableName))
 		builder.WriteString(fmt.Sprintf("\tvar %s proto.%sFilter\n", paraName, tableName))
 		builder.WriteString(fmt.Sprintf("\treq.Unmarshal(&%s)\n\n", paraName))
+		builder.WriteString(fmt.Sprintf("\t%s.GenTotal = true\n", paraName))
 		builder.WriteString(fmt.Sprintf("\trpcResp, err := l.svcCtx.%s.%s.Query%sList(l.ctx, &%s)\n", serviceName, tableName, tableName, paraName))
 		builder.WriteString("\tif err != nil {\n")
 		builder.WriteString("\t\treturn nil,err\n")
