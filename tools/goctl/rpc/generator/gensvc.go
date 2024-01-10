@@ -90,7 +90,7 @@ func dealExistsModelInit(modelInit string, fileName string, tables []string) (st
 
 	modelInitMap := map[string]string{}
 	tmpModelInit := strings.Split(modelInit, ",")
-	re := regexp.MustCompile("[a-zA-z]+Model:")
+	re := regexp.MustCompile("[1-9|a-zA-z]+Model:")
 
 	for i := 0; i < len(tmpModelInit); i++ {
 		match := re.FindAllString(tmpModelInit[i], -1)
@@ -114,7 +114,7 @@ func dealExistsModelInit(modelInit string, fileName string, tables []string) (st
 	modelExMap := map[string]string{}
 	tmpModelDefineArr := strings.Split(tagModelDefineStr[0], ",")
 
-	re = regexp.MustCompile("[a-zA-z]+Model:")
+	re = regexp.MustCompile("[1-9|a-zA-z]+Model:")
 	var tmpModelDefineNoMatch []string
 	for i := 0; i < len(tmpModelDefineArr); i++ {
 		if !strings.Contains(tmpModelDefineArr[i], "Model") {
