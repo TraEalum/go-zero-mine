@@ -22,9 +22,13 @@ func (r *Update{{.upperStartCamelObject}}Req) Unmarshal(p *proto.{{.upperStartCa
 }
 
 func (r *Query{{.upperStartCamelObject}}Resp) Marshal(p *proto.{{.upperStartCamelObject}}List) error {
-    r.CurrPage = p.CurPage
-    r.TotalPage = p.TotalPage
-    r.TotalCount = p.TotalCount
+    r.Pagination = Pagination{
+    		PerPage:   p.PerPage,
+    		TotalPage: p.TotalPage,
+    		Total:     p.Total,
+    		PerSize:   p.PerSize,
+    		Count:     p.Count,
+    	}
 
 	Marshal{{.upperStartCamelObject}}Lst(&r.{{.upperStartCamelObject}}List,p.{{.upperStartCamelObject}})
 
