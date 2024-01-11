@@ -30,6 +30,7 @@ type handlerInfo struct {
 	Call               string
 	HasResp            bool
 	HasRequest         bool
+	IsList             bool
 }
 
 func genHandler(dir, rootPkg string, cfg *config.Config, group spec.Group, route spec.Route) error {
@@ -46,6 +47,12 @@ func genHandler(dir, rootPkg string, cfg *config.Config, group spec.Group, route
 		return err
 	}
 
+	fmt.Printf("handler name: [%v]\n", handler)
+	var isBool bool
+	if strings.Contains(handler, "List") {
+		isBool = true
+	}
+
 	return doGenToFile(dir, handler, cfg, group, route, handlerInfo{
 		PkgName:        pkgName,
 		ImportPackages: genHandlerImports(group, route, parentPkg),
@@ -56,6 +63,7 @@ func genHandler(dir, rootPkg string, cfg *config.Config, group spec.Group, route
 		Call:           strings.Title(strings.TrimSuffix(handler, "Handler")),
 		HasResp:        len(route.ResponseTypeName()) > 0,
 		HasRequest:     len(route.RequestTypeName()) > 0,
+		IsList:         isBool,
 	})
 }
 

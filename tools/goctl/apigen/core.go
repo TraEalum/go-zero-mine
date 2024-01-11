@@ -34,6 +34,10 @@ const (
 
 	leftBracesReplace  = "{\n    //Database Tag Begin. DO NOT EDIT !!!"
 	rightBracesReplace = "  //Database Tag End. DO NOT EDIT!!!\n\n    //Custom Tag. You Can Edit.\n  }"
+
+	imports = `import (
+	"../../../../comm/api/comm.api"
+)`
 )
 
 var unsignedTypeMap = map[string]string{
@@ -45,7 +49,6 @@ var unsignedTypeMap = map[string]string{
 }
 
 func GenerateSchema(db *sql.DB, table string, ignoreTables []string, serviceName string, dir string) (*Schema, error) {
-
 	var err error
 
 	_, err = os.Stat(dir)
@@ -67,6 +70,7 @@ func GenerateSchema(db *sql.DB, table string, ignoreTables []string, serviceName
 	}
 
 	s.Syntax = synatx
+	s.Imports = sort.StringSlice{imports}
 	s.ServiceName = serviceName
 	cols, err := dbColumns(db, dbs, table)
 	if nil != err {
@@ -408,6 +412,11 @@ func (s *Schema) CreateParamString(fileName string) string {
 	buf := new(bytes.Buffer)
 	buf.WriteString(fmt.Sprintf("syntax = \"%s\"\n", s.Syntax))
 	buf.WriteString("\n")
+	if len(s.Imports) > 0 {
+		buf.WriteString(fmt.Sprintf("%s\n", s.Imports[0]))
+		buf.WriteString("\n")
+	}
+
 	buf.WriteString("// Already Exist Table:\n")
 	for _, m := range s.Messages {
 		buf.WriteString("// " + m.Name)
@@ -1069,7 +1078,7 @@ func (m Message) GenApiQueryListResp(buf *bytes.Buffer, warp func(s string) stri
 
 	mOrginName := FirstUpper(m.Name)
 	tmp.WriteString(fmt.Sprintf("%sQuery%sResp {\n", indent, mOrginName))
-	tmp.WriteString(fmt.Sprintf("%s%s%s   []%s  `json:\"%s\"`   \n", indent, indent, m.Name+"List", mOrginName, fmt.Sprintf("%s_list", FirstToLower(m.Name))))
+	tmp.WriteString(fmt.Sprintf("%s%s%s   []%s  `json:\"%s\"`   \n", indent, indent, m.Name+"List", mOrginName, "data"))
 	tmp.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`   \n", indent, indent, "Pagination", "Pagination", "pagination"))
 	tmp.WriteString(fmt.Sprintf("%s}\n", indent))
 

@@ -118,9 +118,11 @@ func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 
 	// 分页
 	if in.GenTotal && totalCount != nil {
-		resp.TotalCount = *totalCount
-		resp.CurPage = in.GetPageNo()
+		resp.Total = *totalCount
+		resp.PerPage = int32(in.GetPageNo())
 		resp.TotalPage = *totalCount / in.GetPageSize()
+		resp.Count = int32(len(resp.{{.modelName}}))
+		resp.PerSize = int32(in.GetPageSize())
 
 		if *totalCount%in.GetPageSize() != 0 {
 			resp.TotalPage += 1
