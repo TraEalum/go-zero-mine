@@ -6,10 +6,12 @@ import (
 	_ "embed"
 	"errors"
 	"fmt"
+	goformat "go/format"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -117,7 +119,9 @@ func upDateNewServer(fileName, registerServer string, imports []string) error {
 
 	buf := bufio.NewReader(f)
 	newBuf := new(bytes.Buffer)
-Loop:
+
+	importIdx := 0
+	serverIdx := 0
 	for {
 		line, err := buf.ReadString('\n')
 		if err != nil {
@@ -128,48 +132,38 @@ Loop:
 			}
 		}
 
-		// if strings.Contains(line, "\"fmt\"") {
-		// 	newBuf.WriteString(line)
-		// 	newBuf.WriteString("\n")
-
-		// 	for {
-		// 		fmt.Println("upDateNewServer 1")
-		// 		line, _ := buf.ReadString('\n')
-		// 		if strings.Contains(line, "comm/configm") {
-		// 			// 写入新imports
-		// 			for _, v := range imports {
-		// 				newBuf.WriteString("\t" + v + "\n")
-		// 			}
-
-		// 			newBuf.WriteString("\n")
-		// 			newBuf.WriteString(line)
-
-		// 			continue Loop
-		// 		}
-		// 	}
-		// }
-
-		if strings.Contains(line, "zrpc.MustNewServer") {
-			newBuf.WriteString(line)
-
-			for {
-				line, _ := buf.ReadString('\n')
-				if strings.Contains(line, "service.DevMode") {
-					// 写入新注册服务
-					newBuf.WriteString(registerServer)
-
-					newBuf.WriteString("\n")
-					newBuf.WriteString(line)
-
-					continue Loop
+		pattern := `\w+Server\s+"\w+\-service.*."`
+		re := regexp.MustCompile(pattern)
+		if re.MatchString(line) {
+			importIdx++
+			if importIdx == 1 {
+				for _, item := range imports {
+					if !re.MatchString(item) {
+						continue
+					}
+					newBuf.WriteString("\t" + item + "\n")
 				}
 			}
+			continue
+		}
+
+		pattern1 := `.*proto\.Register.*.\(.*.\)`
+		re1 := regexp.MustCompile(pattern1)
+		if re1.MatchString(line) {
+			serverIdx++
+			if serverIdx == 1 {
+				newBuf.WriteString(registerServer)
+				newBuf.WriteString("\n")
+			}
+			continue
 		}
 
 		newBuf.WriteString(line)
+
 	}
 
-	err = ioutil.WriteFile(fileName, newBuf.Bytes(), 0666)
+	b, _ := goformat.Source(newBuf.Bytes())
+	err = ioutil.WriteFile(fileName, b, 0666)
 	if err != nil {
 		fmt.Printf("生成paramFile文件失败:%v", err.Error())
 		return err
