@@ -160,7 +160,7 @@ func getFields(fields []*parser.Field, dir, namingFormat string, table stringx.S
 			}
 		}
 
-		fields = make([]*parser.Field, 0)
+		fieldValue := make(map[string]*parser.Field, len(fields))
 
 		for _, v := range oldFields {
 			value, ok := oldFieldMap[v.Name.Source()]
@@ -168,14 +168,19 @@ func getFields(fields []*parser.Field, dir, namingFormat string, table stringx.S
 				continue
 			}
 
-			fields = append(fields, &parser.Field{
+			fieldValue[v.Name.ToCamelWithStartLower()] = &parser.Field{
 				NameOriginal:    v.NameOriginal,
 				Name:            v.Name,
 				DataType:        v.DataType,
 				Comment:         v.Comment,
 				SeqInIndex:      1,
 				OrdinalPosition: 1,
-			})
+			}
+		}
+
+		// 匹配数据库顺序
+		for i := 0; i < len(fields); i++ {
+			fields[i] = fieldValue[fields[i].Name.ToCamelWithStartLower()]
 		}
 	}
 

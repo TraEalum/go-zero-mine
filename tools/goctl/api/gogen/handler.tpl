@@ -16,16 +16,13 @@ func {{.HandlerName}}(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		{{if .HasRequest}}var req types.{{.RequestType}}
 		if err := httpx.Parse(r, &req); err != nil {
-			httpm.ParamErrorResult(w, err)
+			httpm.ParamErrorResultV2(w, err)
 
 			return
 		}
 
-		reqJson, _ := json.Marshal(&req)
-		logx.WithContext(r.Context()).Infof("req: %s", string(reqJson))
-
 		{{end}}l := {{.LogicName}}.New{{.LogicType}}(r.Context(), svcCtx)
 		{{if .HasResp}}resp, {{end}}err := l.{{.Call}}({{if .HasRequest}}&req{{end}})
-			httpm.HttpResult(r, w, err, resp)
+			httpm.HttpResultV2(r, w, err, resp{{if .IsList}}, true{{end}})
 	}
 }

@@ -41,15 +41,21 @@ func New{{.upperStartCamelObject}}Model(conn sqlx.SqlConn{{if .withCache}}, c ca
 	}
 }
 
-func (m *{{.upperStartCamelObject}}) marshal(p *proto.{{.upperStartCamelObject}}) error {
+func (m *{{.upperStartCamelObject}}) Marshal(p *proto.{{.upperStartCamelObject}}) error {
 	m.marshal(p)
 
 	return nil
 }
 
-func (m *{{.upperStartCamelObject}}) unmarshal(p *proto.{{.upperStartCamelObject}}) error {
+func (m *{{.upperStartCamelObject}}) Unmarshal(p *proto.{{.upperStartCamelObject}}) error {
 	m.unmarshal(p)
 	
+	return nil
+}
+
+func (m *{{.upperStartCamelObject}}) MarshalFilter(p *proto.{{.upperStartCamelObject}}Filter) error {
+	m.marshalFilter(p)
+
 	return nil
 }
 `
@@ -114,6 +120,12 @@ func (m *{{.upperStartCamelObject}}) marshal(p *proto.{{.upperStartCamelObject}}
 func (m *{{.upperStartCamelObject}}) unmarshal(p *proto.{{.upperStartCamelObject}}) error {
 	{{.unmarshallFields}}
 	
+	return nil
+}
+
+func (m *{{.upperStartCamelObject}}) marshalFilter(p *proto.{{.upperStartCamelObject}}Filter) error {
+	{{.marshalFields}}
+
 	return nil
 }
 

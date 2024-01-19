@@ -1002,6 +1002,9 @@ func (m Message) GenRpcSearchReqMessage(buf *bytes.Buffer, needList bool) {
 	curFields := []MessageField{
 		{Typ: "int64", Name: "pageNo", tag: 1, Comment: "pageNo"},
 		{Typ: "int64", Name: "pageSize", tag: 2, Comment: "pageSize"},
+		{Typ: "repeated string", Name: "sortField", tag: 3, Comment: "sortField"},
+		{Typ: "repeated string", Name: "sortType", tag: 4, Comment: "sortType"},
+		{Typ: "bool", Name: "genTotal", tag: 5, Comment: "genTotal"},
 	}
 	var filedTag = len(curFields)
 	for _, field := range m.Fields {
@@ -1036,9 +1039,11 @@ func (m Message) GenRpcSearchReqMessage(buf *bytes.Buffer, needList bool) {
 		m.Name = mOrginName + "List"
 		m.Fields = []MessageField{
 			{Typ: "repeated " + mOrginName, Name: stringx.From(firstWord + mOrginName[1:]).ToCamelWithStartLower(), tag: 1, Comment: stringx.From(firstWord+mOrginName[1:]).ToCamelWithStartLower() + "List"},
-			{Typ: "int64", Name: "totalPage", tag: 2},
-			{Typ: "int64", Name: "totalCount", tag: 3},
-			{Typ: "int64", Name: "curPage", tag: 4},
+			{Typ: "int64", Name: "totalPage", tag: 2, Comment: "总页数"},
+			{Typ: "int64", Name: "total", tag: 3, Comment: "总数据量"},
+			{Typ: "int32", Name: "perPage", tag: 4, Comment: "当前第几页"},
+			{Typ: "int32", Name: "perSize", tag: 5, Comment: "每页数据量"},
+			{Typ: "int32", Name: "count", tag: 6, Comment: "当前页实际数量"},
 		}
 		buf.WriteString(fmt.Sprintf("%s", m))
 	}

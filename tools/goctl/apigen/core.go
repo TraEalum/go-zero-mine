@@ -34,6 +34,10 @@ const (
 
 	leftBracesReplace  = "{\n    //Database Tag Begin. DO NOT EDIT !!!"
 	rightBracesReplace = "  //Database Tag End. DO NOT EDIT!!!\n\n    //Custom Tag. You Can Edit.\n  }"
+
+	imports = `import (
+	"../../../../comm/api/comm.api"
+)`
 )
 
 var unsignedTypeMap = map[string]string{
@@ -45,7 +49,6 @@ var unsignedTypeMap = map[string]string{
 }
 
 func GenerateSchema(db *sql.DB, table string, ignoreTables []string, serviceName string, dir string) (*Schema, error) {
-
 	var err error
 
 	_, err = os.Stat(dir)
@@ -67,6 +70,7 @@ func GenerateSchema(db *sql.DB, table string, ignoreTables []string, serviceName
 	}
 
 	s.Syntax = synatx
+	s.Imports = sort.StringSlice{imports}
 	s.ServiceName = serviceName
 	cols, err := dbColumns(db, dbs, table)
 	if nil != err {
@@ -408,6 +412,11 @@ func (s *Schema) CreateParamString(fileName string) string {
 	buf := new(bytes.Buffer)
 	buf.WriteString(fmt.Sprintf("syntax = \"%s\"\n", s.Syntax))
 	buf.WriteString("\n")
+	if len(s.Imports) > 0 {
+		buf.WriteString(fmt.Sprintf("%s\n", s.Imports[0]))
+		buf.WriteString("\n")
+	}
+
 	buf.WriteString("// Already Exist Table:\n")
 	for _, m := range s.Messages {
 		buf.WriteString("// " + m.Name)
@@ -452,10 +461,7 @@ func (s *Schema) CreateParamString(fileName string) string {
 		}
 	}
 
-	//buf.WriteString("\n\n")
-
 	for _, m := range s.CusMessages {
-
 		// 创建
 		buf.WriteString("//--------------------------------" + "customize_proto" + m.Name + "--------------------------------")
 		buf.WriteString("\n")
@@ -1055,6 +1061,8 @@ func (m Message) GenApiQueryListReq(buf *bytes.Buffer, warp func(s string) strin
 	// buf.WriteString(fmt.Sprintf("%s%s%s   %s  `form:\"%s,optional\"`   \n", indent, indent, "Id", "int64", "id"))
 	tmp.WriteString(fmt.Sprintf("%s%s%s   %s  `form:\"%s,optional\"`   \n", indent, indent, "PageNo", "int64", "page_no"))
 	tmp.WriteString(fmt.Sprintf("%s%s%s   %s  `form:\"%s,optional\"`   \n", indent, indent, "PageSize", "int64", "page_size"))
+	tmp.WriteString(fmt.Sprintf("%s%s%s   %s  `form:\"%s,optional\"`   \n", indent, indent, "sortField", "[]string", "sort_field"))
+	tmp.WriteString(fmt.Sprintf("%s%s%s   %s  `form:\"%s,optional\"`   \n", indent, indent, "sortType", "[]string", "sort_type"))
 	tmp.WriteString(fmt.Sprintf("%s}\n", indent))
 
 	if warp == nil {
@@ -1070,10 +1078,8 @@ func (m Message) GenApiQueryListResp(buf *bytes.Buffer, warp func(s string) stri
 
 	mOrginName := FirstUpper(m.Name)
 	tmp.WriteString(fmt.Sprintf("%sQuery%sResp {\n", indent, mOrginName))
-	tmp.WriteString(fmt.Sprintf("%s%s%s   []%s  `json:\"%s\"`   \n", indent, indent, m.Name+"List", mOrginName, fmt.Sprintf("%s_list", FirstToLower(m.Name))))
-	tmp.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`   \n", indent, indent, "CurrPage", "int64", "curr_page"))
-	tmp.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`   \n", indent, indent, "TotalPage", "int64", "total_page"))
-	tmp.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`   \n", indent, indent, "TotalCount", "int64", "total_count"))
+	tmp.WriteString(fmt.Sprintf("%s%s%s   []%s  `json:\"%s\"`   \n", indent, indent, m.Name+"List", mOrginName, "data"))
+	tmp.WriteString(fmt.Sprintf("%s%s%s   %s  `json:\"%s\"`   \n", indent, indent, "Pagination", "Pagination", "pagination"))
 	tmp.WriteString(fmt.Sprintf("%s}\n", indent))
 
 	if warp == nil {
@@ -1363,22 +1369,22 @@ func writeUpdateParamString(buf *bufio.Reader, bufNew *bytes.Buffer, s Schema, f
 	return nil
 }
 
-//	replaceBraces replace a Braces to designated string, include left Braces and right Braces.
+// replaceBraces replace a Braces to designated string, include left Braces and right Braces.
 func replaceBraces(s string) string {
 	return replaceRightBraces(replaceLeftBraces(s))
 }
 
-//	replaceLeftBraces replace a Left Braces to designated string.
+// replaceLeftBraces replace a Left Braces to designated string.
 func replaceLeftBraces(s string) string {
 	return strings.Replace(s, "{", leftBracesReplace, 1)
 }
 
-//	replaceRightBraces replace a Right Braces to designated string.
+// replaceRightBraces replace a Right Braces to designated string.
 func replaceRightBraces(s string) string {
 	return strings.Replace(s, "}", rightBracesReplace, 1)
 }
 
-//	getMessageNameInLine get Message Name in line string.
+// getMessageNameInLine get Message Name in line string.
 func getMessageNameInLine(line string) (message string) {
 	//example: "  SalesServer {"  ======>  "SalesServer"
 	re := regexp.MustCompile(`\b[a-zA-Z_][a-zA-Z0-9_]*\b`)
@@ -1461,7 +1467,7 @@ func getCustomFields(buf *bufio.Reader) (customFields map[string][]string, err e
 	return customFields, nil
 }
 
-//	insertStrAfter insert string after tag String.
+// insertStrAfter insert string after tag String.
 func insertStrAfter(s, insertStr, tag string) string {
 	if insertStr == "" {
 		return s

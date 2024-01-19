@@ -149,6 +149,7 @@ func (g *Generator) genLogicFunction(serviceName, goPackage string, logicName st
 		text = QueryDetailLogic
 		modelName = strings.Replace(parser.CamelCase(rpc.RequestType), "Filter", "", 1)
 		gen.HasModel = true
+		gen.HasUtil = true
 	case fmt.Sprintf("Query%sList", strings.Replace(parser.CamelCase(rpc.RequestType), "Filter", "", 1)):
 		text = QueryLogic
 		modelName = strings.Replace(parser.CamelCase(rpc.RequestType), "Filter", "", 1)
