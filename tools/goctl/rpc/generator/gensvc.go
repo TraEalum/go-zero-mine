@@ -39,8 +39,6 @@ func (g *Generator) GenSvc(ctx DirContext, proto parser.Proto, cfg *conf.Config)
 		modelDefine, modelInit = genModels(proto.Tables)
 	}
 
-	fmt.Println("init: [%v]", modelInit)
-
 	fileName := filepath.Join(dir.Filename, svcFilename+".go")
 	text := ""
 	if pathx.FileExists(fileName) {
