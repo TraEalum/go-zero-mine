@@ -39,6 +39,8 @@ func (g *Generator) GenSvc(ctx DirContext, proto parser.Proto, cfg *conf.Config)
 		modelDefine, modelInit = genModels(proto.Tables)
 	}
 
+	fmt.Println("init: [%v]", modelInit)
+
 	fileName := filepath.Join(dir.Filename, svcFilename+".go")
 	text := ""
 	if pathx.FileExists(fileName) {
@@ -67,10 +69,19 @@ func genModels(tables []string) (string, string) {
 	modelDefine := ""
 	modelInit := ""
 
+	var filterMap = make(map[string]struct{}, len(tables))
+
 	for _, tbl := range tables {
 		if tbl == "" {
 			continue
 		}
+
+		_, ok := filterMap[tbl]
+		if ok {
+			continue
+		}
+
+		filterMap[tbl] = struct{}{}
 		modelDefine += fmt.Sprintf("%sModel model.%sModel\n", tbl, tbl)
 		modelInit += fmt.Sprintf("%sModel: model.New%sModel(sqlConn),\n", tbl, tbl)
 	}
@@ -142,9 +153,19 @@ func dealExistsModelInit(modelInit string, fileName string, tables []string) (st
 		}
 	}
 
+	// 过滤掉重复的表名
+	filterMap := make(map[string]struct{}, len(tables))
+
 	//modelInitMap modelExMap  制作完成
 	var newTagInfo []string
 	for _, table := range tables {
+		_, ok := filterMap[table]
+		if ok {
+			continue
+		}
+
+		filterMap[table] = struct{}{}
+
 		tmpName := table + "Model:"
 		if _, ok := modelExMap[tmpName]; ok {
 			//存在,则沿用之前的
