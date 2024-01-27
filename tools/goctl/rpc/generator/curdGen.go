@@ -88,7 +88,7 @@ func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 const QueryLogic = commonHead + `
 func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 	var err error
-	var totalCount *int64
+	var totalCount []*int64
 	var {{.modelNameFirstLower}}List *[]model.{{.modelName}}
 
 	resp := proto.{{.modelName}}List{
@@ -96,7 +96,7 @@ func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 	}
 
 	if (in.GenTotal) {
-		totalCount = new(int64)
+		totalCount = append(totalCount, new(int64))
 	}
 
 	// build where
@@ -108,7 +108,7 @@ func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 		OrderBy(in.SortField, in.SortType)
 
 	// query
-	if {{.modelNameFirstLower}}List, err = l.svcCtx.{{.modelName}}Model.FindList(l.ctx, builder.SelectBuilder, totalCount); err != nil {
+	if {{.modelNameFirstLower}}List, err = l.svcCtx.{{.modelName}}Model.FindList(l.ctx, builder.SelectBuilder, ...totalCount); err != nil {
 		logx.WithContext(l.ctx).Infof("FindList fail. %v", err)
 		
 		return nil, errorm.New(errorm.RecordFindFailed, "FindList fail.%v", err)

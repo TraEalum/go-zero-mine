@@ -15,8 +15,7 @@ func (m *default{{.upperStartCamelObject}}Model) FindList(ctx context.Context, s
 		return nil, err
 	}
 
-	if len(totalCount) == 0 || (len(totalCount) == 1 && totalCount[0] == nil) {
-		totalCount[0] = new(int64)
+	if len(totalCount) == 0) {
 		return &resp, nil
 	}
 
