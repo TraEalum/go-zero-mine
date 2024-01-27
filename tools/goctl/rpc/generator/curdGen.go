@@ -108,7 +108,7 @@ func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 		OrderBy(in.SortField, in.SortType)
 
 	// query
-	if {{.modelNameFirstLower}}List, err = l.svcCtx.{{.modelName}}Model.FindList(l.ctx, builder.SelectBuilder, ...totalCount); err != nil {
+	if {{.modelNameFirstLower}}List, err = l.svcCtx.{{.modelName}}Model.FindList(l.ctx, builder.SelectBuilder, totalCount...); err != nil {
 		logx.WithContext(l.ctx).Infof("FindList fail. %v", err)
 		
 		return nil, errorm.New(errorm.RecordFindFailed, "FindList fail.%v", err)
