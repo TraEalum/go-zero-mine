@@ -118,13 +118,13 @@ func (l *{{.logicName}}) {{.method}} (in {{.request}}) ({{.response}}, error) {
 
 	// 分页
 	if in.GenTotal && totalCount != nil {
-		resp.Total = *totalCount
+		resp.Total = *totalCount[0]
 		resp.PerPage = int32(in.GetPageNo())
-		resp.TotalPage = *totalCount / in.GetPageSize()
+		resp.TotalPage = *totalCount[0] / in.GetPageSize()
 		resp.Count = int32(len(resp.{{.modelName}}))
 		resp.PerSize = int32(in.GetPageSize())
 
-		if *totalCount%in.GetPageSize() != 0 {
+		if *totalCount[0]%in.GetPageSize() != 0 {
 			resp.TotalPage += 1
 		}
 	}
