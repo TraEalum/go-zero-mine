@@ -135,15 +135,15 @@ func getMarshalProtoDataType(field *parser.Field) string {
 	switch field.DataType {
 	case "sql.NullString":
 		{
-			return fmt.Sprintf("&sql.NullString{String:p.%s}", fileName)
+			return fmt.Sprintf("&sql.NullString{String:p.%s, Valid: true}", fileName)
 		}
 	case "sql.NullInt16":
 		{
-			return fmt.Sprintf("&sql.NullInt16{Int16:p.%s}", fileName)
+			return fmt.Sprintf("&sql.NullInt16{Int16:p.%s, Valid: true}", fileName)
 		}
 	case "sql.NullInt32":
 		{
-			return fmt.Sprintf("&sql.NullInt32{Int32:p.%s}", fileName)
+			return fmt.Sprintf("&sql.NullInt32{Int32:p.%s, Valid: true}", fileName)
 		}
 	case "sql.NullInt64":
 		{
@@ -151,15 +151,15 @@ func getMarshalProtoDataType(field *parser.Field) string {
 		}
 	case "sql.NullBool":
 		{
-			return fmt.Sprintf("&sql.NullBool{Bool:p.%s}", fileName)
+			return fmt.Sprintf("&sql.NullBool{Bool:p.%s, Valid: true}", fileName)
 		}
 	case "sql.NullByte":
 		{
-			return fmt.Sprintf("&sql.NullByte{Byte:p.%s}", fileName)
+			return fmt.Sprintf("&sql.NullByte{Byte:p.%s, Valid: true}", fileName)
 		}
 	case "sql.NullFloat64":
 		{
-			return fmt.Sprintf("&sql.NullFloat64{Float64:p.%s}", fileName)
+			return fmt.Sprintf("&sql.NullFloat64{Float64:p.%s, Valid: true}", fileName)
 		}
 	default:
 		{
